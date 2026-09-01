@@ -1182,7 +1182,18 @@ function EditorView({
                 <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {entry.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#8D96A3" }}>{entry.year || "Year unknown"}</div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#8D96A3",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {entry.year || "Year unknown"}
+                  {entry.details?.director ? ` · Dir. ${entry.details.director}` : ""}
+                </div>
               </div>
               <div
                 style={{
@@ -1614,6 +1625,26 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
                 {expanded ? "Show less" : "Read more"}
               </button>
             )}
+            {expanded && movie.pageUrl && (
+              <div style={{ marginTop: 8 }}>
+                <a
+                  href={movie.pageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#6C86AB",
+                    fontSize: 12.5,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    textDecoration: "none",
+                  }}
+                >
+                  More on Wikipedia
+                  <ExternalLink size={12} strokeWidth={2} />
+                </a>
+              </div>
+            )}
           </div>
         )}
 
@@ -1699,25 +1730,6 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
             </div>
           </div>
         </div>
-
-        {movie.pageUrl && (
-          <a
-            href={movie.pageUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: "#6C86AB",
-              fontSize: 12.5,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              textDecoration: "none",
-            }}
-          >
-            More on Wikipedia
-            <ExternalLink size={12} strokeWidth={2} />
-          </a>
-        )}
 
         <button
           onClick={onClose}
