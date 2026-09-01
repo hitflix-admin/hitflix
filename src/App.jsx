@@ -45,11 +45,12 @@ function ratingColor(value, min, max) {
 }
 
 function Gauge({ score, size = 44 }) {
+  const hasScore = score !== null && score !== undefined;
   const strokeWidth = Math.max(3, size * 0.11);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const pct = Math.max(0, Math.min(100, score)) / 100;
-  const color = ratingColor(score, 0, 100);
+  const pct = hasScore ? Math.max(0, Math.min(100, score)) / 100 : 0;
+  const color = hasScore ? ratingColor(score, 0, 100) : "rgba(231,233,236,0.22)";
 
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
@@ -90,13 +91,19 @@ function Gauge({ score, size = 44 }) {
           fontFamily: "'Montserrat', sans-serif",
           fontWeight: 800,
           color: "#E7E9EC",
-          fontSize: size * 0.32,
+          fontSize: hasScore ? size * 0.32 : size * 0.22,
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1,
         }}
       >
-        {score}
-        <span style={{ fontSize: size * 0.16, marginLeft: 1 }}>%</span>
+        {hasScore ? (
+          <>
+            {score}
+            <span style={{ fontSize: size * 0.16, marginLeft: 1 }}>%</span>
+          </>
+        ) : (
+          <span style={{ color: "#8D96A3" }}>N/A</span>
+        )}
       </div>
     </div>
   );
@@ -1252,8 +1259,9 @@ const iconBtn = {
 
 function MovieModal({ movie, onClose, onRate }) {
   const [expanded, setExpanded] = useState(false);
+  const hasRating = !!movie.rating;
   const rating = movie.rating || DEFAULT_RATING;
-  const score = calcScore(rating);
+  const score = hasRating ? calcScore(rating) : null;
   const extract = movie.extract || "";
   const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
@@ -1386,7 +1394,7 @@ function MovieModal({ movie, onClose, onRate }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
                 <span>Overall</span>
                 <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {rating.overall}/10
+                  {hasRating ? `${rating.overall}/10` : "N/A"}
                 </span>
               </div>
               <input
@@ -1403,12 +1411,14 @@ function MovieModal({ movie, onClose, onRate }) {
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               {SUBCATEGORIES.map((cat) => {
                 const value = rating[cat.key];
-                const color = ratingColor(value, 1, 5);
+                const color = hasRating ? ratingColor(value, 1, 5) : "#4a525c";
                 return (
                   <div key={cat.key}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
                       <span>{cat.label}</span>
-                      <span style={{ color, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{value}/5</span>
+                      <span style={{ color: hasRating ? color : "#8D96A3", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                        {hasRating ? `${value}/5` : "N/A"}
+                      </span>
                     </div>
                     <input
                       type="range"
