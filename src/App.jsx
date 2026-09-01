@@ -22,6 +22,28 @@ function yearFromDescription(desc) {
   return m ? m[0] : "";
 }
 
+const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
+const SUBCATEGORIES = [
+  { key: "writing", label: "Writing" },
+  { key: "performance", label: "Performance" },
+  { key: "visuals", label: "Visuals" },
+  { key: "audio", label: "Audio" },
+];
+const DESCRIPTION_TRUNCATE_LENGTH = 275;
+
+function calcScore(rating) {
+  if (!rating) return null;
+  const subTotal = rating.writing + rating.performance + rating.visuals + rating.audio;
+  const subFrac = subTotal / 20;
+  const overallFrac = rating.overall / 10;
+  return Math.round(((subFrac + overallFrac) / 2) * 100);
+}
+
+function ratingColor(value, min, max) {
+  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  return `hsl(${Math.round(t * 120)}, 65%, 48%)`;
+}
+
 const NON_MOVIE_DESCRIPTION = /\b(director|actor|actress|producer|screenwriter|composer|cinematographer|editor|soundtrack|album|score|song|series|franchise|trilogy|registry|studio|festival|award|musician|singer|novel|book|video game|podcast)\b/i;
 
 function isMovieDescription(desc) {
@@ -133,7 +155,7 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [modalMovie, setModalMovie] = useState(null);
+  const [modalMovieUid, setModalMovieUid] = useState(null);
 
   const dragState = useRef(null);
   const [dragIndex, setDragIndex] = useState(null);
@@ -169,6 +191,7 @@ export default function App() {
   }, []);
 
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
+  const modalEntry = currentList && modalMovieUid ? currentList.entries.find((e) => e.uid === modalMovieUid) : null;
 
   function updateCurrent(mutator) {
     if (!lists || !currentId) return;
@@ -247,8 +270,17 @@ export default function App() {
     if (currentList.targetLength > 0 && currentList.entries.length >= currentList.targetLength) return;
     updateCurrent((l) => ({
       ...l,
-      entries: [...l.entries, { ...movie, uid: uid() }],
+      entries: [...l.entries, { ...movie, uid: uid(), rating: { ...DEFAULT_RATING } }],
       updatedAt: Date.now(),
+    }));
+  }
+
+  function rateMovie(uidToRate, field, value) {
+    updateCurrent((l) => ({
+      ...l,
+      entries: l.entries.map((e) =>
+        e.uid === uidToRate ? { ...e, rating: { ...(e.rating || DEFAULT_RATING), [field]: value } } : e
+      ),
     }));
   }
 
@@ -356,7 +388,7 @@ export default function App() {
           searchError={searchError}
           onAdd={addMovie}
           onRemove={removeEntry}
-          onOpenMovie={setModalMovie}
+          onOpenMovie={(entry) => setModalMovieUid(entry.uid)}
           rowRefs={rowRefs}
           dragIndex={dragIndex}
           dragY={dragY}
@@ -382,7 +414,13 @@ export default function App() {
         />
       )}
 
-      {modalMovie && <MovieModal movie={modalMovie} onClose={() => setModalMovie(null)} />}
+      {modalEntry && (
+        <MovieModal
+          movie={modalEntry}
+          onClose={() => setModalMovieUid(null)}
+          onRate={(field, value) => rateMovie(modalEntry.uid, field, value)}
+        />
+      )}
     </div>
   );
 }
@@ -813,8 +851,23 @@ function EditorView({
                 <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
               </div>
               <div onClick={() => onOpenMovie(entry)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
-                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {entry.title}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {entry.title}
+                  </div>
+                  {calcScore(entry.rating) !== null && (
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: "#6C86AB",
+                        flexShrink: 0,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {calcScore(entry.rating)}%
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "#8D96A3" }}>{entry.year || "Year unknown"}</div>
               </div>
@@ -925,7 +978,14 @@ const iconBtn = {
 
 /* ---------------- Movie modal ---------------- */
 
-function MovieModal({ movie, onClose }) {
+function MovieModal({ movie, onClose, onRate }) {
+  const [expanded, setExpanded] = useState(false);
+  const rating = movie.rating || DEFAULT_RATING;
+  const score = calcScore(rating);
+  const extract = movie.extract || "";
+  const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
+  const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
+
   return (
     <div
       onClick={onClose}
@@ -989,11 +1049,121 @@ function MovieModal({ movie, onClose }) {
           </div>
         </div>
 
-        {movie.extract && (
+        {extract && (
           <div style={{ color: "#E7E9EC", fontSize: 13.5, lineHeight: 1.55, marginBottom: 14 }}>
-            {movie.extract}
+            {shownExtract}
+            {isLong && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#6C86AB",
+                  cursor: "pointer",
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  padding: 0,
+                  marginLeft: 6,
+                  fontFamily: "'Montserrat', sans-serif",
+                }}
+              >
+                {expanded ? "Show less" : "Read more"}
+              </button>
+            )}
           </div>
         )}
+
+        <div
+          style={{
+            borderTop: "1px solid rgba(231,233,236,0.1)",
+            marginTop: 4,
+            marginBottom: 14,
+            paddingTop: 16,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              fontSize: 13,
+              letterSpacing: 0.5,
+              color: "#8D96A3",
+              marginBottom: 12,
+            }}
+          >
+            Your rating
+          </div>
+
+          {/* Section 1: total calculated score */}
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <div
+              style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                fontSize: 40,
+                lineHeight: 1,
+                color: "#6C86AB",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {score}%
+            </div>
+          </div>
+
+          {/* Section 2 (overall, left) + Section 3 (subcategories, right) */}
+          <div style={{ display: "flex", gap: 18, alignItems: "stretch" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
+                <span>Overall</span>
+                <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  {rating.overall}/10
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={1}
+                value={rating.overall}
+                onChange={(e) => onRate("overall", Number(e.target.value))}
+                style={{ width: "100%" }}
+              />
+            </div>
+
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+              {SUBCATEGORIES.map((cat) => {
+                const value = rating[cat.key];
+                const color = ratingColor(value, 1, 5);
+                return (
+                  <div key={cat.key}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
+                      <span>{cat.label}</span>
+                      <span style={{ color, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{value}/5</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={5}
+                      step={1}
+                      value={value}
+                      onChange={(e) => onRate(cat.key, Number(e.target.value))}
+                      style={{ width: "100%", accentColor: color }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {movie.pageUrl && (
           <a
