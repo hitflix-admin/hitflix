@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
-import logo from "./assets/hitflix-movie-club-red-transparent.png";
+import logo from "./assets/hitflix-logo-transparent.png";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
