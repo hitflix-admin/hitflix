@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
+import logo from "./assets/hitflix-movie-club-red-transparent.png";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -392,19 +393,11 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
-        <div
-          style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            fontSize: 32,
-            letterSpacing: 0.5,
-            lineHeight: 1,
-            color: "#E7E9EC",
-          }}
-        >
-          Hitflix
-        </div>
+        <img
+          src={logo}
+          alt="Hitflix Movie Club"
+          style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
+        />
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           Build a list, one reel at a time.
         </div>
