@@ -431,6 +431,7 @@ export default function App() {
   const [currentId, setCurrentId] = useState(null);
   const [status, setStatus] = useState(""); // saved indicator
   const [creating, setCreating] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [newName, setNewName] = useState("");
   const [newLength, setNewLength] = useState("");
   const [newRanked, setNewRanked] = useState(true);
@@ -517,10 +518,16 @@ export default function App() {
     setSearchError("");
   }
 
-  function deleteList(id, e) {
+  function requestDeleteList(id, name, e) {
     e.stopPropagation();
-    const next = (lists || []).filter((l) => l.id !== id);
+    setDeleteTarget({ id, name });
+  }
+
+  function confirmDeleteList() {
+    if (!deleteTarget) return;
+    const next = (lists || []).filter((l) => l.id !== deleteTarget.id);
     persist(next);
+    setDeleteTarget(null);
   }
 
   function goHome() {
@@ -688,7 +695,7 @@ export default function App() {
           lists={lists}
           onCreate={() => setCreating(true)}
           onOpen={openList}
-          onDelete={deleteList}
+          onDelete={requestDeleteList}
         />
       )}
 
@@ -744,6 +751,14 @@ export default function App() {
           onClose={() => setModalMovieUid(null)}
           onRate={(field, value) => rateMovie(modalEntry.uid, field, value)}
           onDetails={(details) => setMovieDetails(modalEntry.uid, details)}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          name={deleteTarget.name}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDeleteList}
         />
       )}
     </div>
@@ -855,7 +870,7 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
                   </div>
                 </div>
                 <button
-                  onClick={(e) => onDelete(l.id, e)}
+                  onClick={(e) => onDelete(l.id, l.name, e)}
                   style={{
                     background: "none",
                     border: "none",
@@ -964,6 +979,63 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, onCa
   );
 }
 
+/* ---------------- Delete confirmation modal ---------------- */
+
+function ConfirmDeleteModal({ name, onCancel, onConfirm }) {
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(20,20,20,0.72)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        zIndex: 55,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#1E1E1E",
+          width: "100%",
+          maxWidth: 400,
+          borderRadius: 10,
+          padding: "22px 20px 20px",
+          border: "1px solid rgba(231,233,236,0.1)",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Montserrat', sans-serif",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 19,
+            letterSpacing: 0.4,
+            marginBottom: 10,
+          }}
+        >
+          Delete list?
+        </div>
+        <div style={{ color: "#8D96A3", fontSize: 13.5, lineHeight: 1.5, marginBottom: 22 }}>
+          Are you sure you want to delete <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{name}</span>? This
+          can't be undone.
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={secondaryBtn}>
+            Don't Delete
+          </button>
+          <button onClick={onConfirm} style={dangerBtn}>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const inputStyle = {
   width: "100%",
   background: "#141414",
@@ -997,6 +1069,18 @@ const secondaryBtn = {
   borderRadius: 3,
   padding: "12px 14px",
   fontSize: 14.5,
+  cursor: "pointer",
+};
+
+const dangerBtn = {
+  flex: 1,
+  background: "#B5544B",
+  color: "#E7E9EC",
+  border: "none",
+  borderRadius: 3,
+  padding: "12px 14px",
+  fontSize: 14.5,
+  fontWeight: 600,
   cursor: "pointer",
 };
 
