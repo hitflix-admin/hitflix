@@ -928,6 +928,7 @@ function EditorView({
                 {calcScore(entry.rating) !== null ? (
                   <>
                     <div
+                      className="your-score-label"
                       style={{
                         fontSize: 9,
                         textTransform: "uppercase",

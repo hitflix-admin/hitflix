@@ -9,3 +9,13 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.your-score-label {
+  display: block;
+}
+
+@media (max-width: 380px) {
+  .your-score-label {
+    display: none;
+  }
+}
