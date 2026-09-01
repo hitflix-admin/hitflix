@@ -249,7 +249,11 @@ export default function App() {
   }, []);
 
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
-  const modalEntry = currentList && modalMovieUid ? currentList.entries.find((e) => e.uid === modalMovieUid) : null;
+  const modalEntry =
+    currentList && modalMovieUid
+      ? currentList.entries.find((e) => e.uid === modalMovieUid) ||
+        (currentList.honorableMentions || []).find((e) => e.uid === modalMovieUid)
+      : null;
 
   function updateCurrent(mutator) {
     if (!lists || !currentId) return;
@@ -266,6 +270,7 @@ export default function App() {
       targetLength: Number.isFinite(cap) && cap > 0 ? cap : 0,
       ranked: newRanked,
       entries: [],
+      honorableMentions: [],
       updatedAt: Date.now(),
     };
     const next = [list, ...(lists || [])];
@@ -333,19 +338,38 @@ export default function App() {
     }));
   }
 
-  function rateMovie(uidToRate, field, value) {
+  function addHonorableMention(movie) {
+    if (!currentList) return;
     updateCurrent((l) => ({
       ...l,
-      entries: l.entries.map((e) =>
-        e.uid === uidToRate ? { ...e, rating: { ...(e.rating || DEFAULT_RATING), [field]: value } } : e
-      ),
+      honorableMentions: [...(l.honorableMentions || []), { ...movie, uid: uid() }],
+      updatedAt: Date.now(),
     }));
+  }
+
+  function rateMovie(uidToRate, field, value) {
+    updateCurrent((l) => {
+      const inEntries = l.entries.some((e) => e.uid === uidToRate);
+      const patch = (e) =>
+        e.uid === uidToRate ? { ...e, rating: { ...(e.rating || DEFAULT_RATING), [field]: value } } : e;
+      return inEntries
+        ? { ...l, entries: l.entries.map(patch) }
+        : { ...l, honorableMentions: (l.honorableMentions || []).map(patch) };
+    });
   }
 
   function removeEntry(uidToRemove) {
     updateCurrent((l) => ({
       ...l,
       entries: l.entries.filter((e) => e.uid !== uidToRemove),
+      updatedAt: Date.now(),
+    }));
+  }
+
+  function removeHonorableMention(uidToRemove) {
+    updateCurrent((l) => ({
+      ...l,
+      honorableMentions: (l.honorableMentions || []).filter((e) => e.uid !== uidToRemove),
       updatedAt: Date.now(),
     }));
   }
@@ -441,11 +465,17 @@ export default function App() {
           onRecap={(cap) => updateCurrent((l) => ({ ...l, targetLength: cap }))}
           query={query}
           setQuery={setQuery}
-          results={results.filter((r) => !currentList.entries.some((e) => e.id === r.id))}
+          results={results.filter(
+            (r) =>
+              !currentList.entries.some((e) => e.id === r.id) &&
+              !(currentList.honorableMentions || []).some((e) => e.id === r.id)
+          )}
           searching={searching}
           searchError={searchError}
           onAdd={addMovie}
+          onAddMention={addHonorableMention}
           onRemove={removeEntry}
+          onRemoveMention={removeHonorableMention}
           onOpenMovie={(entry) => setModalMovieUid(entry.uid)}
           rowRefs={rowRefs}
           dragIndex={dragIndex}
@@ -767,13 +797,16 @@ function EditorView({
   searching,
   searchError,
   onAdd,
+  onAddMention,
   onRemove,
+  onRemoveMention,
   onOpenMovie,
   rowRefs,
   dragIndex,
   dragY,
   onHandlePointerDown,
 }) {
+  const honorableMentions = list.honorableMentions || [];
   const full = list.targetLength > 0 && list.entries.length >= list.targetLength;
   const [editingName, setEditingName] = useState(false);
 
@@ -974,6 +1007,132 @@ function EditorView({
           ))}
         </div>
 
+        {list.ranked && (
+          <div style={{ marginBottom: 22 }}>
+            <div
+              style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                fontSize: 15,
+                letterSpacing: 0.5,
+                marginBottom: 4,
+              }}
+            >
+              Honorable mentions
+            </div>
+            <div style={{ color: "#8D96A3", fontSize: 12, marginBottom: 10 }}>No particular order</div>
+
+            {honorableMentions.length === 0 ? (
+              <div
+                style={{
+                  border: "1px dashed rgba(231,233,236,0.18)",
+                  borderRadius: 4,
+                  padding: "20px 16px",
+                  textAlign: "center",
+                  color: "#8D96A3",
+                  fontSize: 13,
+                }}
+              >
+                No honorable mentions yet.
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  overflowX: "auto",
+                  paddingBottom: 6,
+                }}
+              >
+                {honorableMentions.map((entry) => (
+                  <div
+                    key={entry.uid}
+                    style={{
+                      background: "#1E1E1E",
+                      border: "1px solid rgba(231,233,236,0.08)",
+                      borderRadius: 4,
+                      padding: 10,
+                      width: 116,
+                      flexShrink: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                      position: "relative",
+                    }}
+                  >
+                    <button
+                      onClick={() => onRemoveMention(entry.uid)}
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        background: "rgba(20,20,20,0.7)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 22,
+                        height: 22,
+                        color: "#8D96A3",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      aria-label={`Remove ${entry.title}`}
+                    >
+                      <X size={13} strokeWidth={1.8} />
+                    </button>
+                    <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                      <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
+                    </div>
+                    <div
+                      onClick={() => onOpenMovie(entry)}
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: 1.25,
+                        width: "100%",
+                      }}
+                    >
+                      {entry.title}
+                    </div>
+                    {calcScore(entry.rating) !== null ? (
+                      <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                        <Gauge score={calcScore(entry.rating)} size={34} />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onOpenMovie(entry)}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid #6C86AB",
+                          color: "#6C86AB",
+                          borderRadius: 20,
+                          padding: "4px 8px",
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          fontFamily: "'Montserrat', sans-serif",
+                        }}
+                      >
+                        Add score
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div style={{ borderTop: "1px solid rgba(231,233,236,0.08)", paddingTop: 18 }}>
           <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 15, letterSpacing: 0.5, marginBottom: 10 }}>
             Add a title
@@ -1028,26 +1187,47 @@ function EditorView({
                       {r.description || r.year}
                     </div>
                   </div>
-                  <button
-                    onClick={() => onAdd(r)}
-                    style={{
-                      background: "#6C86AB",
-                      border: "none",
-                      borderRadius: 3,
-                      color: "#141414",
-                      padding: "8px 10px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Plus size={14} strokeWidth={2.5} />
-                    Add
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => onAdd(r)}
+                      style={{
+                        background: "#6C86AB",
+                        border: "none",
+                        borderRadius: 3,
+                        color: "#141414",
+                        padding: "8px 10px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 4,
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Plus size={14} strokeWidth={2.5} />
+                      Add
+                    </button>
+                    {list.ranked && (
+                      <button
+                        onClick={() => onAddMention(r)}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid rgba(231,233,236,0.2)",
+                          borderRadius: 3,
+                          color: "#8D96A3",
+                          padding: "6px 10px",
+                          cursor: "pointer",
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                          fontFamily: "'Montserrat', sans-serif",
+                        }}
+                      >
+                        Mention
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
