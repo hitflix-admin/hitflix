@@ -3,14 +3,14 @@ import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, C
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
-   Palette:   ink #12181C / surface #1C262D / paper #EDE7DA
-              gold #D4A24C / rose #B5544B / mute #7E8E96
-   Display type: "Bebas Neue" (marquee letterforms)
-   Body type:    "Work Sans"
+   Palette:   ink #141414 / surface #1E1E1E / paper #E7E9EC
+              blue #6C86AB / rose #B5544B / mute #8D96A3
+   Type: "Montserrat" — extrabold + tracked caps for display,
+         regular/medium for body
 --------------------------------------------------------- */
 
 const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 `;
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -79,9 +79,9 @@ function PosterArt({ poster, title, size = "thumb" }) {
           height: dims.h,
           objectFit: "cover",
           borderRadius: 3,
-          border: "1px solid rgba(237,231,218,0.14)",
+          border: "1px solid rgba(231,233,236,0.14)",
           flexShrink: 0,
-          background: "#1C262D",
+          background: "#1E1E1E",
         }}
       />
     );
@@ -92,16 +92,17 @@ function PosterArt({ poster, title, size = "thumb" }) {
         width: dims.w,
         height: dims.h,
         borderRadius: 3,
-        border: "1px solid rgba(237,231,218,0.14)",
+        border: "1px solid rgba(231,233,236,0.14)",
         flexShrink: 0,
-        background: "linear-gradient(160deg, #3A2E1E 0%, #6B4E23 55%, #D4A24C 130%)",
+        background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #6C86AB 130%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#12181C",
-        fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: size === "thumb" ? 18 : 40,
-        letterSpacing: 1,
+        color: "#141414",
+        fontFamily: "'Montserrat', sans-serif",
+        fontWeight: 800,
+        fontSize: size === "thumb" ? 16 : 36,
+        letterSpacing: 0.5,
       }}
     >
       {initials || <Film size={size === "thumb" ? 16 : 28} strokeWidth={1.5} />}
@@ -301,9 +302,9 @@ export default function App() {
   }, []);
 
   const wrap = {
-    fontFamily: "'Work Sans', sans-serif",
-    background: "#12181C",
-    color: "#EDE7DA",
+    fontFamily: "'Montserrat', sans-serif",
+    background: "#141414",
+    color: "#E7E9EC",
     minHeight: "100%",
     width: "100%",
   };
@@ -312,7 +313,7 @@ export default function App() {
     return (
       <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
         <style>{FONTS}</style>
-        <div style={{ color: "#7E8E96", fontSize: 14 }}>Loading your lists…</div>
+        <div style={{ color: "#8D96A3", fontSize: 14 }}>Loading your lists…</div>
       </div>
     );
   }
@@ -379,16 +380,18 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
       <div style={{ marginBottom: 26 }}>
         <div
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 40,
-            letterSpacing: 1.5,
+            fontFamily: "'Montserrat', sans-serif",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 32,
+            letterSpacing: 0.5,
             lineHeight: 1,
-            color: "#EDE7DA",
+            color: "#E7E9EC",
           }}
         >
           Hitflix
         </div>
-        <div style={{ color: "#7E8E96", fontSize: 13.5, marginTop: 6 }}>
+        <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           Build a list, one reel at a time.
         </div>
       </div>
@@ -397,8 +400,8 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
         onClick={onCreate}
         style={{
           width: "100%",
-          background: "#D4A24C",
-          color: "#12181C",
+          background: "#6C86AB",
+          color: "#141414",
           border: "none",
           borderRadius: 3,
           padding: "13px 16px",
@@ -419,11 +422,11 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
       {lists.length === 0 ? (
         <div
           style={{
-            border: "1px dashed rgba(237,231,218,0.18)",
+            border: "1px dashed rgba(231,233,236,0.18)",
             borderRadius: 4,
             padding: "36px 20px",
             textAlign: "center",
-            color: "#7E8E96",
+            color: "#8D96A3",
             fontSize: 14,
           }}
         >
@@ -439,8 +442,8 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
                 key={l.id}
                 onClick={() => onOpen(l.id)}
                 style={{
-                  background: "#1C262D",
-                  border: "1px solid rgba(237,231,218,0.08)",
+                  background: "#1E1E1E",
+                  border: "1px solid rgba(231,233,236,0.08)",
                   borderRadius: 4,
                   padding: "14px 16px",
                   cursor: "pointer",
@@ -461,11 +464,11 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
                         width: 52,
                         height: 76,
                         borderRadius: 3,
-                        border: "1px dashed rgba(237,231,218,0.2)",
+                        border: "1px dashed rgba(231,233,236,0.2)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#7E8E96",
+                        color: "#8D96A3",
                       }}
                     >
                       <Film size={16} strokeWidth={1.5} />
@@ -476,7 +479,7 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
                   <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {l.name}
                   </div>
-                  <div style={{ color: "#7E8E96", fontSize: 12.5 }}>
+                  <div style={{ color: "#8D96A3", fontSize: 12.5 }}>
                     {l.entries.length}
                     {l.targetLength ? ` / ${l.targetLength}` : ""} titles
                   </div>
@@ -486,7 +489,7 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#7E8E96",
+                    color: "#8D96A3",
                     cursor: "pointer",
                     padding: 6,
                   }}
@@ -511,7 +514,7 @@ function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(10,13,15,0.72)",
+        background: "rgba(20,20,20,0.72)",
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
@@ -521,19 +524,19 @@ function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#1C262D",
+          background: "#1E1E1E",
           width: "100%",
           maxWidth: 480,
           borderRadius: "10px 10px 0 0",
           padding: "22px 20px 26px",
-          border: "1px solid rgba(237,231,218,0.1)",
+          border: "1px solid rgba(231,233,236,0.1)",
           borderBottom: "none",
         }}
       >
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, letterSpacing: 1, marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 21, letterSpacing: 0.4, marginBottom: 16 }}>
           New list
         </div>
-        <label style={{ display: "block", fontSize: 12.5, color: "#7E8E96", marginBottom: 6 }}>List name</label>
+        <label style={{ display: "block", fontSize: 12.5, color: "#8D96A3", marginBottom: 6 }}>List name</label>
         <input
           autoFocus
           value={name}
@@ -541,7 +544,7 @@ function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
           placeholder="e.g. Sunday night rewatches"
           style={inputStyle}
         />
-        <label style={{ display: "block", fontSize: 12.5, color: "#7E8E96", margin: "16px 0 6px" }}>
+        <label style={{ display: "block", fontSize: 12.5, color: "#8D96A3", margin: "16px 0 6px" }}>
           How many titles? (optional)
         </label>
         <input
@@ -567,21 +570,21 @@ function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
 
 const inputStyle = {
   width: "100%",
-  background: "#12181C",
-  border: "1px solid rgba(237,231,218,0.15)",
+  background: "#141414",
+  border: "1px solid rgba(231,233,236,0.15)",
   borderRadius: 3,
   padding: "11px 12px",
-  color: "#EDE7DA",
+  color: "#E7E9EC",
   fontSize: 14.5,
-  fontFamily: "'Work Sans', sans-serif",
+  fontFamily: "'Montserrat', sans-serif",
   boxSizing: "border-box",
   outline: "none",
 };
 
 const primaryBtn = {
   flex: 1,
-  background: "#D4A24C",
-  color: "#12181C",
+  background: "#6C86AB",
+  color: "#141414",
   border: "none",
   borderRadius: 3,
   padding: "12px 14px",
@@ -593,8 +596,8 @@ const primaryBtn = {
 const secondaryBtn = {
   flex: 1,
   background: "transparent",
-  color: "#EDE7DA",
-  border: "1px solid rgba(237,231,218,0.2)",
+  color: "#E7E9EC",
+  border: "1px solid rgba(231,233,236,0.2)",
   borderRadius: 3,
   padding: "12px 14px",
   fontSize: 14.5,
@@ -631,8 +634,8 @@ function EditorView({
         style={{
           position: "sticky",
           top: 0,
-          background: "#12181C",
-          borderBottom: "1px solid rgba(237,231,218,0.08)",
+          background: "#141414",
+          borderBottom: "1px solid rgba(231,233,236,0.08)",
           padding: "14px 16px 12px",
           zIndex: 10,
         }}
@@ -653,8 +656,11 @@ function EditorView({
               style={{
                 ...inputStyle,
                 flex: 1,
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 24,
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                fontSize: 20,
+                letterSpacing: 0.4,
                 padding: "4px 8px",
               }}
             />
@@ -663,9 +669,11 @@ function EditorView({
               onClick={() => setEditingName(true)}
               style={{
                 flex: 1,
-                fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 26,
-                letterSpacing: 0.5,
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                fontSize: 21,
+                letterSpacing: 0.4,
                 cursor: "text",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -675,9 +683,9 @@ function EditorView({
               {list.name}
             </div>
           )}
-          <div style={{ fontSize: 11.5, color: "#7E8E96", flexShrink: 0 }}>{status}</div>
+          <div style={{ fontSize: 11.5, color: "#8D96A3", flexShrink: 0 }}>{status}</div>
         </div>
-        <div style={{ color: "#7E8E96", fontSize: 12.5 }}>
+        <div style={{ color: "#8D96A3", fontSize: 12.5 }}>
           {list.entries.length}
           {list.targetLength ? ` / ${list.targetLength}` : ""} titles · drag the handle to reorder
         </div>
@@ -687,11 +695,11 @@ function EditorView({
         {list.entries.length === 0 && (
           <div
             style={{
-              border: "1px dashed rgba(237,231,218,0.18)",
+              border: "1px dashed rgba(231,233,236,0.18)",
               borderRadius: 4,
               padding: "26px 18px",
               textAlign: "center",
-              color: "#7E8E96",
+              color: "#8D96A3",
               fontSize: 13.5,
               marginBottom: 18,
             }}
@@ -706,8 +714,8 @@ function EditorView({
               key={entry.uid}
               ref={(el) => (rowRefs.current[i] = el)}
               style={{
-                background: "#1C262D",
-                border: "1px solid rgba(237,231,218,0.08)",
+                background: "#1E1E1E",
+                border: "1px solid rgba(231,233,236,0.08)",
                 borderRadius: 4,
                 padding: "10px 10px 10px 6px",
                 display: "flex",
@@ -723,7 +731,7 @@ function EditorView({
               <div
                 onPointerDown={(e) => onHandlePointerDown(e, i)}
                 style={{
-                  color: "#7E8E96",
+                  color: "#8D96A3",
                   cursor: "grab",
                   padding: "10px 4px",
                   touchAction: "none",
@@ -739,11 +747,11 @@ function EditorView({
                 <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {entry.title}
                 </div>
-                <div style={{ fontSize: 12, color: "#7E8E96" }}>{entry.year || "Year unknown"}</div>
+                <div style={{ fontSize: 12, color: "#8D96A3" }}>{entry.year || "Year unknown"}</div>
               </div>
               <button
                 onClick={() => onRemove(entry.uid)}
-                style={{ background: "none", border: "none", color: "#7E8E96", cursor: "pointer", padding: 6 }}
+                style={{ background: "none", border: "none", color: "#8D96A3", cursor: "pointer", padding: 6 }}
                 aria-label={`Remove ${entry.title}`}
               >
                 <X size={17} strokeWidth={1.7} />
@@ -752,15 +760,15 @@ function EditorView({
           ))}
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(237,231,218,0.08)", paddingTop: 18 }}>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 19, letterSpacing: 0.5, marginBottom: 10 }}>
+        <div style={{ borderTop: "1px solid rgba(231,233,236,0.08)", paddingTop: 18 }}>
+          <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 15, letterSpacing: 0.5, marginBottom: 10 }}>
             Add a title
           </div>
           <div style={{ position: "relative", marginBottom: 12 }}>
             <Search
               size={16}
               strokeWidth={1.8}
-              style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#7E8E96" }}
+              style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#8D96A3" }}
             />
             <input
               value={query}
@@ -776,10 +784,10 @@ function EditorView({
               This list is full ({list.entries.length}/{list.targetLength}). Remove a title to add another.
             </div>
           )}
-          {!full && searching && <div style={{ color: "#7E8E96", fontSize: 13 }}>Searching…</div>}
+          {!full && searching && <div style={{ color: "#8D96A3", fontSize: 13 }}>Searching…</div>}
           {!full && searchError && <div style={{ color: "#B5544B", fontSize: 13 }}>{searchError}</div>}
           {!full && !searching && query.trim() && !searchError && results.length === 0 && (
-            <div style={{ color: "#7E8E96", fontSize: 13 }}>No titles found for "{query}".</div>
+            <div style={{ color: "#8D96A3", fontSize: 13 }}>No titles found for "{query}".</div>
           )}
 
           {!full && (
@@ -788,8 +796,8 @@ function EditorView({
                 <div
                   key={r.id}
                   style={{
-                    background: "#1C262D",
-                    border: "1px solid rgba(237,231,218,0.08)",
+                    background: "#1E1E1E",
+                    border: "1px solid rgba(231,233,236,0.08)",
                     borderRadius: 4,
                     padding: 10,
                     display: "flex",
@@ -802,17 +810,17 @@ function EditorView({
                     <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {r.title}
                     </div>
-                    <div style={{ fontSize: 11.5, color: "#7E8E96", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 11.5, color: "#8D96A3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {r.description || r.year}
                     </div>
                   </div>
                   <button
                     onClick={() => onAdd(r)}
                     style={{
-                      background: "#D4A24C",
+                      background: "#6C86AB",
                       border: "none",
                       borderRadius: 3,
-                      color: "#12181C",
+                      color: "#141414",
                       padding: "8px 10px",
                       cursor: "pointer",
                       display: "flex",
@@ -839,7 +847,7 @@ function EditorView({
 const iconBtn = {
   background: "none",
   border: "none",
-  color: "#EDE7DA",
+  color: "#E7E9EC",
   cursor: "pointer",
   padding: 6,
   display: "flex",
@@ -855,7 +863,7 @@ function MovieModal({ movie, onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(10,13,15,0.8)",
+        background: "rgba(20,20,20,0.8)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -866,9 +874,9 @@ function MovieModal({ movie, onClose }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: "#1C262D",
+          background: "#1E1E1E",
           borderRadius: 6,
-          border: "1px solid rgba(237,231,218,0.1)",
+          border: "1px solid rgba(231,233,236,0.1)",
           maxWidth: 420,
           width: "100%",
           maxHeight: "85vh",
@@ -883,12 +891,12 @@ function MovieModal({ movie, onClose }) {
             position: "absolute",
             top: 14,
             right: 14,
-            background: "rgba(18,24,28,0.6)",
+            background: "rgba(20,20,20,0.6)",
             border: "none",
             borderRadius: "50%",
             width: 30,
             height: 30,
-            color: "#EDE7DA",
+            color: "#E7E9EC",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -902,18 +910,18 @@ function MovieModal({ movie, onClose }) {
         <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
           <PosterArt poster={movie.poster} title={movie.title} size="large" />
           <div style={{ paddingTop: 4 }}>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 0.5, lineHeight: 1.05, marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 19, letterSpacing: 0.3, lineHeight: 1.15, marginBottom: 6 }}>
               {movie.title}
             </div>
-            <div style={{ color: "#D4A24C", fontSize: 13, marginBottom: 8 }}>{movie.year || "Year unknown"}</div>
+            <div style={{ color: "#6C86AB", fontSize: 13, marginBottom: 8 }}>{movie.year || "Year unknown"}</div>
             {movie.description && (
-              <div style={{ color: "#7E8E96", fontSize: 12.5, lineHeight: 1.4 }}>{movie.description}</div>
+              <div style={{ color: "#8D96A3", fontSize: 12.5, lineHeight: 1.4 }}>{movie.description}</div>
             )}
           </div>
         </div>
 
         {movie.extract && (
-          <div style={{ color: "#EDE7DA", fontSize: 13.5, lineHeight: 1.55, marginBottom: 14 }}>
+          <div style={{ color: "#E7E9EC", fontSize: 13.5, lineHeight: 1.55, marginBottom: 14 }}>
             {movie.extract}
           </div>
         )}
@@ -924,7 +932,7 @@ function MovieModal({ movie, onClose }) {
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: "#D4A24C",
+              color: "#6C86AB",
               fontSize: 12.5,
               display: "inline-flex",
               alignItems: "center",
