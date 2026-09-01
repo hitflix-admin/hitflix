@@ -523,8 +523,9 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, onCa
         inset: 0,
         background: "rgba(20,20,20,0.72)",
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "center",
         justifyContent: "center",
+        padding: 20,
         zIndex: 50,
       }}
     >
@@ -534,10 +535,11 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, onCa
           background: "#1E1E1E",
           width: "100%",
           maxWidth: 480,
-          borderRadius: "10px 10px 0 0",
+          maxHeight: "calc(100vh - 40px)",
+          overflowY: "auto",
+          borderRadius: 10,
           padding: "22px 20px 26px",
           border: "1px solid rgba(231,233,236,0.1)",
-          borderBottom: "none",
         }}
       >
         <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 21, letterSpacing: 0.4, marginBottom: 16 }}>
