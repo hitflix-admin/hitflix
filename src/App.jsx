@@ -157,6 +157,225 @@ async function searchWikipediaFilms(query) {
     .filter((s) => s.title && isMovieDescription(s.description));
 }
 
+/* ---------------- Wikipedia infobox parsing ---------------- */
+
+function cleanWikitext(raw) {
+  if (!raw) return "";
+  let s = raw;
+  s = s.replace(/<!--[\s\S]*?-->/g, "");
+  s = s.replace(/<ref[^>]*\/>/gi, "");
+  s = s.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
+  s = s.replace(/\{\{(?:Plainlist|plainlist|ubl|hlist|flatlist)\s*\|([\s\S]*?)\}\}/gi, (_, inner) =>
+    inner
+      .split(/\n?\*/)
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .join(", ")
+  );
+  s = s.replace(/\{\{(?:small|nowrap|sic|efn|nobr)\|([^{}]*)\}\}/gi, "$1");
+  s = s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2");
+  s = s.replace(/\[\[([^\]]+)\]\]/g, "$1");
+  s = s.replace(/'''''([^']+)'''''/g, "$1");
+  s = s.replace(/'''([^']+)'''/g, "$1");
+  s = s.replace(/''([^']+)''/g, "$1");
+  s = s.replace(/\{\{[^{}]*\}\}/g, "");
+  s = s.replace(/\{\{|\}\}/g, "");
+  s = s.replace(/<br\s*\/?>/gi, "; ");
+  s = s.replace(/<[^>]+>/g, "");
+  s = s.replace(/\s+/g, " ").trim();
+  s = s.replace(/^[;,\s]+|[;,\s]+$/g, "");
+  return s;
+}
+
+function splitTopLevel(str, sep) {
+  const parts = [];
+  let depthCurly = 0;
+  let depthBracket = 0;
+  let buf = "";
+  for (let i = 0; i < str.length; i++) {
+    const two = str.slice(i, i + 2);
+    if (two === "{{") {
+      depthCurly++;
+      buf += two;
+      i++;
+      continue;
+    }
+    if (two === "}}") {
+      depthCurly--;
+      buf += two;
+      i++;
+      continue;
+    }
+    if (two === "[[") {
+      depthBracket++;
+      buf += two;
+      i++;
+      continue;
+    }
+    if (two === "]]") {
+      depthBracket--;
+      buf += two;
+      i++;
+      continue;
+    }
+    const ch = str[i];
+    if (ch === sep && depthCurly === 0 && depthBracket === 0) {
+      parts.push(buf);
+      buf = "";
+    } else {
+      buf += ch;
+    }
+  }
+  parts.push(buf);
+  return parts;
+}
+
+function extractTemplate(wikitext, nameRegex) {
+  const m = wikitext.match(nameRegex);
+  if (!m) return null;
+  const i = m.index;
+  let depth = 0;
+  let j = i;
+  for (; j < wikitext.length; j++) {
+    if (wikitext.startsWith("{{", j)) {
+      depth++;
+      j++;
+    } else if (wikitext.startsWith("}}", j)) {
+      depth--;
+      j++;
+      if (depth === 0) {
+        j++;
+        break;
+      }
+    }
+  }
+  return wikitext.slice(i, j);
+}
+
+function parseInfobox(wikitext) {
+  const block = extractTemplate(wikitext, /\{\{\s*Infobox\s+film/i);
+  if (!block) return {};
+  const inner = block.slice(2, -2);
+  const parts = splitTopLevel(inner, "|");
+  const fields = {};
+  for (let p = 1; p < parts.length; p++) {
+    const eq = parts[p].indexOf("=");
+    if (eq === -1) continue;
+    const key = parts[p].slice(0, eq).trim().toLowerCase();
+    const value = parts[p].slice(eq + 1).trim();
+    fields[key] = value;
+  }
+  return fields;
+}
+
+function parseUSReleaseDate(rawReleased) {
+  if (!rawReleased) return null;
+  const filmDateBlock = extractTemplate(rawReleased, /\{\{\s*Film date/i);
+  if (!filmDateBlock) return cleanWikitext(rawReleased) || null;
+
+  const inner = filmDateBlock.slice(2, -2);
+  const positional = splitTopLevel(inner, "|")
+    .slice(1)
+    .map((p) => p.trim())
+    .filter((p) => !/^[a-z]+\s*=/i.test(p));
+
+  const entries = [];
+  let i = 0;
+  while (i < positional.length) {
+    const year = positional[i];
+    const month = positional[i + 1];
+    const day = positional[i + 2];
+    if (!/^\d{4}$/.test(year) || !/^\d{1,2}$/.test(month) || !/^\d{1,2}$/.test(day)) break;
+    i += 3;
+    let location = "";
+    if (i < positional.length && !/^\d{4}$/.test(positional[i])) {
+      location = positional[i];
+      i++;
+    }
+    entries.push({ year, month, day, location: cleanWikitext(location) });
+  }
+  if (entries.length === 0) return cleanWikitext(rawReleased) || null;
+
+  const usEntry = entries.find((e) => /united states/i.test(e.location)) || entries[0];
+  const date = new Date(Number(usEntry.year), Number(usEntry.month) - 1, Number(usEntry.day));
+  if (isNaN(date.getTime())) return cleanWikitext(rawReleased) || null;
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+async function fetchWikidataAwards(title) {
+  try {
+    const propsRes = await fetch(
+      `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=pageprops&titles=${encodeURIComponent(
+        title
+      )}&format=json`
+    );
+    const propsData = await propsRes.json();
+    const page = Object.values(propsData?.query?.pages || {})[0];
+    const qid = page?.pageprops?.wikibase_item;
+    if (!qid) return { oscarNominations: null, oscarWinners: null };
+
+    const [wonRes, nominatedRes] = await Promise.all([
+      fetch(`https://www.wikidata.org/w/api.php?origin=*&action=wbgetclaims&entity=${qid}&property=P166&format=json`),
+      fetch(`https://www.wikidata.org/w/api.php?origin=*&action=wbgetclaims&entity=${qid}&property=P1411&format=json`),
+    ]);
+    const wonData = await wonRes.json();
+    const nominatedData = await nominatedRes.json();
+    const won = (wonData?.claims?.P166 || []).map((c) => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
+    const nominated = (nominatedData?.claims?.P1411 || [])
+      .map((c) => c.mainsnak?.datavalue?.value?.id)
+      .filter(Boolean);
+    const allIds = Array.from(new Set([...won, ...nominated]));
+    if (allIds.length === 0) return { oscarNominations: 0, oscarWinners: [] };
+
+    const labelsRes = await fetch(
+      `https://www.wikidata.org/w/api.php?origin=*&action=wbgetentities&ids=${allIds.join(
+        "|"
+      )}&props=labels&languages=en&format=json`
+    );
+    const labelsData = await labelsRes.json();
+    const labelOf = (id) => labelsData?.entities?.[id]?.labels?.en?.value || "";
+    const isOscar = (id) => /^Academy Award/i.test(labelOf(id));
+
+    const oscarNominations = nominated.filter(isOscar).length;
+    const oscarWinners = won.filter(isOscar).map((id) => labelOf(id).replace(/^Academy Award for /i, ""));
+
+    return { oscarNominations, oscarWinners };
+  } catch (e) {
+    return { oscarNominations: null, oscarWinners: null };
+  }
+}
+
+async function fetchMovieDetails(title) {
+  try {
+    const wikitextRes = await fetch(
+      `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
+        title
+      )}&prop=wikitext&section=0&format=json`
+    );
+    const wikitextData = await wikitextRes.json();
+    const wikitext = wikitextData?.parse?.wikitext?.["*"] || "";
+    const fields = parseInfobox(wikitext);
+
+    const releaseDateUS = parseUSReleaseDate(fields.released || fields.release_date) || "Unknown";
+    const director = cleanWikitext(fields.director) || "Unknown";
+    const budget = cleanWikitext(fields.budget) || "Unknown";
+    const boxOffice = cleanWikitext(fields.gross) || "Unknown";
+
+    const awards = await fetchWikidataAwards(title);
+
+    return {
+      releaseDateUS,
+      director,
+      budget,
+      boxOffice,
+      oscarNominations: awards.oscarNominations,
+      oscarWinners: awards.oscarWinners,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 function PosterArt({ poster, title, size = "thumb" }) {
   const initials = (title || "?")
     .split(" ")
@@ -381,6 +600,16 @@ export default function App() {
     }));
   }
 
+  function setMovieDetails(uidToUpdate, details) {
+    updateCurrent((l) => {
+      const inEntries = l.entries.some((e) => e.uid === uidToUpdate);
+      const patch = (e) => (e.uid === uidToUpdate ? { ...e, details } : e);
+      return inEntries
+        ? { ...l, entries: l.entries.map(patch) }
+        : { ...l, honorableMentions: (l.honorableMentions || []).map(patch) };
+    });
+  }
+
   // ---- drag reorder (pointer events, mobile-friendly) ----
   function onHandlePointerDown(e, index) {
     e.preventDefault();
@@ -514,6 +743,7 @@ export default function App() {
           movie={modalEntry}
           onClose={() => setModalMovieUid(null)}
           onRate={(field, value) => rateMovie(modalEntry.uid, field, value)}
+          onDetails={(details) => setMovieDetails(modalEntry.uid, details)}
         />
       )}
     </div>
@@ -1257,7 +1487,7 @@ const iconBtn = {
 
 /* ---------------- Movie modal ---------------- */
 
-function MovieModal({ movie, onClose, onRate }) {
+function MovieModal({ movie, onClose, onRate, onDetails }) {
   const [expanded, setExpanded] = useState(false);
   const hasRating = !!movie.rating;
   const rating = movie.rating || DEFAULT_RATING;
@@ -1265,6 +1495,19 @@ function MovieModal({ movie, onClose, onRate }) {
   const extract = movie.extract || "";
   const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
+
+  useEffect(() => {
+    if (movie.details) return;
+    let cancelled = false;
+    (async () => {
+      const details = await fetchMovieDetails(movie.title);
+      if (!cancelled && details) onDetails(details);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movie.uid]);
 
   return (
     <div
@@ -1322,9 +1565,30 @@ function MovieModal({ movie, onClose, onRate }) {
             <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 19, letterSpacing: 0.3, lineHeight: 1.15, marginBottom: 6 }}>
               {movie.title}
             </div>
-            <div style={{ color: "#6C86AB", fontSize: 13, marginBottom: 8 }}>{movie.year || "Year unknown"}</div>
-            {movie.description && (
-              <div style={{ color: "#8D96A3", fontSize: 12.5, lineHeight: 1.4 }}>{movie.description}</div>
+            {!movie.details ? (
+              <div style={{ color: "#8D96A3", fontSize: 12.5 }}>Loading details…</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {[
+                  ["Release Date", movie.details.releaseDateUS],
+                  ["Director", movie.details.director],
+                  ["Budget", movie.details.budget],
+                  ["Box Office", movie.details.boxOffice],
+                  ["Oscar Nominations", movie.details.oscarNominations ?? "Unknown"],
+                  [
+                    "Oscar Winners",
+                    movie.details.oscarWinners === null
+                      ? "Unknown"
+                      : movie.details.oscarWinners.length === 0
+                      ? "None"
+                      : movie.details.oscarWinners.join(", "),
+                  ],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ fontSize: 12, color: "#8D96A3", lineHeight: 1.4 }}>
+                    <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{label}:</span> {value}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
