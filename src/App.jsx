@@ -44,6 +44,64 @@ function ratingColor(value, min, max) {
   return `hsl(${Math.round(t * 120)}, 65%, 48%)`;
 }
 
+function Gauge({ score, size = 44 }) {
+  const strokeWidth = Math.max(3, size * 0.11);
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const color = ratingColor(score, 0, 100);
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)", display: "block" }}
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(231,233,236,0.12)"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - pct)}
+          style={{ transition: "stroke-dashoffset 0.25s ease, stroke 0.25s ease" }}
+        />
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          color: "#E7E9EC",
+          fontSize: size * 0.32,
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1,
+        }}
+      >
+        {score}
+        <span style={{ fontSize: size * 0.16, marginLeft: 1 }}>%</span>
+      </div>
+    </div>
+  );
+}
+
 const NON_MOVIE_DESCRIPTION = /\b(director|actor|actress|producer|screenwriter|composer|cinematographer|editor|soundtrack|album|score|song|series|franchise|trilogy|registry|studio|festival|award|musician|singer|novel|book|video game|podcast)\b/i;
 
 function isMovieDescription(desc) {
@@ -270,7 +328,7 @@ export default function App() {
     if (currentList.targetLength > 0 && currentList.entries.length >= currentList.targetLength) return;
     updateCurrent((l) => ({
       ...l,
-      entries: [...l.entries, { ...movie, uid: uid(), rating: { ...DEFAULT_RATING } }],
+      entries: [...l.entries, { ...movie, uid: uid() }],
       updatedAt: Date.now(),
     }));
   }
@@ -851,25 +909,58 @@ function EditorView({
                 <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
               </div>
               <div onClick={() => onOpenMovie(entry)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {entry.title}
-                  </div>
-                  {calcScore(entry.rating) !== null && (
-                    <div
-                      style={{
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        color: "#6C86AB",
-                        flexShrink: 0,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {calcScore(entry.rating)}%
-                    </div>
-                  )}
+                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {entry.title}
                 </div>
                 <div style={{ fontSize: 12, color: "#8D96A3" }}>{entry.year || "Year unknown"}</div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                  flexShrink: 0,
+                  width: 60,
+                }}
+              >
+                {calcScore(entry.rating) !== null ? (
+                  <>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.4,
+                        fontWeight: 700,
+                        color: "#8D96A3",
+                      }}
+                    >
+                      Your score
+                    </div>
+                    <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                      <Gauge score={calcScore(entry.rating)} size={40} />
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => onOpenMovie(entry)}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #6C86AB",
+                      color: "#6C86AB",
+                      borderRadius: 20,
+                      padding: "6px 10px",
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      fontFamily: "'Montserrat', sans-serif",
+                    }}
+                  >
+                    Add score
+                  </button>
+                )}
               </div>
               <button
                 onClick={() => onRemove(entry.uid)}
@@ -1096,19 +1187,8 @@ function MovieModal({ movie, onClose, onRate }) {
           </div>
 
           {/* Section 1: total calculated score */}
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <div
-              style={{
-                fontFamily: "'Montserrat', sans-serif",
-                fontWeight: 800,
-                fontSize: 40,
-                lineHeight: 1,
-                color: "#6C86AB",
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              {score}%
-            </div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+            <Gauge score={score} size={132} />
           </div>
 
           {/* Section 2 (overall, left) + Section 3 (subcategories, right) */}
