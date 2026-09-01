@@ -21,6 +21,14 @@ function yearFromDescription(desc) {
   return m ? m[0] : "";
 }
 
+const NON_MOVIE_DESCRIPTION = /\b(director|actor|actress|producer|screenwriter|composer|cinematographer|editor|soundtrack|album|score|song|series|franchise|trilogy|registry|studio|festival|award|musician|singer|novel|book|video game|podcast)\b/i;
+
+function isMovieDescription(desc) {
+  if (!desc) return false;
+  if (!/\bfilm\b/i.test(desc)) return false;
+  return !NON_MOVIE_DESCRIPTION.test(desc);
+}
+
 async function searchWikipediaFilms(query) {
   const searchUrl = `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=search&srlimit=8&format=json&srsearch=${encodeURIComponent(
     query + " film"
@@ -58,7 +66,7 @@ async function searchWikipediaFilms(query) {
       poster: s.thumbnail ? s.thumbnail.source : null,
       pageUrl: s.content_urls?.desktop?.page || "",
     }))
-    .filter((s) => s.title);
+    .filter((s) => s.title && isMovieDescription(s.description));
 }
 
 function PosterArt({ poster, title, size = "thumb" }) {
@@ -118,6 +126,7 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newLength, setNewLength] = useState("");
+  const [newRanked, setNewRanked] = useState(true);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
@@ -173,6 +182,7 @@ export default function App() {
       id: uid(),
       name,
       targetLength: Number.isFinite(cap) && cap > 0 ? cap : 0,
+      ranked: newRanked,
       entries: [],
       updatedAt: Date.now(),
     };
@@ -183,6 +193,7 @@ export default function App() {
     setCreating(false);
     setNewName("");
     setNewLength("");
+    setNewRanked(true);
   }
 
   function openList(id) {
@@ -358,10 +369,13 @@ export default function App() {
           setName={setNewName}
           length={newLength}
           setLength={setNewLength}
+          ranked={newRanked}
+          setRanked={setNewRanked}
           onCancel={() => {
             setCreating(false);
             setNewName("");
             setNewLength("");
+            setNewRanked(true);
           }}
           onCreate={createList}
         />
@@ -507,7 +521,7 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
 
 /* ---------------- Create modal ---------------- */
 
-function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
+function CreateModal({ name, setName, length, setLength, ranked, setRanked, onCancel, onCreate }) {
   return (
     <div
       onClick={onCancel}
@@ -555,6 +569,30 @@ function CreateModal({ name, setName, length, setLength, onCancel, onCreate }) {
           placeholder="Leave blank for no limit"
           style={inputStyle}
         />
+        <label style={{ display: "block", fontSize: 12.5, color: "#8D96A3", margin: "16px 0 6px" }}>
+          List type
+        </label>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setRanked(true)}
+            style={ranked ? segmentBtnActive : segmentBtn}
+          >
+            Ranked
+          </button>
+          <button
+            type="button"
+            onClick={() => setRanked(false)}
+            style={!ranked ? segmentBtnActive : segmentBtn}
+          >
+            Unranked
+          </button>
+        </div>
+        <div style={{ color: "#8D96A3", fontSize: 12, marginTop: 7 }}>
+          {ranked
+            ? "Titles are numbered 1, 2, 3… from top to bottom."
+            : "Titles have no set order."}
+        </div>
         <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
           <button onClick={onCancel} style={secondaryBtn}>
             Cancel
@@ -602,6 +640,26 @@ const secondaryBtn = {
   padding: "12px 14px",
   fontSize: 14.5,
   cursor: "pointer",
+};
+
+const segmentBtn = {
+  flex: 1,
+  background: "#141414",
+  color: "#E7E9EC",
+  border: "1px solid rgba(231,233,236,0.15)",
+  borderRadius: 3,
+  padding: "10px 14px",
+  fontSize: 13.5,
+  fontWeight: 600,
+  cursor: "pointer",
+  fontFamily: "'Montserrat', sans-serif",
+};
+
+const segmentBtnActive = {
+  ...segmentBtn,
+  background: "#6C86AB",
+  color: "#141414",
+  border: "1px solid #6C86AB",
 };
 
 /* ---------------- Editor ---------------- */
@@ -687,7 +745,7 @@ function EditorView({
         </div>
         <div style={{ color: "#8D96A3", fontSize: 12.5 }}>
           {list.entries.length}
-          {list.targetLength ? ` / ${list.targetLength}` : ""} titles · drag the handle to reorder
+          {list.targetLength ? ` / ${list.targetLength}` : ""} titles · {list.ranked ? "ranked" : "unranked"} · drag the handle to reorder
         </div>
       </div>
 
@@ -740,6 +798,22 @@ function EditorView({
               >
                 <GripVertical size={18} strokeWidth={1.6} />
               </div>
+              {list.ranked && (
+                <div
+                  style={{
+                    width: 22,
+                    flexShrink: 0,
+                    textAlign: "center",
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    fontSize: 15,
+                    color: "#6C86AB",
+                  }}
+                >
+                  {i + 1}
+                </div>
+              )}
               <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
                 <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
               </div>
