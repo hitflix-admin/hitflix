@@ -351,7 +351,7 @@ export default function App() {
           onRecap={(cap) => updateCurrent((l) => ({ ...l, targetLength: cap }))}
           query={query}
           setQuery={setQuery}
-          results={results}
+          results={results.filter((r) => !currentList.entries.some((e) => e.id === r.id))}
           searching={searching}
           searchError={searchError}
           onAdd={addMovie}
