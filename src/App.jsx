@@ -937,7 +937,9 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie }) {
                 >
                   {entry.title}
                 </div>
-                <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+                <div style={{ marginTop: "auto" }}>
+                  <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+                </div>
               </div>
             ))}
           </div>
@@ -1467,12 +1469,11 @@ function EditorView({
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: 4,
+                  justifyContent: "flex-end",
+                  gap: 8,
                   flexShrink: 0,
-                  width: 60,
                 }}
               >
                 {calcScore(reviews[entry.id]?.rating) !== null ? (
@@ -1485,12 +1486,13 @@ function EditorView({
                         letterSpacing: 0.4,
                         fontWeight: 700,
                         color: "#8D96A3",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       Your score
                     </div>
                     <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                      <Gauge score={calcScore(reviews[entry.id]?.rating)} size={40} />
+                      <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} />
                     </div>
                   </>
                 ) : (
@@ -1620,29 +1622,31 @@ function EditorView({
                     >
                       {entry.title}
                     </div>
-                    {calcScore(reviews[entry.id]?.rating) !== null ? (
-                      <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                        <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => onOpenMovie(entry)}
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #6C86AB",
-                          color: "#6C86AB",
-                          borderRadius: 20,
-                          padding: "4px 8px",
-                          fontSize: 9.5,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          whiteSpace: "nowrap",
-                          fontFamily: "'Montserrat', sans-serif",
-                        }}
-                      >
-                        Add score
-                      </button>
-                    )}
+                    <div style={{ marginTop: "auto" }}>
+                      {calcScore(reviews[entry.id]?.rating) !== null ? (
+                        <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                          <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => onOpenMovie(entry)}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #6C86AB",
+                            color: "#6C86AB",
+                            borderRadius: 20,
+                            padding: "4px 8px",
+                            fontSize: 9.5,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            fontFamily: "'Montserrat', sans-serif",
+                          }}
+                        >
+                          Add score
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
