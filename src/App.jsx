@@ -168,12 +168,54 @@ async function searchWikipediaFilms(query) {
 
 /* ---------------- Wikipedia infobox parsing ---------------- */
 
+const HTML_ENTITIES = {
+  nbsp: " ",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  minus: "−",
+};
+
+function decodeHtmlEntities(str) {
+  if (!str) return str;
+  return str
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&([a-z]+);/gi, (m, name) => {
+      const lower = name.toLowerCase();
+      return lower in HTML_ENTITIES ? HTML_ENTITIES[lower] : m;
+    });
+}
+
+// Footnote/explanatory-note templates (e.g. {{efn|...}} explaining a cumulative
+// box-office figure) carry annotation text that isn't meant to be displayed inline —
+// strip them out entirely rather than keeping their contents.
+function stripFootnoteTemplates(wikitext) {
+  let s = wikitext;
+  const nameRegex = /\{\{\s*(?:efn|refn|sfn|r|citation needed|cn)\b/i;
+  let guard = 0;
+  while (nameRegex.test(s) && guard < 25) {
+    const block = extractTemplate(s, nameRegex);
+    if (!block) break;
+    s = s.replace(block, "");
+    guard++;
+  }
+  return s;
+}
+
 function cleanWikitext(raw) {
   if (!raw) return "";
   let s = raw;
   s = s.replace(/<!--[\s\S]*?-->/g, "");
   s = s.replace(/<ref[^>]*\/>/gi, "");
   s = s.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "");
+  s = stripFootnoteTemplates(s);
+  s = s.replace(/\{\{nbsp\}\}/gi, " ");
   s = s.replace(/\{\{(?:Plainlist|plainlist|ubl|hlist|flatlist)\s*\|([\s\S]*?)\}\}/gi, (_, inner) =>
     inner
       .split(/\n?\*/)
@@ -181,7 +223,7 @@ function cleanWikitext(raw) {
       .filter(Boolean)
       .join(", ")
   );
-  s = s.replace(/\{\{(?:small|nowrap|sic|efn|nobr)\|([^{}]*)\}\}/gi, "$1");
+  s = s.replace(/\{\{(?:small|nowrap|sic|nobr)\|([^{}]*)\}\}/gi, "$1");
   s = s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2");
   s = s.replace(/\[\[([^\]]+)\]\]/g, "$1");
   s = s.replace(/'''''([^']+)'''''/g, "$1");
@@ -191,6 +233,8 @@ function cleanWikitext(raw) {
   s = s.replace(/\{\{|\}\}/g, "");
   s = s.replace(/<br\s*\/?>/gi, "; ");
   s = s.replace(/<[^>]+>/g, "");
+  s = decodeHtmlEntities(s);
+  s = s.replace(/(\d)(million|billion|thousand)\b/gi, "$1 $2");
   s = s.replace(/\s+/g, " ").trim();
   s = s.replace(/^[;,\s]+|[;,\s]+$/g, "");
   return s;
