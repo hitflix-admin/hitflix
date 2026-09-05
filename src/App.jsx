@@ -502,7 +502,13 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [modalRef, setModalRef] = useState(null); // { listId, uid } | null
+
+  const [homeQuery, setHomeQuery] = useState("");
+  const [homeResults, setHomeResults] = useState([]);
+  const [homeSearching, setHomeSearching] = useState(false);
+  const [homeSearchError, setHomeSearchError] = useState("");
+
+  const [modalRef, setModalRef] = useState(null); // { listId, uid } | { movie } | null
   const [reviews, setReviews] = useState({}); // movieId -> { rating, details }, shared across all lists
 
   const dragState = useRef(null);
@@ -627,14 +633,15 @@ export default function App() {
   }, []);
 
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
-  const modalList = lists && modalRef ? lists.find((l) => l.id === modalRef.listId) : null;
+  const modalList = lists && modalRef?.listId ? lists.find((l) => l.id === modalRef.listId) : null;
   const modalEntry =
     modalList && modalRef
       ? modalList.entries.find((e) => e.uid === modalRef.uid) ||
         (modalList.honorableMentions || []).find((e) => e.uid === modalRef.uid)
       : null;
-  const modalMovie = modalEntry
-    ? { ...modalEntry, rating: reviews[modalEntry.id]?.rating, details: reviews[modalEntry.id]?.details }
+  const modalBase = modalEntry || modalRef?.movie || null;
+  const modalMovie = modalBase
+    ? { ...modalBase, rating: reviews[modalBase.id]?.rating, details: reviews[modalBase.id]?.details }
     : null;
 
   function updateCurrent(mutator) {
@@ -716,6 +723,31 @@ export default function App() {
     };
   }, [query]);
 
+  useEffect(() => {
+    if (!homeQuery.trim()) {
+      setHomeResults([]);
+      setHomeSearchError("");
+      return;
+    }
+    let cancelled = false;
+    setHomeSearching(true);
+    setHomeSearchError("");
+    const t = setTimeout(async () => {
+      try {
+        const r = await searchWikipediaFilms(homeQuery.trim());
+        if (!cancelled) setHomeResults(r);
+      } catch (e) {
+        if (!cancelled) setHomeSearchError("Search is unavailable right now. Check your connection and try again.");
+      } finally {
+        if (!cancelled) setHomeSearching(false);
+      }
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [homeQuery]);
+
   function addMovie(movie) {
     if (!currentList) return;
     if (currentList.targetLength > 0 && currentList.entries.length >= currentList.targetLength) return;
@@ -736,8 +768,8 @@ export default function App() {
   }
 
   function saveRating(rating) {
-    if (!modalEntry) return;
-    const id = modalEntry.id;
+    if (!modalBase) return;
+    const id = modalBase.id;
     persistReviews({ ...reviews, [id]: { ...reviews[id], rating } });
   }
 
@@ -758,8 +790,8 @@ export default function App() {
   }
 
   function setMovieDetails(details) {
-    if (!modalEntry) return;
-    const id = modalEntry.id;
+    if (!modalBase) return;
+    const id = modalBase.id;
     persistReviews({ ...reviews, [id]: { ...reviews[id], details } });
   }
 
@@ -844,6 +876,12 @@ export default function App() {
           onOpen={openList}
           onDelete={requestDeleteList}
           onOpenMovie={(listId, uid) => setModalRef({ listId, uid })}
+          homeQuery={homeQuery}
+          setHomeQuery={setHomeQuery}
+          homeResults={homeResults}
+          homeSearching={homeSearching}
+          homeSearchError={homeSearchError}
+          onOpenSearchResult={(movie) => setModalRef({ movie })}
         />
       )}
 
@@ -1056,7 +1094,20 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie }) {
 
 /* ---------------- Home ---------------- */
 
-function HomeView({ lists, reviews, onCreate, onOpen, onDelete, onOpenMovie }) {
+function HomeView({
+  lists,
+  reviews,
+  onCreate,
+  onOpen,
+  onDelete,
+  onOpenMovie,
+  homeQuery,
+  setHomeQuery,
+  homeResults,
+  homeSearching,
+  homeSearchError,
+  onOpenSearchResult,
+}) {
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
@@ -1176,7 +1227,86 @@ function HomeView({ lists, reviews, onCreate, onOpen, onDelete, onOpenMovie }) {
         </div>
       )}
 
+      <MovieLookup
+        query={homeQuery}
+        setQuery={setHomeQuery}
+        results={homeResults}
+        searching={homeSearching}
+        searchError={homeSearchError}
+        onSelect={onOpenSearchResult}
+      />
+
       <ReviewedLibrary lists={lists} reviews={reviews} onOpenMovie={onOpenMovie} />
+    </div>
+  );
+}
+
+function MovieLookup({ query, setQuery, results, searching, searchError, onSelect }) {
+  return (
+    <div style={{ marginTop: 34 }}>
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          fontSize: 17,
+          letterSpacing: 0.5,
+          marginBottom: 10,
+        }}
+      >
+        Look up a movie
+      </div>
+
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <Search
+          size={16}
+          strokeWidth={1.8}
+          style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#8D96A3" }}
+        />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search any movie…"
+          style={{ ...inputStyle, paddingLeft: 34 }}
+        />
+      </div>
+
+      {searching && <div style={{ color: "#8D96A3", fontSize: 13 }}>Searching…</div>}
+      {searchError && <div style={{ color: "#B5544B", fontSize: 13 }}>{searchError}</div>}
+      {!searching && query.trim() && !searchError && results.length === 0 && (
+        <div style={{ color: "#8D96A3", fontSize: 13 }}>No titles found for "{query}".</div>
+      )}
+
+      {results.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {results.map((r) => (
+            <div
+              key={r.id}
+              onClick={() => onSelect(r)}
+              style={{
+                background: "#1E1E1E",
+                border: "1px solid rgba(231,233,236,0.08)",
+                borderRadius: 4,
+                padding: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+              }}
+            >
+              <PosterArt poster={r.poster} title={r.title} size="thumb" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {r.title}
+                </div>
+                <div style={{ fontSize: 11.5, color: "#8D96A3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {r.description || r.year}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
