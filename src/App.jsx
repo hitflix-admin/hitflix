@@ -429,6 +429,15 @@ async function fetchMovieDetails(title) {
   }
 }
 
+// Details fetched and cached before the wikitext cleanup (raw "&nbsp;", leftover
+// "{{efn|...}}" footnotes, etc.) should be treated as stale so they're refetched once
+// rather than staying wrong forever in the cache.
+function detailsLookStale(details) {
+  if (!details) return true;
+  const fields = [details.budget, details.boxOffice, details.releaseDateUS, details.director];
+  return fields.some((f) => typeof f === "string" && /&[a-zA-Z#0-9]+;|\{\{|efn\||refn\|/i.test(f));
+}
+
 function PosterArt({ poster, title, size = "thumb" }) {
   const initials = (title || "?")
     .split(" ")
@@ -1860,7 +1869,7 @@ function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
 
   useEffect(() => {
-    if (movie.details) return;
+    if (movie.details && !detailsLookStale(movie.details)) return;
     let cancelled = false;
     (async () => {
       const details = await fetchMovieDetails(movie.pageTitle || movie.title);
@@ -1928,7 +1937,7 @@ function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
             <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 19, letterSpacing: 0.3, lineHeight: 1.15, marginBottom: 6 }}>
               {movie.title}
             </div>
-            {!movie.details ? (
+            {!movie.details || detailsLookStale(movie.details) ? (
               <div style={{ color: "#8D96A3", fontSize: 12.5 }}>Loading details…</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
