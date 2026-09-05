@@ -389,7 +389,9 @@ async function fetchWikidataAwards(title) {
     const labelOf = (id) => labelsData?.entities?.[id]?.labels?.en?.value || "";
     const isOscar = (id) => /^Academy Award/i.test(labelOf(id));
 
-    const oscarNominations = nominated.filter(isOscar).length;
+    // a won category isn't always separately tagged as a nomination on Wikidata,
+    // so count nominations from the union of both properties, not P1411 alone
+    const oscarNominations = allIds.filter(isOscar).length;
     const oscarWinners = won.filter(isOscar).map((id) => labelOf(id).replace(/^Academy Award for /i, ""));
 
     return { oscarNominations, oscarWinners };
