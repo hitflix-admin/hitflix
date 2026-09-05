@@ -1,9 +1,12 @@
-// Regenerates src/oscarAwards.json from the "the_oscar_award.csv" dataset
-// (CC0, github.com/unanimad's Kaggle dataset "The Oscar Award, 1927 - 2026").
-// Usage: node scripts/build-oscar-data.mjs path/to/the_oscar_award.csv
+// Regenerates src/oscarAwards.json from unanimad's Kaggle dataset
+// "The Oscar Award, 1927 - 2026" (CC0). Re-run this after each ceremony:
 //
-// Re-run this after each ceremony by grabbing a fresh copy of the CSV
-// (columns: year_film,year_ceremony,ceremony,category,name,film,winner).
+//   curl -L "https://www.kaggle.com/api/v1/datasets/download/unanimad/the-oscar-award/the_oscar_award.csv" -o /tmp/the_oscar_award.csv
+//   node scripts/build-oscar-data.mjs /tmp/the_oscar_award.csv
+//
+// That endpoint serves the dataset's files directly, no Kaggle account or API
+// key needed. Expects columns: year_film,year_ceremony,ceremony,category,name,film,winner
+// (an optional canon_category column, if present, is ignored).
 
 import fs from "node:fs";
 
@@ -77,6 +80,8 @@ const col = Object.fromEntries(header.map((name, i) => [name, i]));
 
 const byTitle = {};
 for (const r of data) {
+  if (r.length !== header.length) continue; // a handful of pre-1960s rows are missing the film column
+
   const film = r[col.film]?.trim();
   const yearFilm = parseInt(r[col.year_film], 10);
   if (!film || !Number.isFinite(yearFilm)) continue;

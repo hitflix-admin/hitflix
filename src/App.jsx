@@ -360,7 +360,7 @@ function parseUSReleaseDate(rawReleased) {
 // own awards database — complete per-category nomination/win history, unlike
 // Wikidata which is often missing categories a film lost. Re-run
 // scripts/build-oscar-data.mjs against a fresh CSV export to cover new ceremonies.
-const OSCAR_DATA_VERSION = "kaggle-1927-2024";
+const OSCAR_DATA_VERSION = "kaggle-1927-2026";
 
 function normalizeOscarTitle(title) {
   return (title || "")
