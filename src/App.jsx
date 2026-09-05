@@ -409,10 +409,10 @@ async function fetchMovieDetails(title) {
     const wikitext = wikitextData?.parse?.wikitext?.["*"] || "";
     const fields = parseInfobox(wikitext);
 
-    const releaseDateUS = parseUSReleaseDate(fields.released || fields.release_date) || "Unknown";
-    const director = cleanWikitext(fields.director) || "Unknown";
-    const budget = cleanWikitext(fields.budget) || "Unknown";
-    const boxOffice = cleanWikitext(fields.gross) || "Unknown";
+    const releaseDateUS = parseUSReleaseDate(fields.released || fields.release_date) || "TBD";
+    const director = cleanWikitext(fields.director) || "TBD";
+    const budget = cleanWikitext(fields.budget) || "TBD";
+    const boxOffice = cleanWikitext(fields.gross) || "TBD";
 
     const awards = await fetchWikidataAwards(title);
 
@@ -549,7 +549,28 @@ export default function App() {
       try {
         const rawReviews = localStorage.getItem("movieReviews");
         if (rawReviews) {
-          setReviews(JSON.parse(rawReviews));
+          // fields cached before the copy change said "Unknown" — swap to "TBD" in place
+          const loadedReviews = JSON.parse(rawReviews);
+          let unknownChanged = false;
+          const normalized = {};
+          for (const [id, entry] of Object.entries(loadedReviews)) {
+            let details = entry.details;
+            if (details) {
+              const fixedDetails = { ...details };
+              for (const key of ["releaseDateUS", "director", "budget", "boxOffice"]) {
+                if (fixedDetails[key] === "Unknown") {
+                  fixedDetails[key] = "TBD";
+                  unknownChanged = true;
+                }
+              }
+              details = fixedDetails;
+            }
+            normalized[id] = { ...entry, details };
+          }
+          setReviews(normalized);
+          if (unknownChanged) {
+            localStorage.setItem("movieReviews", JSON.stringify(normalized));
+          }
         } else {
           // migrate ratings/details that used to live per-list-entry onto the shared-by-id map;
           // when the same movie was rated differently across lists, keep the highest score
@@ -1946,11 +1967,11 @@ function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
                   ["Director", movie.details.director],
                   ["Budget", movie.details.budget],
                   ["Box Office", movie.details.boxOffice],
-                  ["Oscar Nominations", movie.details.oscarNominations ?? "Unknown"],
+                  ["Oscar Nominations", movie.details.oscarNominations ?? "TBD"],
                   [
                     "Oscar Winners",
                     movie.details.oscarWinners === null
-                      ? "Unknown"
+                      ? "TBD"
                       : movie.details.oscarWinners.length === 0
                       ? "None"
                       : movie.details.oscarWinners.join(", "),
