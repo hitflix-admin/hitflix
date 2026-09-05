@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
+import oscarAwardsData from "./oscarAwards.json";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -355,52 +356,36 @@ function parseUSReleaseDate(rawReleased) {
   return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-async function fetchWikidataAwards(title) {
-  try {
-    const propsRes = await fetch(
-      `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=pageprops&titles=${encodeURIComponent(
-        title
-      )}&format=json`
-    );
-    const propsData = await propsRes.json();
-    const page = Object.values(propsData?.query?.pages || {})[0];
-    const qid = page?.pageprops?.wikibase_item;
-    if (!qid) return { oscarNominations: null, oscarWinners: null };
+// Bundled from the Kaggle "The Oscar Award" dataset (CC0), which mirrors AMPAS's
+// own awards database — complete per-category nomination/win history, unlike
+// Wikidata which is often missing categories a film lost. Re-run
+// scripts/build-oscar-data.mjs against a fresh CSV export to cover new ceremonies.
+const OSCAR_DATA_VERSION = "kaggle-1927-2024";
 
-    const [wonRes, nominatedRes] = await Promise.all([
-      fetch(`https://www.wikidata.org/w/api.php?origin=*&action=wbgetclaims&entity=${qid}&property=P166&format=json`),
-      fetch(`https://www.wikidata.org/w/api.php?origin=*&action=wbgetclaims&entity=${qid}&property=P1411&format=json`),
-    ]);
-    const wonData = await wonRes.json();
-    const nominatedData = await nominatedRes.json();
-    const won = (wonData?.claims?.P166 || []).map((c) => c.mainsnak?.datavalue?.value?.id).filter(Boolean);
-    const nominated = (nominatedData?.claims?.P1411 || [])
-      .map((c) => c.mainsnak?.datavalue?.value?.id)
-      .filter(Boolean);
-    const allIds = Array.from(new Set([...won, ...nominated]));
-    if (allIds.length === 0) return { oscarNominations: 0, oscarWinners: [] };
-
-    const labelsRes = await fetch(
-      `https://www.wikidata.org/w/api.php?origin=*&action=wbgetentities&ids=${allIds.join(
-        "|"
-      )}&props=labels&languages=en&format=json`
-    );
-    const labelsData = await labelsRes.json();
-    const labelOf = (id) => labelsData?.entities?.[id]?.labels?.en?.value || "";
-    const isOscar = (id) => /^Academy Award/i.test(labelOf(id));
-
-    // a won category isn't always separately tagged as a nomination on Wikidata,
-    // so count nominations from the union of both properties, not P1411 alone
-    const oscarNominations = allIds.filter(isOscar).length;
-    const oscarWinners = won.filter(isOscar).map((id) => labelOf(id).replace(/^Academy Award for /i, ""));
-
-    return { oscarNominations, oscarWinners };
-  } catch (e) {
-    return { oscarNominations: null, oscarWinners: null };
-  }
+function normalizeOscarTitle(title) {
+  return (title || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
-async function fetchMovieDetails(title) {
+function lookupOscarAwards(title, year) {
+  const byYear = oscarAwardsData[normalizeOscarTitle(title)];
+  if (!byYear) return { oscarNominations: 0, oscarWinners: [] };
+
+  const years = Object.keys(byYear);
+  const targetYear = parseInt(year, 10);
+  const bestYear = Number.isFinite(targetYear)
+    ? years.reduce((best, y) => (Math.abs(y - targetYear) < Math.abs(best - targetYear) ? y : best))
+    : years[0];
+
+  const entry = byYear[bestYear];
+  return { oscarNominations: entry.nominations, oscarWinners: entry.winners };
+}
+
+async function fetchMovieDetails(title, year, displayTitle) {
   try {
     const wikitextRes = await fetch(
       `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
@@ -416,7 +401,7 @@ async function fetchMovieDetails(title) {
     const budget = cleanWikitext(fields.budget) || "TBD";
     const boxOffice = cleanWikitext(fields.gross) || "TBD";
 
-    const awards = await fetchWikidataAwards(title);
+    const awards = lookupOscarAwards(displayTitle || title, year);
 
     return {
       releaseDateUS,
@@ -425,6 +410,7 @@ async function fetchMovieDetails(title) {
       boxOffice,
       oscarNominations: awards.oscarNominations,
       oscarWinners: awards.oscarWinners,
+      oscarSource: OSCAR_DATA_VERSION,
     };
   } catch (e) {
     return null;
@@ -436,6 +422,7 @@ async function fetchMovieDetails(title) {
 // rather than staying wrong forever in the cache.
 function detailsLookStale(details) {
   if (!details) return true;
+  if (details.oscarSource !== OSCAR_DATA_VERSION) return true;
   const fields = [details.budget, details.boxOffice, details.releaseDateUS, details.director];
   return fields.some((f) => typeof f === "string" && /&[a-zA-Z#0-9]+;|\{\{|efn\||refn\|/i.test(f));
 }
@@ -2025,7 +2012,7 @@ function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
     if (movie.details && !detailsLookStale(movie.details)) return;
     let cancelled = false;
     (async () => {
-      const details = await fetchMovieDetails(movie.pageTitle || movie.title);
+      const details = await fetchMovieDetails(movie.pageTitle || movie.title, movie.year, movie.title);
       if (!cancelled && details) onDetails(details);
     })();
     return () => {
