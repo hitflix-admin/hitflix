@@ -91,7 +91,7 @@ function Gauge({ score, size = 44 }) {
           fontFamily: "'Montserrat', sans-serif",
           fontWeight: 800,
           color: "#E7E9EC",
-          fontSize: hasScore ? size * 0.32 : size * 0.22,
+          fontSize: hasScore ? size * (score >= 100 ? 0.27 : 0.32) : size * 0.22,
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1,
         }}
@@ -99,7 +99,7 @@ function Gauge({ score, size = 44 }) {
         {hasScore ? (
           <>
             {score}
-            <span style={{ fontSize: size * 0.16, marginLeft: 1 }}>%</span>
+            <span style={{ fontSize: size * (score >= 100 ? 0.135 : 0.16), marginLeft: 1 }}>%</span>
           </>
         ) : (
           <span style={{ color: "#8D96A3" }}>N/A</span>
