@@ -1,0 +1,17 @@
+# Hitflix
+
+> Hitflix is a free, ad-free web app for building and rating personal movie lists. It does not impersonate or claim affiliation with any person, studio, streaming service, or organization.
+
+## About
+
+Hitflix lets visitors create ranked or unranked lists of movies, search for titles, add optional "honorable mentions," and rate movies with a personal scoring system covering writing, performance, visuals, and audio. There is nothing to buy, no ads, and no account required.
+
+## Details
+
+- Purpose: a personal movie list-building and rating tool, nothing else.
+- Cost: completely free to use, no ads, no paywalls, no premium tier.
+- Accounts: none. Nothing to sign up for.
+- Data storage: all lists and ratings are stored only in the visitor's own browser (localStorage). There is no backend server or database, no data is transmitted to or retained by this site, and nothing is shared, sold, or made public.
+- Tracking: no analytics, no cookies, no tracking of any kind.
+- Content sources: movie search results and metadata (title, description, poster, release date, director, budget, box office, awards) are fetched live, client-side, from Wikipedia's and Wikidata's public APIs at read time. This site does not host, claim ownership of, or redistribute that content.
+- Identity: this is an independent hobby project. It does not impersonate, represent, or claim affiliation with any movie studio, streaming service, news outlet, or public figure.
