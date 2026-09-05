@@ -22,6 +22,14 @@ function yearFromDescription(desc) {
   return m ? m[0] : "";
 }
 
+// Wikipedia disambiguates film articles with a trailing "(film)" / "(2020 film)" /
+// "(American film)" etc. — strip that for display; the raw title is kept separately
+// (as pageTitle) so lookups still hit the correct Wikipedia page.
+function cleanMovieTitle(title) {
+  if (!title) return title;
+  return title.replace(/\s*\([^()]*\bfilm\b[^()]*\)\s*$/i, "").trim();
+}
+
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
 const SUBCATEGORIES = [
   { key: "writing", label: "Writing" },
@@ -147,7 +155,8 @@ async function searchWikipediaFilms(query) {
     .filter(Boolean)
     .map((s) => ({
       id: String(s.pageid),
-      title: s.title,
+      title: cleanMovieTitle(s.title),
+      pageTitle: s.title,
       year: yearFromDescription(s.description || s.extract),
       description: s.description || "",
       extract: s.extract || "",
@@ -460,6 +469,28 @@ export default function App() {
       } catch (e) {
         loadedLists = [];
       }
+
+      // strip Wikipedia disambiguation suffixes like "(film)" from titles saved before
+      // this was cleaned at search time; keep the raw title as pageTitle for lookups
+      let titlesChanged = false;
+      const cleanEntry = (e) => {
+        if (!e.title) return e;
+        const cleaned = cleanMovieTitle(e.title);
+        if (cleaned === e.title) return e;
+        titlesChanged = true;
+        return { ...e, pageTitle: e.pageTitle || e.title, title: cleaned };
+      };
+      loadedLists = loadedLists.map((l) => ({
+        ...l,
+        entries: (l.entries || []).map(cleanEntry),
+        honorableMentions: (l.honorableMentions || []).map(cleanEntry),
+      }));
+      if (titlesChanged) {
+        try {
+          localStorage.setItem("lists", JSON.stringify(loadedLists));
+        } catch (e) {}
+      }
+
       setLists(loadedLists);
 
       try {
@@ -1788,7 +1819,7 @@ function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
     if (movie.details) return;
     let cancelled = false;
     (async () => {
-      const details = await fetchMovieDetails(movie.title);
+      const details = await fetchMovieDetails(movie.pageTitle || movie.title);
       if (!cancelled && details) onDetails(details);
     })();
     return () => {
