@@ -501,11 +501,16 @@ export default function App() {
   const [reviews, setReviews] = useState({}); // movieId -> { rating, details }, shared across all lists
 
   const dragState = useRef(null);
+  const dragOriginalOrderRef = useRef(null); // uid -> pre-drag rank, frozen for the duration of a drag
   const [dragIndex, setDragIndex] = useState(null);
   const [dragY, setDragY] = useState(0);
   const rowRefs = useRef([]);
   const saveTimer = useRef(null);
   const saveReviewsTimer = useRef(null);
+  // kept in sync every render so the pointermove/pointerup listeners (added once
+  // per drag gesture) never act on a stale snapshot of lists/currentId
+  const listsRef = useRef(null);
+  const currentIdRef = useRef(null);
 
   // ---- load ----
   useEffect(() => {
@@ -622,6 +627,8 @@ export default function App() {
   }, []);
 
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
+  listsRef.current = lists;
+  currentIdRef.current = currentId;
   const modalList = lists && modalRef?.listId ? lists.find((l) => l.id === modalRef.listId) : null;
   const modalEntry =
     modalList && modalRef
@@ -634,8 +641,13 @@ export default function App() {
     : null;
 
   function updateCurrent(mutator) {
-    if (!lists || !currentId) return;
-    const next = lists.map((l) => (l.id === currentId ? mutator(l) : l));
+    // read from refs, not the closed-over `lists`/`currentId` state: this function
+    // gets called from the pointermove/pointerup drag listeners, which are registered
+    // once per drag gesture and would otherwise keep acting on a stale snapshot
+    const latestLists = listsRef.current;
+    const id = currentIdRef.current;
+    if (!latestLists || !id) return;
+    const next = latestLists.map((l) => (l.id === id ? mutator(l) : l));
     persist(next);
   }
 
@@ -785,15 +797,27 @@ export default function App() {
   }
 
   // ---- drag reorder (pointer events, mobile-friendly) ----
+  // fraction of the row-being-passed-over's height the drag must cross before it swaps places
+  const SWAP_THRESHOLD = 0.75;
+
   function onHandlePointerDown(e, index) {
     e.preventDefault();
     const row = rowRefs.current[index];
-    if (!row) return;
+    if (!row || !currentList) return;
     dragState.current = {
       index,
       startY: e.clientY,
       rowHeight: row.getBoundingClientRect().height,
+      // authoritative working copy for the whole gesture, mutated synchronously on
+      // every step below. Reading from React state instead would go stale mid-drag:
+      // fast pointermove bursts fire faster than React commits, so several of these
+      // steps run before a re-render lands, and each would otherwise recompute its
+      // swap from the same pre-drag snapshot, clobbering earlier steps in the burst
+      entries: currentList.entries.slice(),
     };
+    // rank numbers stay frozen at their pre-drag values until the drop (see render,
+    // below), even though rows keep shifting live to preview where the drop will land
+    dragOriginalOrderRef.current = new Map(currentList.entries.map((entry, i) => [entry.uid, i + 1]));
     setDragIndex(index);
     setDragY(0);
     window.addEventListener("pointermove", onPointerMove);
@@ -801,28 +825,39 @@ export default function App() {
   }
 
   function onPointerMove(e) {
-    if (!dragState.current || !currentList) return;
-    const { index, startY, rowHeight } = dragState.current;
-    const delta = e.clientY - startY;
+    const state = dragState.current;
+    if (!state) return;
+    let { index, rowHeight, entries } = state;
+    let delta = e.clientY - state.startY;
+    let didMove = false;
+
+    // a single move can cross several rows at once (fast drags), so loop: each
+    // iteration swaps with the adjacent row once SWAP_THRESHOLD of its height has
+    // been crossed, then carries over only the leftover distance past that point
+    while (Math.abs(delta) >= rowHeight * SWAP_THRESHOLD) {
+      const dir = delta > 0 ? 1 : -1;
+      const newIndex = Math.min(Math.max(index + dir, 0), entries.length - 1);
+      if (newIndex === index) break; // hit the top/bottom edge
+      const next = entries.slice();
+      const [movedEntry] = next.splice(index, 1);
+      next.splice(newIndex, 0, movedEntry);
+      entries = next;
+      index = newIndex;
+      delta -= dir * rowHeight;
+      didMove = true;
+    }
+
+    dragState.current = { index, startY: e.clientY - delta, rowHeight, entries };
     setDragY(delta);
-    const steps = Math.round(delta / rowHeight);
-    if (steps !== 0) {
-      const entries = currentList.entries;
-      const newIndex = Math.min(Math.max(index + steps, 0), entries.length - 1);
-      if (newIndex !== index) {
-        const next = entries.slice();
-        const [moved] = next.splice(index, 1);
-        next.splice(newIndex, 0, moved);
-        dragState.current = { index: newIndex, startY: e.clientY, rowHeight };
-        setDragIndex(newIndex);
-        setDragY(0);
-        updateCurrent((l) => ({ ...l, entries: next }));
-      }
+    if (didMove) {
+      setDragIndex(index);
+      updateCurrent((l) => ({ ...l, entries }));
     }
   }
 
   function onPointerUp() {
     dragState.current = null;
+    dragOriginalOrderRef.current = null;
     setDragIndex(null);
     setDragY(0);
     window.removeEventListener("pointermove", onPointerMove);
@@ -899,6 +934,7 @@ export default function App() {
           rowRefs={rowRefs}
           dragIndex={dragIndex}
           dragY={dragY}
+          dragOriginalOrder={dragIndex !== null ? dragOriginalOrderRef.current : null}
           onHandlePointerDown={onHandlePointerDown}
         />
       )}
@@ -1536,6 +1572,7 @@ function EditorView({
   rowRefs,
   dragIndex,
   dragY,
+  dragOriginalOrder,
   onHandlePointerDown,
 }) {
   const honorableMentions = list.honorableMentions || [];
@@ -1667,7 +1704,7 @@ function EditorView({
                     color: "#6C86AB",
                   }}
                 >
-                  {i + 1}
+                  {dragOriginalOrder?.get(entry.uid) ?? i + 1}
                 </div>
               )}
               <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
