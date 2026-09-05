@@ -440,22 +440,54 @@ export default function App() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [modalMovieUid, setModalMovieUid] = useState(null);
+  const [modalRef, setModalRef] = useState(null); // { listId, uid } | null
+  const [reviews, setReviews] = useState({}); // movieId -> { rating, details }, shared across all lists
 
   const dragState = useRef(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragY, setDragY] = useState(0);
   const rowRefs = useRef([]);
   const saveTimer = useRef(null);
+  const saveReviewsTimer = useRef(null);
 
   // ---- load ----
   useEffect(() => {
     (async () => {
+      let loadedLists = [];
       try {
         const raw = localStorage.getItem("lists");
-        setLists(raw ? JSON.parse(raw) : []);
+        loadedLists = raw ? JSON.parse(raw) : [];
       } catch (e) {
-        setLists([]);
+        loadedLists = [];
+      }
+      setLists(loadedLists);
+
+      try {
+        const rawReviews = localStorage.getItem("movieReviews");
+        if (rawReviews) {
+          setReviews(JSON.parse(rawReviews));
+        } else {
+          // migrate ratings/details that used to live per-list-entry onto the shared-by-id map;
+          // when the same movie was rated differently across lists, keep the highest score
+          const migrated = {};
+          for (const l of loadedLists) {
+            const pool = [...(l.entries || []), ...(l.honorableMentions || [])];
+            for (const e of pool) {
+              if (!e.rating) continue;
+              const existingScore = calcScore(migrated[e.id]?.rating);
+              const candidateScore = calcScore(e.rating);
+              if (!migrated[e.id] || (existingScore ?? -Infinity) < (candidateScore ?? -Infinity)) {
+                migrated[e.id] = { rating: e.rating, details: e.details || migrated[e.id]?.details };
+              }
+            }
+          }
+          setReviews(migrated);
+          if (Object.keys(migrated).length > 0) {
+            localStorage.setItem("movieReviews", JSON.stringify(migrated));
+          }
+        }
+      } catch (e) {
+        setReviews({});
       }
     })();
   }, []);
@@ -475,12 +507,30 @@ export default function App() {
     }, 500);
   }, []);
 
+  const persistReviews = useCallback((next) => {
+    setReviews(next);
+    if (saveReviewsTimer.current) clearTimeout(saveReviewsTimer.current);
+    setStatus("Saving…");
+    saveReviewsTimer.current = setTimeout(() => {
+      try {
+        localStorage.setItem("movieReviews", JSON.stringify(next));
+        setStatus("Saved");
+      } catch (e) {
+        setStatus("Couldn't save");
+      }
+    }, 500);
+  }, []);
+
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
+  const modalList = lists && modalRef ? lists.find((l) => l.id === modalRef.listId) : null;
   const modalEntry =
-    currentList && modalMovieUid
-      ? currentList.entries.find((e) => e.uid === modalMovieUid) ||
-        (currentList.honorableMentions || []).find((e) => e.uid === modalMovieUid)
+    modalList && modalRef
+      ? modalList.entries.find((e) => e.uid === modalRef.uid) ||
+        (modalList.honorableMentions || []).find((e) => e.uid === modalRef.uid)
       : null;
+  const modalMovie = modalEntry
+    ? { ...modalEntry, rating: reviews[modalEntry.id]?.rating, details: reviews[modalEntry.id]?.details }
+    : null;
 
   function updateCurrent(mutator) {
     if (!lists || !currentId) return;
@@ -580,15 +630,10 @@ export default function App() {
     }));
   }
 
-  function rateMovie(uidToRate, field, value) {
-    updateCurrent((l) => {
-      const inEntries = l.entries.some((e) => e.uid === uidToRate);
-      const patch = (e) =>
-        e.uid === uidToRate ? { ...e, rating: { ...(e.rating || DEFAULT_RATING), [field]: value } } : e;
-      return inEntries
-        ? { ...l, entries: l.entries.map(patch) }
-        : { ...l, honorableMentions: (l.honorableMentions || []).map(patch) };
-    });
+  function saveRating(rating) {
+    if (!modalEntry) return;
+    const id = modalEntry.id;
+    persistReviews({ ...reviews, [id]: { ...reviews[id], rating } });
   }
 
   function removeEntry(uidToRemove) {
@@ -607,14 +652,10 @@ export default function App() {
     }));
   }
 
-  function setMovieDetails(uidToUpdate, details) {
-    updateCurrent((l) => {
-      const inEntries = l.entries.some((e) => e.uid === uidToUpdate);
-      const patch = (e) => (e.uid === uidToUpdate ? { ...e, details } : e);
-      return inEntries
-        ? { ...l, entries: l.entries.map(patch) }
-        : { ...l, honorableMentions: (l.honorableMentions || []).map(patch) };
-    });
+  function setMovieDetails(details) {
+    if (!modalEntry) return;
+    const id = modalEntry.id;
+    persistReviews({ ...reviews, [id]: { ...reviews[id], details } });
   }
 
   // ---- drag reorder (pointer events, mobile-friendly) ----
@@ -693,15 +734,18 @@ export default function App() {
       {view === "home" && (
         <HomeView
           lists={lists}
+          reviews={reviews}
           onCreate={() => setCreating(true)}
           onOpen={openList}
           onDelete={requestDeleteList}
+          onOpenMovie={(listId, uid) => setModalRef({ listId, uid })}
         />
       )}
 
       {view === "editor" && currentList && (
         <EditorView
           list={currentList}
+          reviews={reviews}
           status={status}
           onBack={goHome}
           onRename={(name) => updateCurrent((l) => ({ ...l, name }))}
@@ -719,7 +763,7 @@ export default function App() {
           onAddMention={addHonorableMention}
           onRemove={removeEntry}
           onRemoveMention={removeHonorableMention}
-          onOpenMovie={(entry) => setModalMovieUid(entry.uid)}
+          onOpenMovie={(entry) => setModalRef({ listId: currentList.id, uid: entry.uid })}
           rowRefs={rowRefs}
           dragIndex={dragIndex}
           dragY={dragY}
@@ -745,12 +789,12 @@ export default function App() {
         />
       )}
 
-      {modalEntry && (
+      {modalMovie && (
         <MovieModal
-          movie={modalEntry}
-          onClose={() => setModalMovieUid(null)}
-          onRate={(field, value) => rateMovie(modalEntry.uid, field, value)}
-          onDetails={(details) => setMovieDetails(modalEntry.uid, details)}
+          movie={modalMovie}
+          onClose={() => setModalRef(null)}
+          onSaveRating={(rating) => saveRating(rating)}
+          onDetails={(details) => setMovieDetails(details)}
         />
       )}
 
@@ -765,9 +809,147 @@ export default function App() {
   );
 }
 
+/* ---------------- Reviewed movies library ---------------- */
+
+function getReviewedMovies(lists, reviews) {
+  const byId = new Map();
+  for (const l of lists || []) {
+    const pool = [...l.entries, ...(l.honorableMentions || [])];
+    for (const entry of pool) {
+      if (!reviews[entry.id]?.rating) continue;
+      if (!byId.has(entry.id)) {
+        byId.set(entry.id, { entry, listId: l.id });
+      }
+    }
+  }
+  return Array.from(byId.values());
+}
+
+function movieSortYear(entry) {
+  const y = parseInt(entry.year, 10);
+  return Number.isFinite(y) ? y : null;
+}
+
+function sortReviewedMovies(items, mode) {
+  const sorted = items.slice();
+  if (mode === "newest" || mode === "oldest") {
+    const dir = mode === "newest" ? -1 : 1;
+    sorted.sort((a, b) => {
+      const ya = movieSortYear(a.entry);
+      const yb = movieSortYear(b.entry);
+      if (ya === null && yb === null) return a.entry.title.localeCompare(b.entry.title);
+      if (ya === null) return 1;
+      if (yb === null) return -1;
+      return dir * (ya - yb);
+    });
+  } else {
+    sorted.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
+  }
+  return sorted;
+}
+
+const SORT_OPTIONS = [
+  { key: "alpha", label: "A–Z" },
+  { key: "newest", label: "Newest" },
+  { key: "oldest", label: "Oldest" },
+];
+
+function ReviewedLibrary({ lists, reviews, onOpenMovie }) {
+  const [sortMode, setSortMode] = useState("alpha");
+  const reviewed = sortReviewedMovies(getReviewedMovies(lists, reviews), sortMode);
+
+  return (
+    <div style={{ marginTop: 34 }}>
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          fontSize: 17,
+          letterSpacing: 0.5,
+          marginBottom: 4,
+        }}
+      >
+        Your reviews
+      </div>
+      <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 14 }}>
+        {reviewed.length} title{reviewed.length === 1 ? "" : "s"} reviewed
+      </div>
+
+      {reviewed.length === 0 ? (
+        <div
+          style={{
+            border: "1px dashed rgba(231,233,236,0.18)",
+            borderRadius: 4,
+            padding: "30px 20px",
+            textAlign: "center",
+            color: "#8D96A3",
+            fontSize: 14,
+          }}
+        >
+          Rate a title in one of your lists and it'll show up here.
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            {SORT_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setSortMode(opt.key)}
+                style={sortMode === opt.key ? segmentBtnActive : segmentBtn}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10 }}>
+            {reviewed.map(({ entry, listId }) => (
+              <div
+                key={`${listId}-${entry.uid}`}
+                onClick={() => onOpenMovie(listId, entry.uid)}
+                style={{
+                  background: "#1E1E1E",
+                  border: "1px solid rgba(231,233,236,0.08)",
+                  borderRadius: 4,
+                  padding: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                }}
+              >
+                <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    textAlign: "center",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    lineHeight: 1.25,
+                    width: "100%",
+                  }}
+                >
+                  {entry.title}
+                </div>
+                <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Home ---------------- */
 
-function HomeView({ lists, onCreate, onOpen, onDelete }) {
+function HomeView({ lists, reviews, onCreate, onOpen, onDelete, onOpenMovie }) {
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
@@ -886,6 +1068,8 @@ function HomeView({ lists, onCreate, onOpen, onDelete }) {
             ))}
         </div>
       )}
+
+      <ReviewedLibrary lists={lists} reviews={reviews} onOpenMovie={onOpenMovie} />
     </div>
   );
 }
@@ -1108,6 +1292,7 @@ const segmentBtnActive = {
 
 function EditorView({
   list,
+  reviews,
   status,
   onBack,
   onRename,
@@ -1276,7 +1461,7 @@ function EditorView({
                   }}
                 >
                   {entry.year || "Year unknown"}
-                  {entry.details?.director ? ` · Dir. ${entry.details.director}` : ""}
+                  {reviews[entry.id]?.details?.director ? ` · Dir. ${reviews[entry.id].details.director}` : ""}
                 </div>
               </div>
               <div
@@ -1290,7 +1475,7 @@ function EditorView({
                   width: 60,
                 }}
               >
-                {calcScore(entry.rating) !== null ? (
+                {calcScore(reviews[entry.id]?.rating) !== null ? (
                   <>
                     <div
                       className="your-score-label"
@@ -1305,7 +1490,7 @@ function EditorView({
                       Your score
                     </div>
                     <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                      <Gauge score={calcScore(entry.rating)} size={40} />
+                      <Gauge score={calcScore(reviews[entry.id]?.rating)} size={40} />
                     </div>
                   </>
                 ) : (
@@ -1435,9 +1620,9 @@ function EditorView({
                     >
                       {entry.title}
                     </div>
-                    {calcScore(entry.rating) !== null ? (
+                    {calcScore(reviews[entry.id]?.rating) !== null ? (
                       <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                        <Gauge score={calcScore(entry.rating)} size={34} />
+                        <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
                       </div>
                     ) : (
                       <button
@@ -1582,11 +1767,15 @@ const iconBtn = {
 
 /* ---------------- Movie modal ---------------- */
 
-function MovieModal({ movie, onClose, onRate, onDetails }) {
+function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
   const [expanded, setExpanded] = useState(false);
-  const hasRating = !!movie.rating;
-  const rating = movie.rating || DEFAULT_RATING;
-  const score = hasRating ? calcScore(rating) : null;
+  const hasExistingRating = !!movie.rating;
+  const savedRating = movie.rating || DEFAULT_RATING;
+  const [draftRating, setDraftRating] = useState(savedRating);
+  const hasChanges = JSON.stringify(draftRating) !== JSON.stringify(savedRating);
+  const showValues = hasExistingRating || hasChanges;
+  const score = showValues ? calcScore(draftRating) : null;
+  const saveButtonLabel = !hasChanges ? "Return to list" : hasExistingRating ? "Update rating" : "Add rating";
   const extract = movie.extract || "";
   const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
@@ -1773,7 +1962,7 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
                 <span>Overall</span>
                 <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {hasRating ? `${rating.overall}/10` : "N/A"}
+                  {showValues ? `${draftRating.overall}/10` : "N/A"}
                 </span>
               </div>
               <input
@@ -1781,22 +1970,22 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
                 min={0}
                 max={10}
                 step={1}
-                value={rating.overall}
-                onChange={(e) => onRate("overall", Number(e.target.value))}
+                value={draftRating.overall}
+                onChange={(e) => setDraftRating((r) => ({ ...r, overall: Number(e.target.value) }))}
                 style={{ width: "100%" }}
               />
             </div>
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
               {SUBCATEGORIES.map((cat) => {
-                const value = rating[cat.key];
-                const color = hasRating ? ratingColor(value, 1, 5) : "#4a525c";
+                const value = draftRating[cat.key];
+                const color = showValues ? ratingColor(value, 1, 5) : "#4a525c";
                 return (
                   <div key={cat.key}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
                       <span>{cat.label}</span>
-                      <span style={{ color: hasRating ? color : "#8D96A3", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                        {hasRating ? `${value}/5` : "N/A"}
+                      <span style={{ color: showValues ? color : "#8D96A3", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                        {showValues ? `${value}/5` : "N/A"}
                       </span>
                     </div>
                     <input
@@ -1805,7 +1994,7 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
                       max={5}
                       step={1}
                       value={value}
-                      onChange={(e) => onRate(cat.key, Number(e.target.value))}
+                      onChange={(e) => setDraftRating((r) => ({ ...r, [cat.key]: Number(e.target.value) }))}
                       style={{ width: "100%", accentColor: color }}
                     />
                   </div>
@@ -1816,10 +2005,13 @@ function MovieModal({ movie, onClose, onRate, onDetails }) {
         </div>
 
         <button
-          onClick={onClose}
+          onClick={() => {
+            if (hasChanges) onSaveRating(draftRating);
+            onClose();
+          }}
           style={{ ...primaryBtn, width: "100%", marginTop: 18 }}
         >
-          Back to list
+          {saveButtonLabel}
         </button>
       </div>
     </div>
