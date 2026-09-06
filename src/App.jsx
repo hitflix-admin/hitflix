@@ -682,8 +682,6 @@ export default function App() {
     }, 500);
   }, []);
 
-  const hasAnyRating = Object.values(reviews).some((r) => r?.rating);
-
   function openMovieDirect(movie) {
     setModalRef({ movie });
   }
@@ -975,7 +973,6 @@ export default function App() {
           onOpenSearchResult={openMovieDirect}
           defaultMovies={defaultMovies}
           onOpenStandaloneMovie={openMovieDirect}
-          showHint={!hasAnyRating}
         />
       )}
 
@@ -1190,7 +1187,9 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
         Your reviews
       </div>
       <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 14 }}>
-        {reviewed.length} title{reviewed.length === 1 ? "" : "s"} reviewed
+        {unratedDefaults.length > 0
+          ? "Rate these movies to get started or search for your favorite"
+          : `${reviewed.length} title${reviewed.length === 1 ? "" : "s"} reviewed`}
       </div>
 
       {reviewed.length === 0 && unratedDefaults.length === 0 ? (
@@ -1292,7 +1291,6 @@ function HomeView({
   onOpenSearchResult,
   defaultMovies,
   onOpenStandaloneMovie,
-  showHint,
 }) {
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
@@ -1421,12 +1419,6 @@ function HomeView({
         searchError={homeSearchError}
         onSelect={onOpenSearchResult}
       />
-
-      {showHint && (
-        <div style={{ color: "#8D96A3", fontSize: 12.5, marginTop: 14, textAlign: "center" }}>
-          Rate these movies to get started or search for your favorite
-        </div>
-      )}
 
       <ReviewedLibrary
         lists={lists}
