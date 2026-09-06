@@ -471,14 +471,17 @@ function PosterArt({ poster, title, size = "thumb" }) {
     .map((w) => w[0].toUpperCase())
     .join("");
   const dims = size === "thumb" ? { w: 52, h: 76 } : { w: 168, h: 244 };
+  const sizeStyle =
+    size === "fill"
+      ? { width: "100%", height: "auto", aspectRatio: "52 / 76" }
+      : { width: dims.w, height: dims.h };
   if (poster) {
     return (
       <img
         src={poster}
         alt={title}
         style={{
-          width: dims.w,
-          height: dims.h,
+          ...sizeStyle,
           objectFit: "cover",
           borderRadius: 3,
           border: "1px solid rgba(231,233,236,0.14)",
@@ -491,8 +494,7 @@ function PosterArt({ poster, title, size = "thumb" }) {
   return (
     <div
       style={{
-        width: dims.w,
-        height: dims.h,
+        ...sizeStyle,
         borderRadius: 3,
         border: "1px solid rgba(231,233,236,0.14)",
         flexShrink: 0,
@@ -1116,7 +1118,7 @@ function DefaultMovieTile({ movie, onAddRating }) {
         cursor: "pointer",
       }}
     >
-      <PosterArt poster={movie.poster} title={movie.title} size="thumb" />
+      <PosterArt poster={movie.poster} title={movie.title} size="fill" />
       <div
         style={{
           fontSize: 12.5,
@@ -1144,11 +1146,12 @@ function DefaultMovieTile({ movie, onAddRating }) {
           border: "1px solid rgba(108,134,171,0.6)",
           color: "#6C86AB",
           borderRadius: 3,
-          padding: "5px 10px",
+          padding: "5px 8px",
           fontSize: 11.5,
           fontWeight: 600,
           cursor: "pointer",
           whiteSpace: "nowrap",
+          width: "100%",
         }}
       >
         Add rating
@@ -1220,7 +1223,7 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
             </div>
           )}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10 }}>
+          <div className="library-grid">
             {unratedDefaults.map((movie) => (
               <DefaultMovieTile
                 key={`default-${movie.id}`}
@@ -1244,7 +1247,7 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
                   cursor: "pointer",
                 }}
               >
-                <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
+                <PosterArt poster={entry.poster} title={entry.title} size="fill" />
                 <div
                   style={{
                     fontSize: 12.5,
