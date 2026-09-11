@@ -3,7 +3,7 @@ import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
-import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
+import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 
@@ -149,7 +149,7 @@ export default function DailyGuessGame({
   renderHint,
   crossLinks,
 }) {
-  const date = todayUTCDateString();
+  const date = todayGameDateString();
   const [target, setTarget] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [progress, setProgress] = useState(() => loadProgress(storageId, date));

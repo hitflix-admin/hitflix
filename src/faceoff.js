@@ -3,7 +3,7 @@
 // the player guesses which grossed more worldwide at the box office.
 
 import { searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, parseBoxOfficeUSD } from "./movieData.js";
-import { getCandidatePool, titleCaseGuess, todayUTCDateString } from "./dailyMovie.js";
+import { getCandidatePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
 import { buildGenrePairs } from "./facePairing.js";
 
 const PAIRS_NEEDED = 5;
@@ -49,7 +49,7 @@ function toPublicMovie({ title, year, poster, pageUrl, grossUSD }) {
   return { title, year, poster, pageUrl, value: grossUSD };
 }
 
-export async function getDailyFaceoff(dateString = todayUTCDateString()) {
+export async function getDailyFaceoff(dateString = todayGameDateString()) {
   const pairs = await buildGenrePairs({
     pool: getCandidatePool(),
     dateString,

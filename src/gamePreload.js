@@ -3,7 +3,7 @@
 // multi-second Wikipedia resolution. Also prunes stale cache entries, since
 // none of the four games otherwise expire old dates.
 
-import { getDailyMovie, getDailyOscarWinner, todayUTCDateString } from "./dailyMovie.js";
+import { getDailyMovie, getDailyOscarWinner, todayGameDateString } from "./dailyMovie.js";
 import { getDailyFaceoff } from "./faceoff.js";
 import { getDailyNominationsFaceoff } from "./nominationsFaceoff.js";
 
@@ -52,7 +52,7 @@ function cacheTarget(storageId, date, data) {
 // facePairing.js). A failed prefetch is silently skipped — that game just
 // resolves normally, with its own loading state, when the player opens it.
 export async function preloadOtherGames(currentStorageId) {
-  const date = todayUTCDateString();
+  const date = todayGameDateString();
   pruneOldEntries(date);
 
   for (const game of GAMES) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, Film, Check, X, Share2 } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, iconBtn, primaryBtn } from "./theme.js";
-import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
+import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 
@@ -153,7 +153,7 @@ export default function FaceoffGame({
   formatValue,
   crossLinks,
 }) {
-  const date = todayUTCDateString();
+  const date = todayGameDateString();
   const [target, setTarget] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [progress, setProgress] = useState(() => loadProgress(storageId, date));

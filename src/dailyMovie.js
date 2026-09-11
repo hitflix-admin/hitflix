@@ -1,5 +1,5 @@
-// Picks the day's featured movie (same for every player, changes at UTC midnight)
-// from the Oscar-nominations database — either the nominee pool (getDailyMovie)
+// Picks the day's featured movie (same for every player, changes at midnight
+// US Eastern) from the Oscar-nominations database — either the nominee pool (getDailyMovie)
 // or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
 // for display data, and scores guesses against it.
 
@@ -155,8 +155,59 @@ export function mulberry32(seed) {
 
 const LAUNCH_EPOCH_MS = Date.UTC(2026, 8, 10); // puzzle #1
 
-export function todayUTCDateString(now = new Date()) {
-  return now.toISOString().slice(0, 10);
+// The daily puzzle resets for every player at midnight US Eastern — not each
+// visitor's own local timezone, and not UTC midnight (which lands at 7-8 PM
+// Eastern, hours before an Eastern player's actual midnight). Anchoring to a
+// single real-world zone is what makes the reset a genuinely global, shared
+// event instead of drifting per visitor.
+const RESET_TIMEZONE = "America/New_York";
+
+// (UTC - zoneTime) offset in minutes for `timeZone` at the given instant.
+// Standard Intl-based trick: format the instant's wall-clock components as
+// seen in the target zone, reinterpret those same components as if they were
+// UTC, and diff against the real instant — DST transitions fall out for free
+// since Intl already knows the zone's rules.
+function timeZoneOffsetMinutes(date, timeZone) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value])
+  );
+  const asUTC = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return (asUTC - date.getTime()) / 60000;
+}
+
+// The real UTC timestamp that "YYYY-MM-DD 00:00:00" in `timeZone` falls on.
+// Two passes to converge correctly right at a DST transition.
+function zoneMidnightUTC(dateString, timeZone) {
+  const [y, m, d] = dateString.split("-").map(Number);
+  let ts = Date.UTC(y, m - 1, d, 0, 0, 0);
+  for (let i = 0; i < 2; i++) {
+    const offset = timeZoneOffsetMinutes(new Date(ts), timeZone);
+    ts = Date.UTC(y, m - 1, d, 0, 0, 0) - offset * 60000;
+  }
+  return ts;
+}
+
+// Every player's "today" — the calendar date in RESET_TIMEZONE, so all
+// visitors see the same puzzle change at the same real-world moment
+// regardless of their own browser's timezone.
+export function todayGameDateString(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: RESET_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
 }
 
 export function daysSinceEpoch(dateString) {
@@ -169,9 +220,12 @@ export function puzzleNumberForDate(dateString) {
 }
 
 export function msUntilNextPuzzle(now = new Date()) {
-  const tomorrow = new Date(todayUTCDateString(now) + "T00:00:00.000Z");
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-  return tomorrow.getTime() - now.getTime();
+  const [y, m, d] = todayGameDateString(now).split("-").map(Number);
+  // Date.UTC normalizes an out-of-range day (d + 1 can overflow past the
+  // month's last day) into the correct next calendar date automatically.
+  const tomorrow = new Date(Date.UTC(y, m - 1, d + 1));
+  const tomorrowDateString = `${tomorrow.getUTCFullYear()}-${String(tomorrow.getUTCMonth() + 1).padStart(2, "0")}-${String(tomorrow.getUTCDate()).padStart(2, "0")}`;
+  return zoneMidnightUTC(tomorrowDateString, RESET_TIMEZONE) - now.getTime();
 }
 
 // Distinct offsets keep the two games' picks independent (and keep day 0 from
@@ -233,7 +287,7 @@ async function resolveCandidate(candidate) {
   };
 }
 
-export async function getDailyMovie(dateString = todayUTCDateString()) {
+export async function getDailyMovie(dateString = todayGameDateString()) {
   const pool = getCandidatePool();
   const startIndex = poolIndexForDate(dateString, pool.length, NOMINEE_SEED_OFFSET);
 
@@ -252,7 +306,7 @@ export async function getDailyMovie(dateString = todayUTCDateString()) {
 // Same mechanics as getDailyMovie, but drawn only from actual Oscar winners, and
 // with the flashiest category it won (see CATEGORY_RANK_FAMILIES) picked as an
 // upfront hint — a movie with several wins only ever shows the single best one.
-export async function getDailyOscarWinner(dateString = todayUTCDateString()) {
+export async function getDailyOscarWinner(dateString = todayGameDateString()) {
   const pool = getWinnerPool();
   const startIndex = poolIndexForDate(dateString, pool.length, WINNER_SEED_OFFSET);
 

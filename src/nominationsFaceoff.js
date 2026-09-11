@@ -4,7 +4,7 @@
 // nomination count is already known from the Oscar-nominations dataset itself.
 
 import { searchWikipediaFilms, fetchGenreTags } from "./movieData.js";
-import { getCandidatePool, titleCaseGuess, todayUTCDateString } from "./dailyMovie.js";
+import { getCandidatePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
 import { buildGenrePairs } from "./facePairing.js";
 
 const PAIRS_NEEDED = 5;
@@ -44,7 +44,7 @@ function toPublicMovie({ title, year, poster, pageUrl, nominations }) {
   return { title, year, poster, pageUrl, value: nominations };
 }
 
-export async function getDailyNominationsFaceoff(dateString = todayUTCDateString()) {
+export async function getDailyNominationsFaceoff(dateString = todayGameDateString()) {
   const pairs = await buildGenrePairs({
     pool: getCandidatePool(),
     dateString,
