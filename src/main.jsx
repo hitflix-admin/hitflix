@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import DailyGame from "./DailyGame.jsx";
 import OscarWinnerGame from "./OscarWinnerGame.jsx";
+import Faceoff from "./Faceoff.jsx";
 import "./index.css";
 
 // GitHub Pages has no server-side routing: vite.config.js copies the built
@@ -12,6 +13,7 @@ const path = window.location.pathname.replace(/\/+$/, "") || "/";
 const ROUTES = {
   "/daily": DailyGame,
   "/oscar-winner": OscarWinnerGame,
+  "/faceoff": Faceoff,
 };
 const Root = ROUTES[path] || App;
 

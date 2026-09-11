@@ -6,9 +6,10 @@
 
 Hitflix lets visitors create ranked or unranked lists of movies, search for titles, add optional "honorable mentions," and rate movies with a personal scoring system covering writing, performance, visuals, and audio. There is nothing to buy, no ads, and no account required.
 
-Hitflix also has two daily movie-guessing games, both Wordle-style puzzles where every visitor gets the same mystery movie (picked deterministically by date, no server needed) and up to 5 guesses to identify it. Guesses can be any film findable on Wikipedia; each guess is scored against the mystery movie's year, director, production country, cast, runtime, and Oscar nomination count.
-- /daily: the mystery movie is drawn from the pool of Oscar-nominated films.
-- /oscar-winner: the mystery movie is drawn only from actual Oscar winners, and the category it won is revealed upfront as a clue.
+Hitflix also has three daily games, each picked deterministically by date (same puzzle for every visitor, no server needed):
+- /daily: a Wordle-style puzzle — guess the mystery Oscar-nominated movie in 5 tries. Guesses can be any film findable on Wikipedia; each guess is scored against the mystery movie's year, director, production country, cast, runtime, and Oscar nomination count.
+- /oscar-winner: the same format, but the mystery movie is drawn only from actual Oscar winners, and the category it won is revealed upfront as a clue.
+- /faceoff: 5 head-to-head rounds, each pitting two movies with a similar genre against each other — pick the one with the bigger worldwide box office gross. Ends with a percentage score.
 
 ## Details
 

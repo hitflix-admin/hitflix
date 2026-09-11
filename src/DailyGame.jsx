@@ -1,6 +1,7 @@
 import React from "react";
 import DailyGuessGame from "./DailyGuessGame.jsx";
 import { getDailyMovie } from "./dailyMovie.js";
+import { GAME_INFO } from "./GameCard.jsx";
 
 export default function DailyGame() {
   return (
@@ -12,7 +13,7 @@ export default function DailyGame() {
       shareLabel="Hitflix Daily Movie"
       shareUrl="https://hitflix.club/daily"
       resolveTarget={getDailyMovie}
-      crossLink={{ href: "/oscar-winner", label: "Play the Oscar Winner edition →" }}
+      crossLinks={[GAME_INFO.oscarWinner, GAME_INFO.faceoff]}
     />
   );
 }

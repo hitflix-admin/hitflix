@@ -7,7 +7,7 @@ import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieD
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
-function titleCaseGuess(normalized) {
+export function titleCaseGuess(normalized) {
   return normalized.replace(/[a-z0-9']+/g, (word, offset) => {
     if (offset !== 0 && SMALL_WORDS.has(word)) return word;
     return word.charAt(0).toUpperCase() + word.slice(1);
@@ -45,7 +45,7 @@ function buildPool(predicate) {
 }
 
 let cachedCandidatePool = null;
-function getCandidatePool() {
+export function getCandidatePool() {
   if (!cachedCandidatePool) {
     cachedCandidatePool = buildPool(
       (e) => e.winners.length > 0 || e.nominations >= MIN_NOMINATIONS_UNLESS_WINNER
@@ -69,7 +69,7 @@ const MIN_FEATURE_RUNTIME_MINUTES = 40;
 
 // mulberry32 — small, fast, deterministic PRNG so every visitor derives the same
 // sequence from the same integer seed (no server round-trip needed for "today's" pick).
-function mulberry32(seed) {
+export function mulberry32(seed) {
   let a = seed;
   return function () {
     a |= 0;
@@ -86,7 +86,7 @@ export function todayUTCDateString(now = new Date()) {
   return now.toISOString().slice(0, 10);
 }
 
-function daysSinceEpoch(dateString) {
+export function daysSinceEpoch(dateString) {
   const ms = Date.UTC(...dateString.split("-").map((n, i) => (i === 1 ? Number(n) - 1 : Number(n))));
   return Math.floor((ms - LAUNCH_EPOCH_MS) / 86400000);
 }

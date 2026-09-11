@@ -352,4 +352,112 @@ export function detailsLookStale(details) {
   return fields.some((f) => typeof f === "string" && /&[a-zA-Z#0-9]+;|\{\{|efn\||refn\|/i.test(f));
 }
 
+/* ---------------- Genre tags (for Faceoff pairing) ---------------- */
+
+// Wikipedia's film infobox dropped a "genre" field years ago (see fetchMovieDetails
+// above), but genre-ish info still lives in the page's categories — e.g. a category
+// named "American superhero films" or "2019 monster movies". Match known genre
+// words against those category titles as a best-effort tag list.
+const GENRE_KEYWORDS = [
+  "action",
+  "adventure",
+  "animation",
+  "biographical",
+  "comedy",
+  "crime",
+  "disaster",
+  "documentary",
+  "drama",
+  "fantasy",
+  "heist",
+  "horror",
+  "martial arts",
+  "monster",
+  "musical",
+  "mystery",
+  "noir",
+  "romance",
+  "romantic comedy",
+  "satire",
+  "science fiction",
+  "sci-fi",
+  "slasher",
+  "spy",
+  "sports",
+  "superhero",
+  "supernatural",
+  "thriller",
+  "war",
+  "western",
+  "zombie",
+];
+
+function normalizeGenreTag(keyword) {
+  if (keyword === "sci-fi") return "science fiction";
+  if (keyword === "animation") return "animated";
+  return keyword;
+}
+
+// Word-boundary matching, not plain substring — a category like "Academy Award
+// winners" or "Warner Bros. films" otherwise false-matches "war" (a-WAR-d,
+// WAR-ner) on nearly every notable film.
+const GENRE_KEYWORD_PATTERNS = GENRE_KEYWORDS.map((keyword) => ({
+  keyword,
+  pattern: new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"),
+}));
+
+export async function fetchGenreTags(pageTitle) {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=categories&clshow=!hidden&cllimit=500&format=json&titles=${encodeURIComponent(
+        pageTitle
+      )}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const pages = data?.query?.pages || {};
+    const page = Object.values(pages)[0];
+    const categories = (page?.categories || []).map((c) => c.title.replace(/^Category:/i, "").toLowerCase());
+    // Wikipedia's genre categories are reliably phrased "<qualifiers> <genre> film(s)"
+    // (e.g. "American war films") — restricting to those excludes unrelated categories
+    // that happen to contain a genre word, like "Films set in Western Europe".
+    const genreCategories = categories.filter((c) => /\bfilms?$/.test(c));
+
+    const tags = new Set();
+    for (const category of genreCategories) {
+      for (const { keyword, pattern } of GENRE_KEYWORD_PATTERNS) {
+        if (pattern.test(category)) tags.add(normalizeGenreTag(keyword));
+      }
+    }
+    return [...tags];
+  } catch (e) {
+    return [];
+  }
+}
+
+/* ---------------- Box office parsing (for Faceoff) ---------------- */
+
+// Pulls a single USD figure out of a cleaned "gross" infobox string like
+// "$407,999,255" or "$217.6 million (North America) $408 million (worldwide)".
+// Prefers a figure explicitly marked "(worldwide)"; otherwise takes the largest
+// dollar figure found, since a film's total gross is usually the biggest number
+// present (domestic/international breakdowns are subsets of it).
+export function parseBoxOfficeUSD(cleanedGross) {
+  if (!cleanedGross) return null;
+  const worldwideMatch = cleanedGross.match(/\$[\d,.]+\s*(?:million|billion|thousand)?[^()]*\(worldwide\)/i);
+  const source = worldwideMatch ? worldwideMatch[0] : cleanedGross;
+
+  const matches = [...source.matchAll(/\$([\d,]+(?:\.\d+)?)\s*(million|billion|thousand)?/gi)];
+  if (matches.length === 0) return null;
+
+  const values = matches.map(([, num, unit]) => {
+    let n = parseFloat(num.replace(/,/g, ""));
+    if (/billion/i.test(unit)) n *= 1e9;
+    else if (/million/i.test(unit)) n *= 1e6;
+    else if (/thousand/i.test(unit)) n *= 1e3;
+    return n;
+  });
+  return Math.max(...values);
+}
+
 export { oscarAwardsData };

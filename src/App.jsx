@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, ArrowRight, Film, ExternalLink, Check } from "lucide-react";
+import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { FONTS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
+import GameCard, { GAME_INFO } from "./GameCard.jsx";
 import {
   cleanMovieTitle,
   yearFromDescription,
@@ -956,32 +957,6 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
 
 /* ---------------- Home ---------------- */
 
-function GameCard({ href, accent, title, description }) {
-  return (
-    <a
-      href={href}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-        background: "#1E1E1E",
-        border: `1px solid ${accent}66`,
-        borderRadius: 4,
-        padding: "13px 16px",
-        textDecoration: "none",
-        color: "#E7E9EC",
-      }}
-    >
-      <div>
-        <div style={{ fontSize: 14.5, fontWeight: 700 }}>{title}</div>
-        <div style={{ color: "#8D96A3", fontSize: 12 }}>{description}</div>
-      </div>
-      <ArrowRight size={18} strokeWidth={2} color={accent} style={{ flexShrink: 0 }} />
-    </a>
-  );
-}
-
 function GamesSection() {
   return (
     <div style={{ marginTop: 34 }}>
@@ -1001,18 +976,9 @@ function GamesSection() {
         One puzzle a day, same for everyone.
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <GameCard
-          href="/daily"
-          accent="#6C86AB"
-          title="Daily Movie"
-          description="Guess today's Oscar-nominated mystery movie in 5 tries"
-        />
-        <GameCard
-          href="/oscar-winner"
-          accent="#C9A03D"
-          title="Oscar Winner"
-          description="Guess today's mystery Oscar winner — the category it won is your first clue"
-        />
+        <GameCard {...GAME_INFO.daily} />
+        <GameCard {...GAME_INFO.oscarWinner} />
+        <GameCard {...GAME_INFO.faceoff} />
       </div>
     </div>
   );

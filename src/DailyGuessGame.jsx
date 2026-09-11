@@ -4,6 +4,7 @@ import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
 import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
+import GameCard from "./GameCard.jsx";
 
 const MAX_GUESSES = 5;
 
@@ -73,7 +74,7 @@ export default function DailyGuessGame({
   shareUrl,
   resolveTarget,
   renderHint,
-  crossLink,
+  crossLinks,
 }) {
   const date = todayUTCDateString();
   const [target, setTarget] = useState(null);
@@ -343,11 +344,16 @@ export default function DailyGuessGame({
               />
             )}
 
-            {crossLink && (
-              <div style={{ textAlign: "center", marginTop: 22 }}>
-                <a href={crossLink.href} style={{ color: COLORS.blue, fontSize: 12.5, textDecoration: "none" }}>
-                  {crossLink.label}
-                </a>
+            {crossLinks && crossLinks.length > 0 && (
+              <div style={{ marginTop: 26 }}>
+                <div style={{ color: COLORS.mute, fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700, marginBottom: 8 }}>
+                  More games
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {crossLinks.map((game) => (
+                    <GameCard key={game.href} {...game} />
+                  ))}
+                </div>
               </div>
             )}
           </>

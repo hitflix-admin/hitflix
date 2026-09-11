@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react";
 import DailyGuessGame from "./DailyGuessGame.jsx";
 import { COLORS } from "./theme.js";
 import { getDailyOscarWinner } from "./dailyMovie.js";
+import { GAME_INFO } from "./GameCard.jsx";
 
 function WinnerHint({ hintCategory }) {
   if (!hintCategory) return null;
@@ -38,7 +39,7 @@ export default function OscarWinnerGame() {
       shareUrl="https://hitflix.club/oscar-winner"
       resolveTarget={getDailyOscarWinner}
       renderHint={(target) => <WinnerHint hintCategory={target.hintCategory} />}
-      crossLink={{ href: "/daily", label: "Play the classic Daily Movie edition →" }}
+      crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff]}
     />
   );
 }
