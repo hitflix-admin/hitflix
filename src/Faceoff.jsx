@@ -18,7 +18,7 @@ export default function Faceoff() {
       heading="Faceoff"
       description="Which movie made more at the box office? 5 rounds, similar genres each time."
       shareLabel="Hitflix Faceoff"
-      shareUrl="https://hitflix.club/faceoff"
+      shareUrl="https://hitflix.club/games/faceoff"
       resolvePairs={getDailyFaceoff}
       formatValue={formatUSD}
       crossLinks={[GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.nominationsFaceoff]}

@@ -7,41 +7,69 @@ import path from "node:path";
 // description — keep this in sync with that map when adding a game.
 const ROUTE_META = [
   {
-    path: "/daily",
+    path: "/games/daily",
     title: "Daily Movie — Guess the Featured Movie | Hitflix",
     description:
       "Guess the featured Oscar-nominated movie in 5 tries. Its genre is revealed upfront as a clue, and each guess is scored on year, director, country, cast, runtime, and Oscar nominations. A new movie every day.",
   },
   {
-    path: "/oscar-winner",
+    path: "/games/daily-oscar-edition",
     title: "Daily Movie (Oscar Edition) — Guess the Oscar Winner | Hitflix",
     description:
       "Guess the Oscar-winning movie in 5 tries. Its genre and the category it won are revealed upfront as clues. A new movie every day.",
   },
   {
-    path: "/faceoff",
+    path: "/games/faceoff",
     title: "Faceoff — Box Office Head-to-Head Game | Hitflix",
     description:
       "Pick which of two similar movies made more at the worldwide box office across 5 head-to-head rounds. New matchups every day.",
   },
   {
-    path: "/nominations-faceoff",
-    title: "Faceoff (Oscars Edition) — Oscar Nominations Head-to-Head | Hitflix",
+    path: "/games/faceoff-oscars-edition",
+    title: "Faceoff (Oscar Edition) — Oscar Nominations Head-to-Head | Hitflix",
     description:
       "Pick which of two similar movies earned more Oscar nominations across 5 head-to-head rounds. New matchups every day.",
   },
 ];
+
+// The games used to live at these flat paths, before moving under /games/ —
+// redirect each to its new home so anything already shared or indexed under
+// the old URL still lands correctly.
+const OLD_PATH_REDIRECTS = {
+  "/daily": "/games/daily",
+  "/oscar-winner": "/games/daily-oscar-edition",
+  "/faceoff": "/games/faceoff",
+  "/nominations-faceoff": "/games/faceoff-oscars-edition",
+};
+
+function redirectHtml(toPath) {
+  const url = `https://hitflix.club${toPath}`;
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0; url=${url}" />
+    <link rel="canonical" href="${url}" />
+    <title>Redirecting… | Hitflix</title>
+  </head>
+  <body>
+    <p>This page has moved. <a href="${url}">Continue to ${url}</a>.</p>
+  </body>
+</html>
+`;
+}
 
 // GitHub Pages has no server-side routing. The old fix (copy index.html to
 // 404.html) makes an unknown path still load the app, but GitHub Pages
 // returns that response with an HTTP 404 status — search engines treat a 404
 // status as "this page doesn't exist" regardless of what's rendered
 // client-side, and every page also shared the homepage's own canonical/og:url,
-// which told them to fold /daily etc. into the homepage instead of indexing
-// them separately. Generating a real <route>/index.html for each known route
-// (which GitHub Pages serves as a normal 200) with its own title, meta
-// description, canonical link, and og:url fixes both problems — the client
-// bundle is identical either way, main.jsx picks the page from the real URL.
+// which told them to fold /games/daily etc. into the homepage instead of
+// indexing them separately. Generating a real <route>/index.html for each
+// known route (which GitHub Pages serves as a normal 200) with its own title,
+// meta description, canonical link, and og:url fixes both problems — the
+// client bundle is identical either way, main.jsx picks the page from the
+// real URL.
 function spaRoutes() {
   return {
     name: "spa-routes",
@@ -49,7 +77,8 @@ function spaRoutes() {
       const outDir = "dist";
       const template = fs.readFileSync(path.join(outDir, "index.html"), "utf8");
 
-      // Unknown paths (typos, old links) still fall back to the SPA shell.
+      // Unknown paths (typos, old links not covered by the redirects below)
+      // still fall back to the SPA shell.
       fs.writeFileSync(path.join(outDir, "404.html"), template);
 
       const homeTitle = template.match(/<title>([^<]*)<\/title>/)[1];
@@ -65,6 +94,12 @@ function spaRoutes() {
         const dir = path.join(outDir, route.path);
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, "index.html"), html);
+      }
+
+      for (const [oldPath, newPath] of Object.entries(OLD_PATH_REDIRECTS)) {
+        const dir = path.join(outDir, oldPath);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, "index.html"), redirectHtml(newPath));
       }
     },
   };

@@ -36,7 +36,7 @@ export default function OscarWinnerGame() {
       heading="Daily Movie (Oscar Edition)"
       description="Guess the Oscar-winning movie in 5 tries."
       shareLabel="Hitflix Daily Movie (Oscar Edition)"
-      shareUrl="https://hitflix.club/oscar-winner"
+      shareUrl="https://hitflix.club/games/daily-oscar-edition"
       resolveTarget={getDailyOscarWinner}
       renderHint={(target) => <WinnerHint hintCategory={target.hintCategory} />}
       crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff]}

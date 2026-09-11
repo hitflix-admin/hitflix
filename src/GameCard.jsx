@@ -33,27 +33,27 @@ export default function GameCard({ href, accent, title, description }) {
 
 export const GAME_INFO = {
   daily: {
-    href: "/daily",
+    href: "/games/daily",
     accent: COLORS.blue,
     title: "Daily Movie",
     description: "Guess today's featured movie in 5 tries — genre is your first clue",
   },
   oscarWinner: {
-    href: "/oscar-winner",
+    href: "/games/daily-oscar-edition",
     accent: COLORS.amber,
     title: "Daily Movie (Oscar Edition)",
     description: "Guess today's Oscar winner — genre and the category it won are your first clues",
   },
   faceoff: {
-    href: "/faceoff",
+    href: "/games/faceoff",
     accent: COLORS.rose,
     title: "Faceoff",
     description: "Pick the bigger box office hit across 5 head-to-head rounds",
   },
   nominationsFaceoff: {
-    href: "/nominations-faceoff",
+    href: "/games/faceoff-oscars-edition",
     accent: COLORS.green,
-    title: "Faceoff (Oscars Edition)",
+    title: "Faceoff (Oscar Edition)",
     description: "Pick the movie with more Oscar nominations across 5 head-to-head rounds",
   },
 };

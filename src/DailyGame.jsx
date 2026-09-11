@@ -11,7 +11,7 @@ export default function DailyGame() {
       heading="Daily Movie"
       description="Guess the featured movie in 5 tries."
       shareLabel="Hitflix Daily Movie"
-      shareUrl="https://hitflix.club/daily"
+      shareUrl="https://hitflix.club/games/daily"
       resolveTarget={getDailyMovie}
       crossLinks={[GAME_INFO.oscarWinner, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff]}
     />
