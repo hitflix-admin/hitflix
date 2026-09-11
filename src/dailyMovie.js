@@ -102,9 +102,12 @@ export function msUntilNextPuzzle(now = new Date()) {
 }
 
 // Distinct offsets keep the two games' picks independent (and keep day 0 from
-// hashing to a fixed point) while still being deterministic per date.
-const NOMINEE_SEED_OFFSET = 1000;
-const WINNER_SEED_OFFSET = 5000;
+// hashing to a fixed point) while still being deterministic per date. Bumped
+// after the resolver misattribution fix to reroll every date (today included)
+// onto a fresh pick — anyone who already loaded today's puzzle keeps the movie
+// cached in their own localStorage; this only changes what a fresh load sees.
+const NOMINEE_SEED_OFFSET = 2000;
+const WINNER_SEED_OFFSET = 6000;
 const HINT_CATEGORY_SEED_OFFSET = 9000;
 
 function poolIndexForDate(dateString, poolLength, seedOffset) {
