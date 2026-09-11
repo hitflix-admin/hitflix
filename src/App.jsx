@@ -956,6 +956,68 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
 
 /* ---------------- Home ---------------- */
 
+function GameCard({ href, accent, title, description }) {
+  return (
+    <a
+      href={href}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        background: "#1E1E1E",
+        border: `1px solid ${accent}66`,
+        borderRadius: 4,
+        padding: "13px 16px",
+        textDecoration: "none",
+        color: "#E7E9EC",
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 14.5, fontWeight: 700 }}>{title}</div>
+        <div style={{ color: "#8D96A3", fontSize: 12 }}>{description}</div>
+      </div>
+      <ArrowRight size={18} strokeWidth={2} color={accent} style={{ flexShrink: 0 }} />
+    </a>
+  );
+}
+
+function GamesSection() {
+  return (
+    <div style={{ marginTop: 34 }}>
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          fontSize: 17,
+          letterSpacing: 0.5,
+          marginBottom: 4,
+        }}
+      >
+        Games
+      </div>
+      <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 10 }}>
+        One puzzle a day, same for everyone.
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <GameCard
+          href="/daily"
+          accent="#6C86AB"
+          title="Daily Movie"
+          description="Guess today's Oscar-nominated mystery movie in 5 tries"
+        />
+        <GameCard
+          href="/oscar-winner"
+          accent="#C9A03D"
+          title="Oscar Winner"
+          description="Guess today's mystery Oscar winner — the category it won is your first clue"
+        />
+      </div>
+    </div>
+  );
+}
+
 function HomeView({
   lists,
   reviews,
@@ -984,56 +1046,6 @@ function HomeView({
           Build a list, one reel at a time.
         </div>
       </div>
-
-      <a
-        href="/daily"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          background: "#1E1E1E",
-          border: "1px solid rgba(108,134,171,0.4)",
-          borderRadius: 4,
-          padding: "13px 16px",
-          marginBottom: 14,
-          textDecoration: "none",
-          color: "#E7E9EC",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>Daily Movie</div>
-          <div style={{ color: "#8D96A3", fontSize: 12 }}>
-            Guess today's Oscar-nominated mystery movie in 5 tries
-          </div>
-        </div>
-        <ArrowRight size={18} strokeWidth={2} color="#6C86AB" style={{ flexShrink: 0 }} />
-      </a>
-
-      <a
-        href="/oscar-winner"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          background: "#1E1E1E",
-          border: "1px solid rgba(201,160,61,0.4)",
-          borderRadius: 4,
-          padding: "13px 16px",
-          marginBottom: 14,
-          textDecoration: "none",
-          color: "#E7E9EC",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>Oscar Winner</div>
-          <div style={{ color: "#8D96A3", fontSize: 12 }}>
-            Guess today's mystery Oscar winner — the category it won is your first clue
-          </div>
-        </div>
-        <ArrowRight size={18} strokeWidth={2} color="#C9A03D" style={{ flexShrink: 0 }} />
-      </a>
 
       <button
         onClick={onCreate}
@@ -1140,6 +1152,8 @@ function HomeView({
             ))}
         </div>
       )}
+
+      <GamesSection />
 
       <MovieLookup
         query={homeQuery}
