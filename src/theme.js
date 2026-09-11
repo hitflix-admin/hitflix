@@ -24,7 +24,9 @@ export const inputStyle = {
   borderRadius: 3,
   padding: "11px 12px",
   color: "#E7E9EC",
-  fontSize: 14.5,
+  // iOS Safari auto-zooms the page on focus for any text input whose font-size
+  // is under 16px — keep this at (or above) 16 to avoid that.
+  fontSize: 16,
   fontFamily: "'Montserrat', sans-serif",
   boxSizing: "border-box",
   outline: "none",

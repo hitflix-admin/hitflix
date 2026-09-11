@@ -34,7 +34,7 @@ export default function OscarWinnerGame() {
       storageId="dailyWinner"
       pageTitle="Hitflix — Daily Movie (Oscar Edition)"
       heading="Daily Movie (Oscar Edition)"
-      description="Guess the mystery Oscar-winning movie in 5 tries."
+      description="Guess the Oscar-winning movie in 5 tries."
       shareLabel="Hitflix Daily Movie (Oscar Edition)"
       shareUrl="https://hitflix.club/oscar-winner"
       resolveTarget={getDailyOscarWinner}

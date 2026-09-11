@@ -1,9 +1,9 @@
-// Picks the day's mystery movie (same for every player, changes at UTC midnight)
+// Picks the day's featured movie (same for every player, changes at UTC midnight)
 // from the Oscar-nominations database — either the nominee pool (getDailyMovie)
 // or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
 // for display data, and scores guesses against it.
 
-import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails } from "./movieData.js";
+import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags } from "./movieData.js";
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -131,7 +131,10 @@ async function resolveCandidate(candidate) {
   const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
   if (!best) return null;
 
-  const details = await fetchMovieDetails(best.pageTitle, candidate.year, best.title);
+  const [details, genreTags] = await Promise.all([
+    fetchMovieDetails(best.pageTitle, candidate.year, best.title),
+    fetchGenreTags(best.pageTitle),
+  ]);
   if (!details) return null;
 
   return {
@@ -149,6 +152,7 @@ async function resolveCandidate(candidate) {
     oscarNominations: candidate.nominations,
     oscarWinners: candidate.winners,
     normalizedTitle: candidate.normalizedTitle,
+    genreTags,
   };
 }
 

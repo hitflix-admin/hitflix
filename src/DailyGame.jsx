@@ -9,7 +9,7 @@ export default function DailyGame() {
       storageId="dailyGame"
       pageTitle="Hitflix — Daily Movie"
       heading="Daily Movie"
-      description="Guess the Oscar-nominated mystery movie in 5 tries."
+      description="Guess the Oscar-nominated movie in 5 tries."
       shareLabel="Hitflix Daily Movie"
       shareUrl="https://hitflix.club/daily"
       resolveTarget={getDailyMovie}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2 } from "lucide-react";
+import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
@@ -62,9 +62,39 @@ function buildShareText(shareLabel, shareUrl, date, guesses, status) {
   return `${shareLabel} #${puzzleNum} ${result}\n\n${lines.join("\n")}\n\n${shareUrl}`;
 }
 
+function capitalizeGenre(tag) {
+  return tag.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Shown upfront (before any guess) on both editions — genre is otherwise not
+// one of the compared fields, so this is the one hint every version shares.
+function GenreHint({ genreTags }) {
+  if (!genreTags || genreTags.length === 0) return null;
+  const list = genreTags.slice(0, 3).map(capitalizeGenre).join(", ");
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "rgba(108,134,171,0.12)",
+        border: "1px solid rgba(108,134,171,0.4)",
+        borderRadius: 6,
+        padding: "12px 14px",
+        marginTop: 16,
+      }}
+    >
+      <Tag size={20} strokeWidth={1.8} color={COLORS.blue} style={{ flexShrink: 0 }} />
+      <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>
+        Genre: <span style={{ fontWeight: 700, color: COLORS.blue }}>{list}</span>
+      </div>
+    </div>
+  );
+}
+
 // Generic engine behind both /daily (any Oscar nominee) and /oscar-winner
 // (winners only, with an upfront category hint) — the two differ only in which
-// pool the mystery movie is drawn from and a bit of copy, passed in as props.
+// pool the movie is drawn from and a bit of copy, passed in as props.
 export default function DailyGuessGame({
   storageId,
   pageTitle,
@@ -239,6 +269,7 @@ export default function DailyGuessGame({
 
         {target && (
           <>
+            <GenreHint genreTags={target.genreTags} />
             {renderHint && renderHint(target)}
 
             <div style={{ display: "flex", gap: 8, margin: "18px 0 6px" }}>
@@ -366,13 +397,14 @@ export default function DailyGuessGame({
 function tileStyle(status) {
   const base = {
     borderRadius: 4,
-    padding: "7px 9px",
+    padding: "6px 8px",
     fontSize: 11.5,
     lineHeight: 1.3,
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    minHeight: 34,
+    boxSizing: "border-box",
+    // 3 chips per row on any screen width — percentage basis (not a fixed px
+    // width) is what keeps this from ever forcing horizontal scroll.
+    flex: "1 1 30%",
+    minWidth: 0,
   };
   if (status === "correct" || status === "full") {
     return { ...base, background: COLORS.green, color: "#0d160f", fontWeight: 700 };
@@ -386,26 +418,31 @@ function tileStyle(status) {
   return { ...base, background: "#2A2A2A", color: COLORS.mute };
 }
 
-function FieldTile({ field, guessValue }) {
+function FieldTile({ label, field, guessValue }) {
   // Guards against stale localStorage progress from before a field was added/renamed.
   if (!field) field = { status: "unknown", direction: null };
   const arrow =
-    field.direction === "up" ? <ArrowUp size={12} strokeWidth={2.5} /> : field.direction === "down" ? <ArrowDown size={12} strokeWidth={2.5} /> : null;
+    field.direction === "up" ? <ArrowUp size={11} strokeWidth={2.5} /> : field.direction === "down" ? <ArrowDown size={11} strokeWidth={2.5} /> : null;
   const isCorrect = field.status === "correct" || field.status === "full";
 
   return (
     <div style={tileStyle(field.status)}>
-      {isCorrect && <Check size={12} strokeWidth={2.5} style={{ flexShrink: 0 }} />}
-      {arrow}
-      <span
-        style={{
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {field.status === "unknown" ? "?" : guessValue}
-      </span>
+      <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: 0.3, opacity: 0.8, marginBottom: 2 }}>
+        {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, overflow: "hidden" }}>
+        {isCorrect && <Check size={11} strokeWidth={2.5} style={{ flexShrink: 0 }} />}
+        {arrow}
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {field.status === "unknown" ? "?" : guessValue}
+        </span>
+      </div>
     </div>
   );
 }
@@ -430,67 +467,65 @@ function guessDisplayValueForField(key, comparison) {
   }
 }
 
-const GUESS_ROW_COLUMNS = `100px repeat(${FIELD_META.length}, 92px)`;
-const GUESS_ROW_MIN_WIDTH = 100 + FIELD_META.length * 92 + FIELD_META.length * 6;
-
-function GuessHistory({ guesses }) {
-  if (guesses.length === 0) return null;
+// One guess's card: a title line plus its 6 category chips, wrapping onto as
+// many rows as the screen needs — no fixed-width grid, so it never requires
+// horizontal scrolling on narrow phones.
+function GuessRowCard({ title, italic, fields, values }) {
   return (
-    <div style={{ overflowX: "auto", marginTop: 6, marginBottom: 8 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: GUESS_ROW_MIN_WIDTH }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: GUESS_ROW_COLUMNS,
-            gap: 6,
-            color: COLORS.mute,
-            fontSize: 10,
-            textTransform: "uppercase",
-            letterSpacing: 0.3,
-          }}
-        >
-          <div />
-          {FIELD_META.map((f) => (
-            <div key={f.key} style={{ textAlign: "center" }}>
-              {f.label}
-            </div>
-          ))}
-        </div>
-        {guesses.map((g, i) => (
-          <div
-            key={i}
-            style={{
-              display: "grid",
-              gridTemplateColumns: GUESS_ROW_COLUMNS,
-              gap: 6,
-              alignItems: "stretch",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                paddingRight: 4,
-              }}
-              title={g.guess.title}
-            >
-              {g.guess.title}
-            </div>
-            {FIELD_META.map((f) => (
-              <FieldTile
-                key={f.key}
-                field={g.fields[f.key]}
-                guessValue={guessDisplayValueForField(f.key, g)}
-              />
-            ))}
-          </div>
+    <div
+      style={{
+        background: COLORS.surface,
+        border: "1px solid rgba(231,233,236,0.08)",
+        borderRadius: 6,
+        padding: "10px 12px",
+      }}
+    >
+      <div
+        style={{
+          fontWeight: italic ? 500 : 700,
+          fontStyle: italic ? "italic" : "normal",
+          color: italic ? COLORS.mute : COLORS.paper,
+          fontSize: 13,
+          marginBottom: 8,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={italic ? undefined : title}
+      >
+        {title}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {FIELD_META.map((f) => (
+          <FieldTile key={f.key} label={f.label} field={fields[f.key]} guessValue={values[f.key]} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// Shown in place of a guess card before the player has made one — establishes
+// the category labels upfront, so it reads as a comparison game immediately
+// instead of only becoming clear after the first guess.
+function PlaceholderRow() {
+  const fields = Object.fromEntries(FIELD_META.map((f) => [f.key, { status: "unknown" }]));
+  const values = Object.fromEntries(FIELD_META.map((f) => [f.key, "?"]));
+  return <GuessRowCard title="Your guess" italic fields={fields} values={values} />;
+}
+
+function GuessHistory({ guesses }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10, marginBottom: 8 }}>
+      {guesses.length === 0 && (
+        <div style={{ color: COLORS.mute, fontSize: 12 }}>
+          Each guess is scored against today's answer on these 6 categories.
+        </div>
+      )}
+      {guesses.length === 0 && <PlaceholderRow />}
+      {guesses.map((g, i) => {
+        const values = Object.fromEntries(FIELD_META.map((f) => [f.key, guessDisplayValueForField(f.key, g)]));
+        return <GuessRowCard key={i} title={g.guess.title} fields={g.fields} values={values} />;
+      })}
     </div>
   );
 }

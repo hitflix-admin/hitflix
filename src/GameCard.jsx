@@ -36,13 +36,13 @@ export const GAME_INFO = {
     href: "/daily",
     accent: COLORS.blue,
     title: "Daily Movie",
-    description: "Guess today's Oscar-nominated mystery movie in 5 tries",
+    description: "Guess today's Oscar-nominated movie in 5 tries — genre is your first clue",
   },
   oscarWinner: {
     href: "/oscar-winner",
     accent: COLORS.amber,
     title: "Daily Movie (Oscar Edition)",
-    description: "Guess today's mystery Oscar winner — the category it won is your first clue",
+    description: "Guess today's Oscar winner — genre and the category it won are your first clues",
   },
   faceoff: {
     href: "/faceoff",
