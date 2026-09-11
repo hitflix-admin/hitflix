@@ -29,6 +29,79 @@ function featureCategories(winners) {
   return winners.filter((c) => !NON_FEATURE_CATEGORY_RE.test(c));
 }
 
+// Ordered from the flashiest, most broadly recognizable win down to the most
+// technical/niche one — picks a single upfront hint category when a movie won
+// several. Grouped into "families" since the Kaggle dataset preserves each
+// era's own category name (e.g. "Actor" predates the 1936 split into Leading
+// Role / Supporting Role; "Music (Original Score)" has been renamed a dozen
+// times). Song is deliberately ranked low: it names the movie's musical
+// numbers rather than crediting the film's craft, and often gives away the
+// premise (title songs, character-named songs) more than a genuine hint should.
+const CATEGORY_RANK_FAMILIES = [
+  ["Best Picture", "Best Motion Picture", "Outstanding Motion Picture", "Outstanding Picture", "Outstanding Production", "Unique and Artistic Picture"],
+  ["Directing", "Directing (Comedy Picture)", "Directing (Dramatic Picture)"],
+  ["Actor", "Actor in a Leading Role"],
+  ["Actress", "Actress in a Leading Role"],
+  ["Actor in a Supporting Role"],
+  ["Actress in a Supporting Role"],
+  [
+    "Writing", "Writing (Screenplay)", "Writing (Original Screenplay)", "Writing (Screenplay--Original)",
+    "Writing (Original Story)", "Writing (Motion Picture Story)", "Writing (Original Motion Picture Story)",
+    "Writing (Screenplay Written Directly for the Screen)",
+    "Writing (Screenplay Written Directly for the Screen--Based On Factual Material Or On Story Material Not Previously Published Or Produced)",
+    "Writing (Story and Screenplay)",
+    "Writing (Story and Screenplay--Written Directly for the Screen)",
+    "Writing (Story and Screenplay--Based On Factual Material Or Material Not Previously Published Or Produced)",
+    "Writing (Story and Screenplay--Based On Material Not Previously Published Or Produced)",
+  ],
+  [
+    "Writing (Adapted Screenplay)", "Writing (Adaptation)", "Writing (Screenplay Adapted From Other Material)",
+    "Writing (Screenplay Based On Material From Another Medium)", "Writing (Screenplay Based On Material Previously Produced Or Published)",
+    "Writing (Screenplay--Adapted)", "Writing (Screenplay--Based On Material From Another Medium)",
+  ],
+  ["Cinematography", "Cinematography (Black-and-White)", "Cinematography (Color)"],
+  [
+    "Music (Original Score)", "Music (Original Dramatic Score)", "Music (Original Music Score)",
+    "Music (Score of a Musical Picture--Original Or Adaptation)", "Music (Scoring of a Musical Picture)",
+    "Music (Scoring)", "Music (Music Score of a Dramatic Or Comedy Picture)", "Music (Music Score of a Dramatic Picture)",
+    "Music (Music Score--Substantially Original)", "Music (Adaptation Score)",
+    "Music (Original Score--for a Motion Picture [Not a Musical])", "Music (Original Musical Or Comedy Score)",
+    "Music (Scoring of Music--Adaptation Or Treatment)", "Music (Scoring: Adaptation and Original Song Score)",
+    "Music (Scoring: Original Song Score and Adaptation -Or- Scoring: Adaptation)", "Music (Original Song Score)",
+    "Music (Original Song Score Or Adaptation Score)", "Music (Original Song Score and Its Adaptation -Or- Adaptation Score)",
+    "Music (Original Song Score and Its Adaptation Or Adaptation Score)",
+  ],
+  ["Visual Effects", "Special Visual Effects", "Special Effects", "Engineering Effects", "Special Achievement Award (Visual Effects)"],
+  ["Production Design", "Art Direction", "Art Direction (Black-and-White)", "Art Direction (Color)"],
+  ["Animated Feature Film"],
+  ["Casting"],
+  ["Costume Design", "Costume Design (Black-and-White)", "Costume Design (Color)"],
+  ["Film Editing"],
+  ["Sound", "Sound Mixing", "Sound Recording"],
+  ["Sound Editing", "Sound Effects", "Sound Effects Editing", "Special Achievement Award (Sound Editing)", "Special Achievement Award (Sound Effects Editing)", "Special Achievement Award (Sound Effects)"],
+  ["Makeup", "Makeup and Hairstyling"],
+  ["Music (Original Song)", "Music (Song)", "Music (Song--Original for the Picture)"],
+  ["Documentary", "Documentary (Feature)", "Documentary Feature Film"],
+  ["International Feature Film", "Foreign Language Film"],
+];
+
+const CATEGORY_RANK = new Map();
+CATEGORY_RANK_FAMILIES.forEach((family, rank) => {
+  for (const name of family) CATEGORY_RANK.set(name.toLowerCase(), rank);
+});
+
+// Unranked categories (one-off historical awards like "Assistant Director" or
+// "Dance Direction") sort after every named family.
+function categoryRank(category) {
+  const rank = CATEGORY_RANK.get((category || "").toLowerCase());
+  return rank === undefined ? CATEGORY_RANK_FAMILIES.length : rank;
+}
+
+// Picks the single flashiest category from a list of categories a movie won.
+function flashiestCategory(categories) {
+  return categories.reduce((best, c) => (categoryRank(c) < categoryRank(best) ? c : best));
+}
+
 function buildPool(predicate) {
   const pool = [];
   for (const normalizedTitle of Object.keys(oscarAwardsData).sort()) {
@@ -108,7 +181,6 @@ export function msUntilNextPuzzle(now = new Date()) {
 // cached in their own localStorage; this only changes what a fresh load sees.
 const NOMINEE_SEED_OFFSET = 2000;
 const WINNER_SEED_OFFSET = 6000;
-const HINT_CATEGORY_SEED_OFFSET = 9000;
 
 function poolIndexForDate(dateString, poolLength, seedOffset) {
   const seed = daysSinceEpoch(dateString) + seedOffset;
@@ -178,7 +250,8 @@ export async function getDailyMovie(dateString = todayUTCDateString()) {
 }
 
 // Same mechanics as getDailyMovie, but drawn only from actual Oscar winners, and
-// with one of the categories it won picked (deterministically) as an upfront hint.
+// with the flashiest category it won (see CATEGORY_RANK_FAMILIES) picked as an
+// upfront hint — a movie with several wins only ever shows the single best one.
 export async function getDailyOscarWinner(dateString = todayUTCDateString()) {
   const pool = getWinnerPool();
   const startIndex = poolIndexForDate(dateString, pool.length, WINNER_SEED_OFFSET);
@@ -191,9 +264,7 @@ export async function getDailyOscarWinner(dateString = todayUTCDateString()) {
       if (resolved.runtimeMinutes && resolved.runtimeMinutes < MIN_FEATURE_RUNTIME_MINUTES) continue;
       const hintOptions = featureCategories(resolved.oscarWinners);
       if (hintOptions.length === 0) continue;
-      const hintSeed = daysSinceEpoch(dateString) + HINT_CATEGORY_SEED_OFFSET;
-      const hintIndex = Math.floor(mulberry32(hintSeed)() * hintOptions.length);
-      return { ...resolved, hintCategory: hintOptions[hintIndex] };
+      return { ...resolved, hintCategory: flashiestCategory(hintOptions) };
     } catch (e) {
       // network hiccup on this candidate — try the next deterministic fallback
     }
