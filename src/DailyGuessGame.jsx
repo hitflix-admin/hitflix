@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag } from "lucide-react";
+import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
+import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
 import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
@@ -12,6 +12,9 @@ import { preloadOtherGames } from "./gamePreload.js";
 const PRELOAD_DELAY_MS = 2500;
 
 const MAX_GUESSES = 5;
+// A hint becomes available once the player has burned all but one guess —
+// it's meant as help for the last attempt, not a shortcut through the puzzle.
+const HINT_AVAILABLE_AFTER_GUESSES = 4;
 
 const FIELD_META = [
   { key: "year", label: "Year" },
@@ -22,7 +25,7 @@ const FIELD_META = [
   { key: "nominations", label: "Oscar Noms" },
 ];
 
-const EMPTY_PROGRESS = { guesses: [], status: "playing" };
+const EMPTY_PROGRESS = { guesses: [], status: "playing", hintUsed: false };
 
 // Guards against a shape change in compareGuessToTarget's output making old
 // cached guesses (from before a field was added/renamed) incompatible.
@@ -93,6 +96,41 @@ function GenreHint({ genreTags }) {
       <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>
         Genre: <span style={{ fontWeight: 700, color: COLORS.blue }}>{list}</span>
       </div>
+    </div>
+  );
+}
+
+// Offered once the player is down to their last guess — a redacted plot beat
+// (no character or cast names) rather than another comparable stat, since
+// every stat category is already covered by the guess tiles.
+function PlotHintReveal({ plotHint, revealed, onReveal }) {
+  if (!plotHint) return null;
+  if (!revealed) {
+    return (
+      <button
+        onClick={onReveal}
+        style={{ ...secondaryBtn, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}
+      >
+        <Lightbulb size={15} strokeWidth={2} />
+        Show a hint
+      </button>
+    );
+  }
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "rgba(201,160,61,0.12)",
+        border: "1px solid rgba(201,160,61,0.4)",
+        borderRadius: 6,
+        padding: "12px 14px",
+        marginTop: 10,
+      }}
+    >
+      <Lightbulb size={20} strokeWidth={1.8} color={COLORS.amber} style={{ flexShrink: 0 }} />
+      <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>{plotHint}</div>
     </div>
   );
 }
@@ -364,6 +402,18 @@ export default function DailyGuessGame({
             )}
 
             <GuessHistory guesses={progress.guesses} />
+
+            {progress.status === "playing" && progress.guesses.length >= HINT_AVAILABLE_AFTER_GUESSES && (
+              <PlotHintReveal
+                plotHint={target.plotHint}
+                revealed={!!progress.hintUsed}
+                onReveal={() => {
+                  const next = { ...progress, hintUsed: true };
+                  setProgress(next);
+                  saveProgress(storageId, date, next);
+                }}
+              />
+            )}
 
             {progress.status !== "playing" && (
               <EndScreen

@@ -435,6 +435,100 @@ export async function fetchGenreTags(pageTitle) {
   }
 }
 
+/* ---------------- Plot hint (spoiler-light clue for the Daily Movie hint button) ---------------- */
+
+const PLOT_SECTION_HEADINGS = ["plot", "plot summary", "synopsis", "premise"];
+
+// Locates the page's Plot/Synopsis section (if it has one) via the sections
+// index, so the hint is pulled from what the movie is actually about rather
+// than the lead paragraph, which is mostly cast/crew/award trivia.
+async function fetchPlotSectionIndex(pageTitle) {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
+        pageTitle
+      )}&prop=sections&format=json`
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const sections = data?.parse?.sections || [];
+    const match = sections.find((s) => PLOT_SECTION_HEADINGS.includes((s.line || "").trim().toLowerCase()));
+    return match ? match.index : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function stripParentheticals(text) {
+  // Plot prose often glosses a character's actor in parens right after
+  // introducing them ("Bruce Wayne (Christian Bale) returns to...") — drop
+  // those asides entirely rather than just the name inside them.
+  return text.replace(/\s*\([^()]*\)/g, "");
+}
+
+function splitSentences(text) {
+  return text
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .filter(Boolean);
+}
+
+// Capitalized words that routinely open or sit inside plot sentences without
+// being anyone's name — left alone so redaction doesn't gut ordinary narration.
+const PLOT_SAFE_CAP_WORDS = new Set([
+  "a", "an", "the", "he", "she", "they", "his", "her", "their", "its", "it",
+  "after", "when", "while", "as", "before", "during", "meanwhile", "later",
+  "then", "however", "although", "once", "despite", "unlike", "following",
+  "but", "and", "so", "or", "if", "because", "since", "that", "this", "these",
+  "those", "there", "here", "eventually", "soon", "now", "still", "yet",
+  "just", "only", "also", "even", "though", "years", "months", "weeks",
+  "days", "one", "two", "three", "first", "second", "third", "in", "on",
+  "at", "with", "without", "who", "what", "when", "where", "how", "back",
+]);
+
+// Character and place names are almost always shaped as one to three
+// consecutive Title-Case words ("Bruce Wayne", "Gotham City") — blank those
+// out so the hint can't be used to look up who's in the movie. The word body
+// allows either case after the leading capital (not just lowercase) so names
+// with an internal capital after an apostrophe (e.g. "T'Challa") match as one
+// token instead of splitting into two separately-redacted, run-together words.
+function redactProperNouns(text) {
+  return text.replace(/\b[A-Z][A-Za-z'’-]*(?:\s+[A-Z][A-Za-z'’-]*){0,2}\b/g, (match) => {
+    const parts = match.split(/\s+/);
+    if (parts.length === 1 && PLOT_SAFE_CAP_WORDS.has(parts[0].toLowerCase())) return match;
+    return "someone";
+  });
+}
+
+// Returns one or two redacted plot sentences to use as a late-game hint — empty
+// string if the page has no dedicated Plot/Synopsis section to draw from.
+export async function fetchPlotHint(pageTitle) {
+  try {
+    const sectionIndex = await fetchPlotSectionIndex(pageTitle);
+    if (sectionIndex === null) return "";
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
+        pageTitle
+      )}&prop=wikitext&section=${sectionIndex}&format=json`
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    const rawSection = data?.parse?.wikitext?.["*"] || "";
+    const withoutHeading = rawSection.replace(/^==+[^=\n]*==+\s*/, "");
+    const cleaned = cleanWikitext(stripParentheticals(withoutHeading));
+    const sentences = splitSentences(cleaned).filter((s) => s.length > 30 && s.length < 220);
+    if (sentences.length === 0) return "";
+
+    // Prefer an early sentence that doesn't come back too name-heavy once
+    // redacted — a wall of "someone"s isn't a useful clue.
+    const candidates = sentences.slice(0, 4).map(redactProperNouns);
+    return candidates.find((s) => (s.match(/\bsomeone\b/g) || []).length <= 2) || candidates[0];
+  } catch (e) {
+    return "";
+  }
+}
+
 /* ---------------- Box office parsing (for Faceoff) ---------------- */
 
 // Pulls a single USD figure out of a cleaned "gross" infobox string like

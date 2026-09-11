@@ -3,7 +3,7 @@
 // or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
 // for display data, and scores guesses against it.
 
-import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags } from "./movieData.js";
+import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint } from "./movieData.js";
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -134,9 +134,10 @@ async function resolveCandidate(candidate) {
   const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
   if (!best) return null;
 
-  const [details, genreTags] = await Promise.all([
+  const [details, genreTags, plotHint] = await Promise.all([
     fetchMovieDetails(best.pageTitle, candidate.year, best.title),
     fetchGenreTags(best.pageTitle),
+    fetchPlotHint(best.pageTitle),
   ]);
   if (!details) return null;
 
@@ -156,6 +157,7 @@ async function resolveCandidate(candidate) {
     oscarWinners: candidate.winners,
     normalizedTitle: candidate.normalizedTitle,
     genreTags,
+    plotHint,
   };
 }
 
