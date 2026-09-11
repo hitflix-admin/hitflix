@@ -4,8 +4,12 @@ import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, iconBtn, primaryBtn } from "./theme.js";
 import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
+import { preloadOtherGames } from "./gamePreload.js";
 
 const ROUNDS = 5;
+// Give the current game's own resolution priority over background prefetch
+// requests before starting to warm the other games.
+const PRELOAD_DELAY_MS = 2500;
 
 function targetKey(storageId, date) {
   return `${storageId}:target:${date}`;
@@ -168,14 +172,20 @@ export default function FaceoffGame({
         const cached = localStorage.getItem(targetKey(storageId, date));
         if (cached) {
           if (!cancelled) setTarget(JSON.parse(cached));
-          return;
+        } else {
+          const pairs = await resolvePairs(date);
+          if (cancelled) return;
+          setTarget(pairs);
+          try {
+            localStorage.setItem(targetKey(storageId, date), JSON.stringify(pairs));
+          } catch (e) {}
         }
-        const pairs = await resolvePairs(date);
-        if (cancelled) return;
-        setTarget(pairs);
-        try {
-          localStorage.setItem(targetKey(storageId, date), JSON.stringify(pairs));
-        } catch (e) {}
+        // Warm the other games' caches once this one has settled (from cache
+        // or freshly resolved either way), after a short delay so it never
+        // competes with this game's own resolution or the player's first tap.
+        setTimeout(() => {
+          if (!cancelled) preloadOtherGames(storageId);
+        }, PRELOAD_DELAY_MS);
       } catch (e) {
         if (!cancelled) setLoadError("Couldn't load today's puzzle. Check your connection and reload.");
       }

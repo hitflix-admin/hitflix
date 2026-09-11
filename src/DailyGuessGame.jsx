@@ -5,6 +5,11 @@ import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
 import { todayUTCDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
+import { preloadOtherGames } from "./gamePreload.js";
+
+// Give the current game's own first interactions (typing a guess) priority
+// over background prefetch requests before starting to warm the other games.
+const PRELOAD_DELAY_MS = 2500;
 
 const MAX_GUESSES = 5;
 
@@ -130,14 +135,20 @@ export default function DailyGuessGame({
         const cached = localStorage.getItem(`${storageId}:target:${date}`);
         if (cached) {
           if (!cancelled) setTarget(JSON.parse(cached));
-          return;
+        } else {
+          const movie = await resolveTarget(date);
+          if (cancelled) return;
+          setTarget(movie);
+          try {
+            localStorage.setItem(`${storageId}:target:${date}`, JSON.stringify(movie));
+          } catch (e) {}
         }
-        const movie = await resolveTarget(date);
-        if (cancelled) return;
-        setTarget(movie);
-        try {
-          localStorage.setItem(`${storageId}:target:${date}`, JSON.stringify(movie));
-        } catch (e) {}
+        // Warm the other games' caches once this one has settled (from cache
+        // or freshly resolved either way), after a short delay so it never
+        // competes with the player's own first search.
+        setTimeout(() => {
+          if (!cancelled) preloadOtherGames(storageId);
+        }, PRELOAD_DELAY_MS);
       } catch (e) {
         if (!cancelled) setLoadError("Couldn't load today's puzzle. Check your connection and reload.");
       }
