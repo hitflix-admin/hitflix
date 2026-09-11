@@ -25,7 +25,7 @@ const ROUTE_META = [
       "Pick which of two similar movies made more at the worldwide box office across 5 head-to-head rounds. New matchups every day.",
   },
   {
-    path: "/games/faceoff-oscars-edition",
+    path: "/games/faceoff-oscar-edition",
     title: "Faceoff (Oscar Edition) — Oscar Nominations Head-to-Head | Hitflix",
     description:
       "Pick which of two similar movies earned more Oscar nominations across 5 head-to-head rounds. New matchups every day.",
@@ -39,7 +39,10 @@ const OLD_PATH_REDIRECTS = {
   "/daily": "/games/daily",
   "/oscar-winner": "/games/daily-oscar-edition",
   "/faceoff": "/games/faceoff",
-  "/nominations-faceoff": "/games/faceoff-oscars-edition",
+  "/nominations-faceoff": "/games/faceoff-oscar-edition",
+  // Briefly deployed under the plural slug before this was made consistent
+  // with the singular "Oscar Edition" used everywhere else in the app.
+  "/games/faceoff-oscars-edition": "/games/faceoff-oscar-edition",
 };
 
 function redirectHtml(toPath) {

@@ -15,7 +15,7 @@ const ROUTES = {
   "/games/daily": DailyGame,
   "/games/daily-oscar-edition": OscarWinnerGame,
   "/games/faceoff": Faceoff,
-  "/games/faceoff-oscars-edition": NominationsFaceoff,
+  "/games/faceoff-oscar-edition": NominationsFaceoff,
 };
 const Root = ROUTES[path] || App;
 

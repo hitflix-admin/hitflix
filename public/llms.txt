@@ -16,7 +16,7 @@ The four daily games, each picked deterministically by date (same puzzle for eve
 - /games/daily ("Daily Movie"): a Wordle-style puzzle — guess the featured movie in 5 tries. Its genre is revealed upfront as a clue. Guesses can be any film findable on Wikipedia; each guess is scored against the featured movie's year, director, production country, cast, runtime, and Oscar nomination count.
 - /games/daily-oscar-edition ("Daily Movie (Oscar Edition)"): the same format, but the movie is drawn only from actual Oscar winners, and both its genre and the category it won are revealed upfront as clues.
 - /games/faceoff ("Faceoff"): 5 head-to-head rounds, each pitting two movies with a similar genre against each other — pick the one with the bigger worldwide box office gross. Ends with a percentage score.
-- /games/faceoff-oscars-edition ("Faceoff (Oscar Edition)"): the same head-to-head format as Faceoff, but pick the movie with more Oscar nominations instead of the bigger box office gross.
+- /games/faceoff-oscar-edition ("Faceoff (Oscar Edition)"): the same head-to-head format as Faceoff, but pick the movie with more Oscar nominations instead of the bigger box office gross.
 
 ## Details
 

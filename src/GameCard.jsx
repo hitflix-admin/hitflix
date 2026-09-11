@@ -51,7 +51,7 @@ export const GAME_INFO = {
     description: "Pick the bigger box office hit across 5 head-to-head rounds",
   },
   nominationsFaceoff: {
-    href: "/games/faceoff-oscars-edition",
+    href: "/games/faceoff-oscar-edition",
     accent: COLORS.green,
     title: "Faceoff (Oscar Edition)",
     description: "Pick the movie with more Oscar nominations across 5 head-to-head rounds",
