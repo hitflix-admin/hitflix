@@ -979,6 +979,7 @@ function GamesSection() {
         <GameCard {...GAME_INFO.daily} />
         <GameCard {...GAME_INFO.oscarWinner} />
         <GameCard {...GAME_INFO.faceoff} />
+        <GameCard {...GAME_INFO.nominationsFaceoff} />
       </div>
     </div>
   );
@@ -1011,6 +1012,22 @@ function HomeView({
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           Build a list, one reel at a time.
         </div>
+      </div>
+
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          fontSize: 17,
+          letterSpacing: 0.5,
+          marginBottom: 4,
+        }}
+      >
+        My Lists
+      </div>
+      <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 10 }}>
+        {lists.length === 0 ? "Start your first list below" : `${lists.length} list${lists.length === 1 ? "" : "s"}`}
       </div>
 
       <button

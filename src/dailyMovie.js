@@ -123,8 +123,13 @@ async function resolveCandidate(candidate) {
   if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
   if (results.length === 0) return null;
 
-  const best =
-    results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1) || results[0];
+  // Require the result's own year to actually be near the candidate's — falling
+  // back to results[0] unconditionally let a generically-titled candidate (e.g.
+  // "Black Fox", a 1962 documentary) resolve to an unrelated, irrelevant top hit
+  // ("The Little Foxes", 1941), silently pairing that movie's title/poster/extract
+  // with a completely different movie's director/cast/runtime/Oscar data.
+  const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
+  if (!best) return null;
 
   const details = await fetchMovieDetails(best.pageTitle, candidate.year, best.title);
   if (!details) return null;

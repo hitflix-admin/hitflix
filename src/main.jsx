@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import DailyGame from "./DailyGame.jsx";
 import OscarWinnerGame from "./OscarWinnerGame.jsx";
 import Faceoff from "./Faceoff.jsx";
+import NominationsFaceoff from "./NominationsFaceoff.jsx";
 import "./index.css";
 
 // GitHub Pages has no server-side routing: vite.config.js copies the built
@@ -14,6 +15,7 @@ const ROUTES = {
   "/daily": DailyGame,
   "/oscar-winner": OscarWinnerGame,
   "/faceoff": Faceoff,
+  "/nominations-faceoff": NominationsFaceoff,
 };
 const Root = ROUTES[path] || App;
 

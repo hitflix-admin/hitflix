@@ -13,7 +13,7 @@ export default function DailyGame() {
       shareLabel="Hitflix Daily Movie"
       shareUrl="https://hitflix.club/daily"
       resolveTarget={getDailyMovie}
-      crossLinks={[GAME_INFO.oscarWinner, GAME_INFO.faceoff]}
+      crossLinks={[GAME_INFO.oscarWinner, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff]}
     />
   );
 }

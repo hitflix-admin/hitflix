@@ -41,7 +41,7 @@ export const GAME_INFO = {
   oscarWinner: {
     href: "/oscar-winner",
     accent: COLORS.amber,
-    title: "Oscar Winner",
+    title: "Daily Movie (Oscar Edition)",
     description: "Guess today's mystery Oscar winner — the category it won is your first clue",
   },
   faceoff: {
@@ -49,5 +49,11 @@ export const GAME_INFO = {
     accent: COLORS.rose,
     title: "Faceoff",
     description: "Pick the bigger box office hit across 5 head-to-head rounds",
+  },
+  nominationsFaceoff: {
+    href: "/nominations-faceoff",
+    accent: COLORS.green,
+    title: "Faceoff (Oscars Edition)",
+    description: "Pick the movie with more Oscar nominations across 5 head-to-head rounds",
   },
 };

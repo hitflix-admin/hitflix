@@ -32,14 +32,14 @@ export default function OscarWinnerGame() {
   return (
     <DailyGuessGame
       storageId="dailyWinner"
-      pageTitle="Hitflix — Oscar Winner"
-      heading="Oscar Winner"
+      pageTitle="Hitflix — Daily Movie (Oscar Edition)"
+      heading="Daily Movie (Oscar Edition)"
       description="Guess the mystery Oscar-winning movie in 5 tries."
-      shareLabel="Hitflix Oscar Winner"
+      shareLabel="Hitflix Daily Movie (Oscar Edition)"
       shareUrl="https://hitflix.club/oscar-winner"
       resolveTarget={getDailyOscarWinner}
       renderHint={(target) => <WinnerHint hintCategory={target.hintCategory} />}
-      crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff]}
+      crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff]}
     />
   );
 }
