@@ -1010,6 +1010,31 @@ function HomeView({
         <ArrowRight size={18} strokeWidth={2} color="#6C86AB" style={{ flexShrink: 0 }} />
       </a>
 
+      <a
+        href="/oscar-winner"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          background: "#1E1E1E",
+          border: "1px solid rgba(201,160,61,0.4)",
+          borderRadius: 4,
+          padding: "13px 16px",
+          marginBottom: 14,
+          textDecoration: "none",
+          color: "#E7E9EC",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 14.5, fontWeight: 700 }}>Oscar Winner</div>
+          <div style={{ color: "#8D96A3", fontSize: 12 }}>
+            Guess today's mystery Oscar winner — the category it won is your first clue
+          </div>
+        </div>
+        <ArrowRight size={18} strokeWidth={2} color="#C9A03D" style={{ flexShrink: 0 }} />
+      </a>
+
       <button
         onClick={onCreate}
         style={{

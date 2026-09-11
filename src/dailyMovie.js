@@ -1,6 +1,7 @@
 // Picks the day's mystery movie (same for every player, changes at UTC midnight)
-// from the Oscar-nominated database, resolves it against Wikipedia for display
-// data, and scores guesses against it.
+// from the Oscar-nominations database — either the nominee pool (getDailyMovie)
+// or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
+// for display data, and scores guesses against it.
 
 import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails } from "./movieData.js";
 
@@ -18,7 +19,17 @@ function titleCaseGuess(normalized) {
 const MIN_NOMINATIONS_UNLESS_WINNER = 3;
 const MIN_YEAR = 1960;
 
-function buildCandidatePool() {
+// Categories that don't crown a feature film a general audience would recognize
+// as "a movie" — shorts, documentary shorts, and one-off honorary/special awards
+// (which are often given for a career or a technical achievement, not a specific
+// competitive win). Excluded from the Oscar Winner pool and from its upfront hint.
+const NON_FEATURE_CATEGORY_RE = /short|honorary|award of commendation|^special (award|foreign)/i;
+
+function featureCategories(winners) {
+  return winners.filter((c) => !NON_FEATURE_CATEGORY_RE.test(c));
+}
+
+function buildPool(predicate) {
   const pool = [];
   for (const normalizedTitle of Object.keys(oscarAwardsData).sort()) {
     const byYear = oscarAwardsData[normalizedTitle];
@@ -26,18 +37,35 @@ function buildCandidatePool() {
       const entry = byYear[year];
       const yearNum = parseInt(year, 10);
       if (!Number.isFinite(yearNum) || yearNum < MIN_YEAR) continue;
-      if (entry.winners.length === 0 && entry.nominations < MIN_NOMINATIONS_UNLESS_WINNER) continue;
+      if (!predicate(entry)) continue;
       pool.push({ normalizedTitle, year: yearNum, nominations: entry.nominations, winners: entry.winners });
     }
   }
   return pool;
 }
 
-let cachedPool = null;
+let cachedCandidatePool = null;
 function getCandidatePool() {
-  if (!cachedPool) cachedPool = buildCandidatePool();
-  return cachedPool;
+  if (!cachedCandidatePool) {
+    cachedCandidatePool = buildPool(
+      (e) => e.winners.length > 0 || e.nominations >= MIN_NOMINATIONS_UNLESS_WINNER
+    );
+  }
+  return cachedCandidatePool;
 }
+
+let cachedWinnerPool = null;
+function getWinnerPool() {
+  if (!cachedWinnerPool) {
+    cachedWinnerPool = buildPool((e) => featureCategories(e.winners).length > 0);
+  }
+  return cachedWinnerPool;
+}
+
+// Shorts sometimes slip past the category filter above (miscategorized rows,
+// pre-1943 "Documentary" entries that were newsreel compilations, etc.) — a
+// runtime this low is the last line of defense against a non-feature target.
+const MIN_FEATURE_RUNTIME_MINUTES = 40;
 
 // mulberry32 — small, fast, deterministic PRNG so every visitor derives the same
 // sequence from the same integer seed (no server round-trip needed for "today's" pick).
@@ -73,8 +101,14 @@ export function msUntilNextPuzzle(now = new Date()) {
   return tomorrow.getTime() - now.getTime();
 }
 
-function poolIndexForDate(dateString, poolLength) {
-  const seed = daysSinceEpoch(dateString) + 1000; // offset so day 0 doesn't hash to a fixed point
+// Distinct offsets keep the two games' picks independent (and keep day 0 from
+// hashing to a fixed point) while still being deterministic per date.
+const NOMINEE_SEED_OFFSET = 1000;
+const WINNER_SEED_OFFSET = 5000;
+const HINT_CATEGORY_SEED_OFFSET = 9000;
+
+function poolIndexForDate(dateString, poolLength, seedOffset) {
+  const seed = daysSinceEpoch(dateString) + seedOffset;
   const rand = mulberry32(seed)();
   return Math.floor(rand * poolLength);
 }
@@ -115,7 +149,7 @@ async function resolveCandidate(candidate) {
 
 export async function getDailyMovie(dateString = todayUTCDateString()) {
   const pool = getCandidatePool();
-  const startIndex = poolIndexForDate(dateString, pool.length);
+  const startIndex = poolIndexForDate(dateString, pool.length, NOMINEE_SEED_OFFSET);
 
   for (let attempt = 0; attempt < 25; attempt++) {
     const candidate = pool[(startIndex + attempt) % pool.length];
@@ -127,6 +161,30 @@ export async function getDailyMovie(dateString = todayUTCDateString()) {
     }
   }
   throw new Error("Could not resolve a daily movie");
+}
+
+// Same mechanics as getDailyMovie, but drawn only from actual Oscar winners, and
+// with one of the categories it won picked (deterministically) as an upfront hint.
+export async function getDailyOscarWinner(dateString = todayUTCDateString()) {
+  const pool = getWinnerPool();
+  const startIndex = poolIndexForDate(dateString, pool.length, WINNER_SEED_OFFSET);
+
+  for (let attempt = 0; attempt < 25; attempt++) {
+    const candidate = pool[(startIndex + attempt) % pool.length];
+    try {
+      const resolved = await resolveCandidate(candidate);
+      if (!resolved) continue;
+      if (resolved.runtimeMinutes && resolved.runtimeMinutes < MIN_FEATURE_RUNTIME_MINUTES) continue;
+      const hintOptions = featureCategories(resolved.oscarWinners);
+      if (hintOptions.length === 0) continue;
+      const hintSeed = daysSinceEpoch(dateString) + HINT_CATEGORY_SEED_OFFSET;
+      const hintIndex = Math.floor(mulberry32(hintSeed)() * hintOptions.length);
+      return { ...resolved, hintCategory: hintOptions[hintIndex] };
+    } catch (e) {
+      // network hiccup on this candidate — try the next deterministic fallback
+    }
+  }
+  throw new Error("Could not resolve a daily Oscar winner");
 }
 
 /* ---------------- Guess comparison ---------------- */

@@ -1,0 +1,44 @@
+import React from "react";
+import { Trophy } from "lucide-react";
+import DailyGuessGame from "./DailyGuessGame.jsx";
+import { COLORS } from "./theme.js";
+import { getDailyOscarWinner } from "./dailyMovie.js";
+
+function WinnerHint({ hintCategory }) {
+  if (!hintCategory) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "rgba(201,160,61,0.12)",
+        border: "1px solid rgba(201,160,61,0.4)",
+        borderRadius: 6,
+        padding: "12px 14px",
+        marginTop: 16,
+      }}
+    >
+      <Trophy size={20} strokeWidth={1.8} color={COLORS.amber} style={{ flexShrink: 0 }} />
+      <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>
+        This movie won an Oscar for <span style={{ fontWeight: 700, color: COLORS.amber }}>{hintCategory}</span>.
+      </div>
+    </div>
+  );
+}
+
+export default function OscarWinnerGame() {
+  return (
+    <DailyGuessGame
+      storageId="dailyWinner"
+      pageTitle="Hitflix — Oscar Winner"
+      heading="Oscar Winner"
+      description="Guess the mystery Oscar-winning movie in 5 tries."
+      shareLabel="Hitflix Oscar Winner"
+      shareUrl="https://hitflix.club/oscar-winner"
+      resolveTarget={getDailyOscarWinner}
+      renderHint={(target) => <WinnerHint hintCategory={target.hintCategory} />}
+      crossLink={{ href: "/daily", label: "Play the classic Daily Movie edition →" }}
+    />
+  );
+}
