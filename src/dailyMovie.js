@@ -1,9 +1,11 @@
 // Picks the day's featured movie (same for every player, changes at midnight
-// US Eastern) from the Oscar-nominations database — either the nominee pool (getDailyMovie)
-// or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
-// for display data, and scores guesses against it.
+// US Eastern). getDailyMovie draws from the top-10-grossing-per-year pool
+// (boxOfficeTop10.json — real, broadly recognizable hits); getDailyOscarWinner
+// draws from the Oscar-nominations database's winners-only pool. Both resolve
+// the pick against Wikipedia for display data and score guesses against it.
 
 import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
+import boxOfficeTop10 from "./boxOfficeTop10.json";
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -14,9 +16,10 @@ export function titleCaseGuess(normalized) {
   });
 }
 
-// Only well-known nominees make fair puzzles: at least one win, or enough
-// nominations to be a multi-category contender, from the sound era onward.
-const MIN_NOMINATIONS_UNLESS_WINNER = 3;
+// Only well-known nominees make fair puzzles: at least one mainstream win, or
+// enough nominations to be a multi-category contender, from the sound era onward.
+// Raised from 3 after players reported picks that were too obscure to guess.
+const MIN_NOMINATIONS_UNLESS_WINNER = 4;
 const MIN_YEAR = 1960;
 
 // Categories that don't crown a feature film a general audience would recognize
@@ -27,6 +30,17 @@ const NON_FEATURE_CATEGORY_RE = /short|honorary|award of commendation|^special (
 
 function featureCategories(winners) {
   return winners.filter((c) => !NON_FEATURE_CATEGORY_RE.test(c));
+}
+
+// Documentary and foreign-language wins are feature-length, but a single win
+// there doesn't reliably mean a general audience has heard of the film (unlike
+// a Picture/Directing/Acting/Screenplay win). Don't let one of these alone
+// qualify a movie for the daily pool — it still counts toward the nomination-
+// count path below, same as any other nominee.
+const NICHE_WIN_ONLY_CATEGORY_RE = /^documentary|international feature film|foreign language film/i;
+
+function hasMainstreamWin(winners) {
+  return featureCategories(winners).some((c) => !NICHE_WIN_ONLY_CATEGORY_RE.test(c));
 }
 
 // Ordered from the flashiest, most broadly recognizable win down to the most
@@ -117,11 +131,31 @@ function buildPool(predicate) {
   return pool;
 }
 
+// The regular Daily Movie's pool: the top 10 highest-grossing films of each of
+// the last several decades (src/boxOfficeTop10.json, built by
+// scripts/build-boxoffice-data.mjs from Wikipedia's own yearly box-office
+// tables) — real box-office hits rather than an Oscar-nomination proxy for
+// fame, so mainstream movies with no awards pedigree (Transformers, Superbad-
+// style comedies that made their year's top 10) are eligible too.
+let cachedBoxOfficePool = null;
+function getBoxOfficePool() {
+  if (!cachedBoxOfficePool) {
+    const pool = [];
+    for (const year of Object.keys(boxOfficeTop10).sort()) {
+      for (const title of boxOfficeTop10[year]) {
+        pool.push({ normalizedTitle: normalizeOscarTitle(title), year: parseInt(year, 10), displayTitle: title });
+      }
+    }
+    cachedBoxOfficePool = pool;
+  }
+  return cachedBoxOfficePool;
+}
+
 let cachedCandidatePool = null;
 export function getCandidatePool() {
   if (!cachedCandidatePool) {
     cachedCandidatePool = buildPool(
-      (e) => e.winners.length > 0 || e.nominations >= MIN_NOMINATIONS_UNLESS_WINNER
+      (e) => hasMainstreamWin(e.winners) || e.nominations >= MIN_NOMINATIONS_UNLESS_WINNER
     );
   }
   return cachedCandidatePool;
@@ -142,9 +176,10 @@ const MIN_FEATURE_RUNTIME_MINUTES = 40;
 
 // Box office is now one of the compared fields, so the target needs a known,
 // non-trivial gross — otherwise every guess would score "unknown" against it.
-// $25M also keeps obscure/unreleased-wide nominees (undermining a game about
-// guessable movies) out of the pool.
-const MIN_TARGET_BOX_OFFICE_USD = 25_000_000;
+// $35M also keeps obscure/unreleased-wide nominees (undermining a game about
+// guessable movies) out of the pool. Raised from $25M after players reported
+// picks that were too obscure to guess.
+const MIN_TARGET_BOX_OFFICE_USD = 35_000_000;
 
 // Coarse enough that most guesses land a "close" bucket without giving away
 // the exact figure; the top brackets stay wide since $1B+ hits are rare
@@ -275,7 +310,11 @@ function poolIndexForDate(dateString, poolLength, seedOffset) {
 // player still lands on the same fallback) if a candidate can't be resolved —
 // e.g. a title too obscure for Wikipedia's search to surface confidently.
 async function resolveCandidate(candidate) {
-  const guessTitle = titleCaseGuess(candidate.normalizedTitle);
+  // Box-office candidates carry their real Wikipedia-wikilink title (accents,
+  // colons, ampersands and all) — prefer that over round-tripping through the
+  // normalized/title-cased form, which the Oscar pool's candidates fall back to
+  // since they only have a normalized key to work from.
+  const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
   let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`);
   if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
   if (results.length === 0) return null;
@@ -315,16 +354,25 @@ async function resolveCandidate(candidate) {
     cast: details.cast,
     runtimeMinutes: details.runtimeMinutes,
     boxOfficeUSD,
-    oscarNominations: candidate.nominations,
-    oscarWinners: candidate.winners,
+    // fetchMovieDetails already looks these up from the Oscar dataset by the
+    // resolved page's own title/year (see lookupOscarAwards) — reading them from
+    // there instead of the candidate keeps this function source-agnostic: a
+    // box-office candidate has no nominations/winners of its own to pass in, and
+    // a non-Oscar hit like Superbad correctly comes back as 0 nominations.
+    oscarNominations: details.oscarNominations,
+    oscarWinners: details.oscarWinners,
     normalizedTitle: candidate.normalizedTitle,
     genreTags,
     plotHint,
   };
 }
 
+// A uniform random pick over this pool is equivalent to picking a random year
+// from the last several decades and then a random rank 1-10 within that year —
+// the pool is just those (year, rank) pairs flattened out — so a single seeded
+// index does both draws at once.
 export async function getDailyMovie(dateString = todayGameDateString()) {
-  const pool = getCandidatePool();
+  const pool = getBoxOfficePool();
   const startIndex = poolIndexForDate(dateString, pool.length, NOMINEE_SEED_OFFSET);
 
   for (let attempt = 0; attempt < 25; attempt++) {
