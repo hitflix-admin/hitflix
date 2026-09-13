@@ -319,7 +319,7 @@ export async function fetchMovieDetails(title, year, displayTitle) {
     const director = cleanWikitext(fields.director) || "TBD";
     const budget = cleanWikitext(fields.budget) || "TBD";
     const boxOffice = cleanWikitext(fields.gross) || "TBD";
-    const countries = parseListField(fields.country || fields.countries, 5);
+    const studio = parseListField(fields.studio, 4);
     const cast = parseListField(fields.starring, 6);
     const runtimeMinutes = parseRuntimeMinutes(fields.runtime);
 
@@ -330,7 +330,7 @@ export async function fetchMovieDetails(title, year, displayTitle) {
       director,
       budget,
       boxOffice,
-      countries,
+      studio,
       cast,
       runtimeMinutes,
       oscarNominations: awards.oscarNominations,

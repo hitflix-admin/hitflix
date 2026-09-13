@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
-import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle } from "./movieData.js";
-import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget } from "./dailyMovie.js";
+import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
+import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget, boxOfficeBracketLabel } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 
@@ -19,9 +19,9 @@ const HINT_AVAILABLE_AFTER_GUESSES = 4;
 const FIELD_META = [
   { key: "year", label: "Year" },
   { key: "director", label: "Director" },
-  { key: "country", label: "Country" },
+  { key: "studio", label: "Studio" },
   { key: "cast", label: "Cast" },
-  { key: "runtime", label: "Runtime" },
+  { key: "boxOffice", label: "Box Office" },
   { key: "nominations", label: "Oscar Noms" },
 ];
 
@@ -250,9 +250,9 @@ export default function DailyGuessGame({
           poster: movie.poster,
           year: movie.year || yearFromDescription(details.releaseDateUS) || "",
           director: details.director,
-          countries: details.countries,
+          studio: details.studio,
           cast: details.cast,
-          runtimeMinutes: details.runtimeMinutes,
+          boxOfficeUSD: parseBoxOfficeUSD(details.boxOffice),
           oscarNominations: details.oscarNominations,
         };
         const comparison = compareGuessToTarget(guessMovie, target);
@@ -515,12 +515,12 @@ function guessDisplayValueForField(key, comparison) {
       return raw.year || "?";
     case "director":
       return raw.director || "?";
-    case "country":
-      return (raw.country || []).join(", ") || "?";
+    case "studio":
+      return (raw.studio || []).join(", ") || "?";
     case "cast":
       return (raw.cast || []).slice(0, 2).join(", ") || "?";
-    case "runtime":
-      return raw.runtime ? `${raw.runtime} min` : "?";
+    case "boxOffice":
+      return boxOfficeBracketLabel(raw.boxOffice) || "?";
     case "nominations":
       return `${raw.nominations ?? 0} nom${raw.nominations === 1 ? "" : "s"}`;
     default:

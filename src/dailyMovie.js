@@ -3,7 +3,7 @@
 // or the winners-only pool (getDailyOscarWinner) — resolves it against Wikipedia
 // for display data, and scores guesses against it.
 
-import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint } from "./movieData.js";
+import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -140,6 +140,34 @@ function getWinnerPool() {
 // runtime this low is the last line of defense against a non-feature target.
 const MIN_FEATURE_RUNTIME_MINUTES = 40;
 
+// Box office is now one of the compared fields, so the target needs a known,
+// non-trivial gross — otherwise every guess would score "unknown" against it.
+// $25M also keeps obscure/unreleased-wide nominees (undermining a game about
+// guessable movies) out of the pool.
+const MIN_TARGET_BOX_OFFICE_USD = 25_000_000;
+
+// Coarse enough that most guesses land a "close" bucket without giving away
+// the exact figure; the top brackets stay wide since $1B+ hits are rare
+// enough that finer buckets there would rarely differ from a plain "correct".
+const BOX_OFFICE_BRACKETS = [
+  { max: 10_000_000, label: "Under $10M" },
+  { max: 50_000_000, label: "$10M–$50M" },
+  { max: 200_000_000, label: "$50M–$200M" },
+  { max: 500_000_000, label: "$200M–$500M" },
+  { max: 1_000_000_000, label: "$500M–$1B" },
+  { max: Infinity, label: "$1B+" },
+];
+
+export function boxOfficeBracketLabel(grossUSD) {
+  if (grossUSD === null || grossUSD === undefined || !Number.isFinite(grossUSD)) return null;
+  return BOX_OFFICE_BRACKETS.find((b) => grossUSD <= b.max).label;
+}
+
+function boxOfficeBracketIndex(grossUSD) {
+  if (grossUSD === null || grossUSD === undefined || !Number.isFinite(grossUSD)) return null;
+  return BOX_OFFICE_BRACKETS.findIndex((b) => grossUSD <= b.max);
+}
+
 // mulberry32 — small, fast, deterministic PRNG so every visitor derives the same
 // sequence from the same integer seed (no server round-trip needed for "today's" pick).
 export function mulberry32(seed) {
@@ -267,6 +295,13 @@ async function resolveCandidate(candidate) {
   ]);
   if (!details) return null;
 
+  // Below this, either the gross is genuinely obscure/unreleased-wide (a bad
+  // fit for a game about guessable movies) or Wikipedia just doesn't have a
+  // parseable figure yet — either way, falling back to the next candidate
+  // keeps every player off a target that can't be scored on box office.
+  const boxOfficeUSD = parseBoxOfficeUSD(details.boxOffice);
+  if (boxOfficeUSD === null || boxOfficeUSD < MIN_TARGET_BOX_OFFICE_USD) return null;
+
   return {
     id: best.id,
     title: best.title,
@@ -276,9 +311,10 @@ async function resolveCandidate(candidate) {
     pageUrl: best.pageUrl,
     extract: best.extract,
     director: details.director,
-    countries: details.countries,
+    studio: details.studio,
     cast: details.cast,
     runtimeMinutes: details.runtimeMinutes,
+    boxOfficeUSD,
     oscarNominations: candidate.nominations,
     oscarWinners: candidate.winners,
     normalizedTitle: candidate.normalizedTitle,
@@ -361,10 +397,10 @@ export function compareGuessToTarget(guess, target) {
     (target.director || "").split(/[,;]|\s+and\s+/i).map((s) => s.trim()).filter(Boolean)
   );
 
-  const country = setOverlapStatus(guess.countries, target.countries);
+  const studio = setOverlapStatus(guess.studio, target.studio);
   const cast = setOverlapStatus(guess.cast, target.cast);
   const year = numericStatus(Number(guess.year) || null, Number(target.year));
-  const runtime = numericStatus(guess.runtimeMinutes, target.runtimeMinutes);
+  const boxOffice = numericStatus(boxOfficeBracketIndex(guess.boxOfficeUSD), boxOfficeBracketIndex(target.boxOfficeUSD));
   const nominations = numericStatus(guess.oscarNominations, target.oscarNominations);
 
   return {
@@ -373,11 +409,11 @@ export function compareGuessToTarget(guess, target) {
     guessRaw: {
       year: guess.year,
       director: guess.director,
-      country: guess.countries,
+      studio: guess.studio,
       cast: guess.cast,
-      runtime: guess.runtimeMinutes,
+      boxOffice: guess.boxOfficeUSD,
       nominations: guess.oscarNominations,
     },
-    fields: { director, country, cast, year, runtime, nominations },
+    fields: { director, studio, cast, year, boxOffice, nominations },
   };
 }
