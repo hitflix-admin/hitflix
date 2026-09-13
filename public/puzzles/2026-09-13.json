@@ -1,0 +1,312 @@
+{
+  "date": "2026-09-13",
+  "generatedAt": "2026-09-13T06:20:22.281Z",
+  "dailyGame": {
+    "id": "88075",
+    "title": "Shakespeare in Love",
+    "pageTitle": "Shakespeare in Love",
+    "year": 1998,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/e/e8/Shakespeare_in_Love_1998_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Shakespeare_in_Love",
+    "extract": "Shakespeare in Love is a 1998 romantic comedy period film directed by John Madden, and written by Marc Norman and Tom Stoppard. It stars Gwyneth Paltrow, Joseph Fiennes, Geoffrey Rush, Colin Firth, Ben Affleck, and Judi Dench. The film depicts a fictional love affair involving playwright William Shakespeare (Fiennes) and Viola de Lesseps (Paltrow) during the writing of Romeo and Juliet. Several characters are based on historical figures, and many of the characters, lines, and plot devices allude to Shakespeare's plays.",
+    "director": "John Madden",
+    "studio": [
+      "The Bedford Falls Company"
+    ],
+    "cast": [
+      "Gwyneth Paltrow",
+      "Joseph Fiennes",
+      "Geoffrey Rush",
+      "Colin Firth",
+      "Ben Affleck",
+      "Judi Dench"
+    ],
+    "runtimeMinutes": 123,
+    "boxOfficeUSD": 289000000,
+    "oscarNominations": 13,
+    "oscarWinners": [
+      "Actress in a Leading Role",
+      "Actress in a Supporting Role",
+      "Art Direction",
+      "Costume Design",
+      "Music (Original Musical Or Comedy Score)",
+      "Best Picture",
+      "Writing (Screenplay Written Directly for the Screen)"
+    ],
+    "normalizedTitle": "shakespeare in love",
+    "genreTags": [
+      "romance",
+      "comedy",
+      "drama",
+      "romantic comedy"
+    ],
+    "plotHint": "The desperate someone, in debt to ruthless moneylender someone, begins auditions anyway."
+  },
+  "dailyWinner": {
+    "id": "34164547",
+    "title": "Frozen",
+    "pageTitle": "Frozen (2013 film)",
+    "year": 2013,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/0/05/Frozen_%282013_film%29_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Frozen_(2013_film)",
+    "extract": "Frozen is a 2013 American animated musical fantasy film produced by Walt Disney Animation Studios, loosely inspired by Hans Christian Andersen's 1844 fairy tale \"The Snow Queen\". Directed by Chris Buck and Jennifer Lee and written by Lee, it stars the voices of Kristen Bell, Idina Menzel, Jonathan Groff, Josh Gad, and Santino Fontana. It follows Anna (Bell), the princess of Arendelle, who sets off on a journey with the iceman Kristoff (Groff), his reindeer Sven, and the snowman Olaf (Gad), to find her estranged sister Elsa (Menzel) after she accidentally traps their kingdom in eternal winter with her icy powers.",
+    "director": "Chris Buck, Jennifer Lee",
+    "studio": [],
+    "cast": [
+      "Kristen Bell",
+      "Idina Menzel",
+      "Jonathan Groff",
+      "Josh Gad",
+      "Santino Fontana"
+    ],
+    "runtimeMinutes": 102,
+    "boxOfficeUSD": 1280000000,
+    "oscarNominations": 2,
+    "oscarWinners": [
+      "Animated Feature Film",
+      "Music (Original Song)"
+    ],
+    "normalizedTitle": "frozen",
+    "genreTags": [
+      "fantasy",
+      "musical",
+      "animated"
+    ],
+    "plotHint": "someone of someone has naturally occurring magical powers, allowing her to create ice and snow.",
+    "hintCategory": "Animated Feature Film"
+  },
+  "faceoff": [
+    {
+      "id": "2026-09-13-0",
+      "left": {
+        "id": "433285",
+        "title": "Bullitt",
+        "pageTitle": "Bullitt",
+        "year": 1968,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/17/Bullitt_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Bullitt",
+        "extract": "Bullitt is a 1968 American crime action thriller film directed by Peter Yates, from a screenplay by Alan R. Trustman and Harry Kleiner, based on the 1963 novel Mute Witness by Robert L. Fish. It stars Steve McQueen, Robert Vaughn, Jacqueline Bisset, Don Gordon, Robert Duvall, Simon Oakland, and Norman Fell. In the film, San Francisco police detective Frank Bullitt (McQueen) investigates the murder of a witness he was assigned to protect.",
+        "value": 42300000
+      },
+      "right": {
+        "id": "28085067",
+        "title": "Fast Five",
+        "pageTitle": "Fast Five",
+        "year": 2011,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/0c/Fast_Five_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Fast_Five",
+        "extract": "Fast Five is a 2011 American action film directed by Justin Lin and written by Chris Morgan. It is the sequel to Fast & Furious (2009) and the fifth installment in the Fast & Furious franchise. The film stars Vin Diesel as Dominic Toretto and Paul Walker as Brian O'Conner, alongside Jordana Brewster, Tyrese Gibson, Gal Gadot, Ludacris, Matt Schulze, Sung Kang and Dwayne Johnson. In the film, Dom and Brian, along with Dom's sister Mia plan a heist to steal $100 million from corrupt businessman Hernan Reyes while being pursued for arrest by U.S. Diplomatic Security Service (DSS) agent Luke Hobbs.",
+        "value": 630000000
+      }
+    },
+    {
+      "id": "2026-09-13-1",
+      "left": {
+        "id": "89631",
+        "title": "The Goonies",
+        "pageTitle": "The Goonies",
+        "year": 1985,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/c/c6/The_Goonies.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Goonies",
+        "extract": "The Goonies is a 1985 American adventure comedy film directed by Richard Donner from a screenplay by Chris Columbus based on a story by Steven Spielberg. The film stars Sean Astin, Josh Brolin, Jeff Cohen, Corey Feldman, Kerri Green, Martha Plimpton and Ke Huy Quan with John Matuszak, Robert Davi, Joe Pantoliano and Anne Ramsey in supporting roles. In the film, a group of children who live in the \"Goon Docks\" neighborhood of Astoria, Oregon attempt to save their homes from foreclosure. In doing so, they discover an old treasure map which takes them on an adventure to unearth the long-lost fortune of One-Eyed Willy, a legendary 17th-century pirate, while being pursued by a family of criminals who are after the treasure as well.",
+        "value": 65000000
+      },
+      "right": {
+        "id": "832232",
+        "title": "10",
+        "pageTitle": "10 (1979 film)",
+        "year": 1979,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/67/10_1979_film_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/10_(1979_film)",
+        "extract": "10 is a 1979 American romantic comedy film written, produced and directed by Blake Edwards and starring Dudley Moore, Julie Andrews, Robert Webber, and Bo Derek. It was considered a trendsetting film at the time of its release and became one of the year's biggest box-office hits. The film follows middle-aged composer George Webber who becomes infatuated with Jenny Hanley, a newlywed young woman he has never met, and pursues her to Mexico.",
+        "value": 107000000
+      }
+    },
+    {
+      "id": "2026-09-13-2",
+      "left": {
+        "id": "76018",
+        "title": "Who Framed Roger Rabbit",
+        "pageTitle": "Who Framed Roger Rabbit",
+        "year": 1988,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/3/32/Movie_poster_who_framed_roger_rabbit.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Who_Framed_Roger_Rabbit",
+        "extract": "Who Framed Roger Rabbit is a 1988 American fantasy comedy film directed by Robert Zemeckis from a screenplay written by Jeffrey Price and Peter S. Seaman. The film, which combines live-action and animation, is loosely based on Gary K. Wolf's novel Who Censored Roger Rabbit? The film stars Bob Hoskins, Christopher Lloyd, Stubby Kaye and Joanna Cassidy, with Charles Fleischer providing the voice of the title character. Set in an alternative history Hollywood in 1947, where humans and cartoon characters co-exist, Who Framed Roger Rabbit follows Eddie Valiant, a private investigator with a grudge against toons, who must help exonerate Roger, a toon who has been framed for murder.",
+        "value": 351500000
+      },
+      "right": {
+        "id": "101914",
+        "title": "Dog Day Afternoon",
+        "pageTitle": "Dog Day Afternoon",
+        "year": 1975,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/4/44/Dog_Day_Afternoon_film_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Dog_Day_Afternoon",
+        "extract": "Dog Day Afternoon is a 1975 American biographical crime drama film directed by Sidney Lumet and produced by Martin Bregman and Martin Elfand. The film stars Al Pacino, John Cazale, James Broderick and Charles Durning. The screenplay is written by Frank Pierson and is based on the Life magazine article \"The Boys in the Bank\" by P. F. Kluge and Thomas Moore. The feature chronicles the 1972 robbery and hostage situation led by John Wojtowicz and Salvatore Naturile at a Chase Manhattan branch in Brooklyn.",
+        "value": 50000000
+      }
+    },
+    {
+      "id": "2026-09-13-3",
+      "left": {
+        "id": "1790734",
+        "title": "Summer of '42",
+        "pageTitle": "Summer of '42",
+        "year": 1971,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/18/Summer_of_%2742_POSTER.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Summer_of_'42",
+        "extract": "Summer of '42 is a 1971 American coming-of-age romance film directed by Robert Mulligan, and starring Jennifer O'Neill, Gary Grimes, Jerry Houser, and Christopher Norris. Based on the memoirs of screenwriter Herman \"Hermie\" Raucher, it follows a teenage boy who, during the summer of 1942 on (fictional) Packett Island, embarks on a one-sided romance with a young woman, Dorothy, whose husband has gone off to fight in World War II. The film was a commercial and critical success and was nominated for four Academy Awards, winning for Best Original Score for Michel Legrand.",
+        "value": 32100000
+      },
+      "right": {
+        "id": "79053575",
+        "title": "Ne Zha 2",
+        "pageTitle": "Ne Zha 2",
+        "year": 2025,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/b/b6/Ne_Zha_2_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Ne_Zha_2",
+        "extract": "Ne Zha 2 is a 2025 Chinese animated epic fantasy action-adventure film written and directed by Jiaozi based on the titular mythic figure of Chinese legend and Xu Zhonglin's 16th-century novel Investiture of the Gods. It is the direct sequel to Ne Zha (2019). The film takes up the story of Chinese mythological character Ne Zha and his friend Ao Bing. After a sacrifice, only Ne Zha's body can be recreated, although he carries Ao Bing's spirit within. Ne Zha calls on this spirit in his fight against Master Shen.",
+        "value": 2270000000
+      }
+    },
+    {
+      "id": "2026-09-13-4",
+      "left": {
+        "id": "59353603",
+        "title": "Doctor Strange in the Multiverse of Madness",
+        "pageTitle": "Doctor Strange in the Multiverse of Madness",
+        "year": 2022,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/17/Doctor_Strange_in_the_Multiverse_of_Madness_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Doctor_Strange_in_the_Multiverse_of_Madness",
+        "extract": "Doctor Strange in the Multiverse of Madness is a 2022 American superhero film based on Marvel Comics featuring the character Doctor Strange. Produced by Marvel Studios and distributed by Walt Disney Studios Motion Pictures, it is the sequel to Doctor Strange (2016) and the 28th film in the Marvel Cinematic Universe (MCU). The film was directed by Sam Raimi, written by Michael Waldron, and stars Benedict Cumberbatch as Stephen Strange, alongside Elizabeth Olsen, Chiwetel Ejiofor, Benedict Wong, Xochitl Gomez, Michael Stuhlbarg, and Rachel McAdams. In the film, Strange must protect America Chavez (Gomez), a teenager capable of traveling the multiverse, from the Scarlet Witch (Olsen).",
+        "value": 955800000
+      },
+      "right": {
+        "id": "286544",
+        "title": "Deep Impact",
+        "pageTitle": "Deep Impact (film)",
+        "year": 1998,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/9/93/Deep_Impact_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Deep_Impact_(film)",
+        "extract": "Deep Impact is a 1998 American science fiction disaster film directed by Mimi Leder, written by Bruce Joel Rubin and Michael Tolkin, and starring Robert Duvall, Téa Leoni, Elijah Wood, Vanessa Redgrave, Maximilian Schell, and Morgan Freeman. Steven Spielberg served as an executive producer of this film. It was released by Paramount Pictures in the United States and Canada, and by DreamWorks Pictures through United International Pictures internationally on May 8, 1998. The film depicts humanity's attempts to prepare for and destroy a 7-mile (11 km) wide comet set to collide with Earth and cause a mass extinction.",
+        "value": 349500000
+      }
+    }
+  ],
+  "nominationsFaceoff": [
+    {
+      "id": "2026-09-13-0",
+      "left": {
+        "id": "24319139",
+        "title": "The Social Network",
+        "pageTitle": "The Social Network",
+        "year": 2010,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/8/8c/The_Social_Network_film_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Social_Network",
+        "extract": "The Social Network is a 2010 American biographical drama film directed by David Fincher and written by Aaron Sorkin. Based on the 2009 book The Accidental Billionaires by Ben Mezrich, the film portrays the founding of the social networking website Facebook. It stars Jesse Eisenberg as Facebook CEO Mark Zuckerberg, with Andrew Garfield as co-founder Eduardo Saverin, Justin Timberlake as Sean Parker, Armie Hammer as Cameron and Tyler Winklevoss, and Max Minghella as Divya Narendra. Neither Zuckerberg nor any other Facebook staff were involved with the project, although Saverin was a consultant for Mezrich's book.",
+        "value": 8
+      },
+      "right": {
+        "id": "8031432",
+        "title": "The Curious Case of Benjamin Button",
+        "pageTitle": "The Curious Case of Benjamin Button (film)",
+        "year": 2008,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/7/7c/The_Curious_Case_of_Benjamin_Button_%28film%29.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Curious_Case_of_Benjamin_Button_(film)",
+        "extract": "The Curious Case of Benjamin Button is a 2008 American epic romantic fantasy drama film directed by David Fincher and adapted by Eric Roth and Robin Swicord from F. Scott Fitzgerald's 1922 short story. The film stars Brad Pitt as a man who ages in reverse and Cate Blanchett as his love interest throughout his life. The film also stars Taraji P. Henson, Julia Ormond, Jason Flemyng, Elias Koteas, and Tilda Swinton.",
+        "value": 13
+      }
+    },
+    {
+      "id": "2026-09-13-1",
+      "left": {
+        "id": "25080984",
+        "title": "The King's Speech",
+        "pageTitle": "The King's Speech",
+        "year": 2010,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/4/4a/The_King%27s_Speech_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_King's_Speech",
+        "extract": "The King's Speech is a 2010 historical drama film directed by Tom Hooper and written by David Seidler. Colin Firth plays the future King George VI who, to cope with a stammer, sees Lionel Logue, an Australian speech and language therapist played by Geoffrey Rush. The men become friends as they work together, and after his brother abdicates the throne, the new king relies on Logue to help him make his first wartime radio broadcast upon Britain's declaration of war on Germany in 1939.",
+        "value": 12
+      },
+      "right": {
+        "id": "184158",
+        "title": "Iris",
+        "pageTitle": "Iris (2001 film)",
+        "year": 2001,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/e/e3/Iris_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Iris_(2001_film)",
+        "extract": "Iris is a 2001 biographical drama film about novelist Iris Murdoch and her relationship with her husband John Bayley. Directed by Richard Eyre from a screenplay he co-wrote with Charles Wood, the film is based on Bayley's 1999 memoir Elegy for Iris. Judi Dench and Jim Broadbent portray Murdoch and Bayley during the later stages of their marriage, while Kate Winslet and Hugh Bonneville appear as the couple in their younger years. The film contrasts the start of their relationship, when Murdoch was an outgoing, dominant individual compared to the timid and scholarly Bayley, and their later life, when Murdoch was suffering from Alzheimer's disease and tended to by a frustrated Bayley in their North Oxford home in Charlbury Road. The beach scenes were filmed at Southwold in Suffolk, one of Murdoch's favourite haunts.",
+        "value": 3
+      }
+    },
+    {
+      "id": "2026-09-13-2",
+      "left": {
+        "id": "8708612",
+        "title": "Notes on a Scandal",
+        "pageTitle": "Notes on a Scandal (film)",
+        "year": 2006,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/5/5a/Notes_on_a_Scandal.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Notes_on_a_Scandal_(film)",
+        "extract": "Notes on a Scandal is a 2006 British psychological drama thriller directed by Richard Eyre and produced by Robert Fox and Scott Rudin. Adapted from the 2003 novel by Zoë Heller, the screenplay was written by Patrick Marber. The film stars Judi Dench, Cate Blanchett, and Bill Nighy, and centres on a lonely veteran teacher who uncovers a fellow teacher's illicit affair with an underage student.",
+        "value": 4
+      },
+      "right": {
+        "id": "171559",
+        "title": "Affliction",
+        "pageTitle": "Affliction (1997 film)",
+        "year": 1998,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/68/Affliction_%281997_movie_poster%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Affliction_(1997_film)",
+        "extract": "Affliction is a 1997 American neo-noir crime drama directed and written by Paul Schrader. Based on the 1989 novel by Russell Banks, the film stars Nick Nolte, Sissy Spacek, James Coburn, and Willem Dafoe.",
+        "value": 2
+      }
+    },
+    {
+      "id": "2026-09-13-3",
+      "left": {
+        "id": "50449686",
+        "title": "Three Billboards Outside Ebbing, Missouri",
+        "pageTitle": "Three Billboards Outside Ebbing, Missouri",
+        "year": 2017,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/c/c7/Three_Billboards_Outside_Ebbing%2C_Missouri_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Three_Billboards_Outside_Ebbing%2C_Missouri",
+        "extract": "Three Billboards Outside Ebbing, Missouri is a 2017 dark comedy crime film written, directed, and produced by Martin McDonagh. It stars Frances McDormand as Mildred Hayes, a Missouri woman who rents three roadside billboards to draw attention to her daughter's unsolved rape and murder. Woody Harrelson, Sam Rockwell, Abbie Cornish, John Hawkes, and Peter Dinklage appear in supporting roles. The film was theatrically released in the United States in November 2017 and in the United Kingdom in January 2018 by Fox Searchlight Pictures, and it grossed $162 million at the worldwide box office.",
+        "value": 7
+      },
+      "right": {
+        "id": "3276167",
+        "title": "Capote",
+        "pageTitle": "Capote (film)",
+        "year": 2005,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/d/da/Capote_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Capote_(film)",
+        "extract": "Capote is a 2005 biographical drama film about American novelist Truman Capote directed by Bennett Miller, written by Dan Futterman and starring Philip Seymour Hoffman in the title role. The film primarily follows the events during the writing of Capote's 1965 nonfiction book In Cold Blood. The film was based on Gerald Clarke's 1988 biography Capote. It was released by Sony Pictures Classics on September 30, 2005, coinciding with what would have been Capote's 81st birthday.",
+        "value": 5
+      }
+    },
+    {
+      "id": "2026-09-13-4",
+      "left": {
+        "id": "63145041",
+        "title": "The Banshees of Inisherin",
+        "pageTitle": "The Banshees of Inisherin",
+        "year": 2022,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/6e/The_Banshees_of_Inisherin.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Banshees_of_Inisherin",
+        "extract": "The Banshees of Inisherin is a 2022 black tragicomedy film directed, written, and co-produced by Martin McDonagh. Set on a fictional remote island off the west coast of Ireland in 1923, the film stars Colin Farrell and Brendan Gleeson as two lifelong friends who find themselves at an impasse when one abruptly ends their friendship, with severe consequences for both of them. Kerry Condon and Barry Keoghan co-star. It reunites Farrell and Gleeson after McDonagh's directorial debut In Bruges (2008).",
+        "value": 9
+      },
+      "right": {
+        "id": "11324389",
+        "title": "The Miracle Worker",
+        "pageTitle": "The Miracle Worker (1962 film)",
+        "year": 1962,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/7/75/MiracleWorkerPoster.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Miracle_Worker_(1962_film)",
+        "extract": "The Miracle Worker is a 1962 American biographical film about Anne Sullivan, blind tutor to Helen Keller, directed by Arthur Penn. The screenplay by William Gibson is based on his 1959 play of the same title, which originated as a 1957 broadcast of the television anthology series Playhouse 90. Gibson's secondary source material was The Story of My Life, the 1903 autobiography of Helen Keller.",
+        "value": 5
+      }
+    }
+  ]
+}
