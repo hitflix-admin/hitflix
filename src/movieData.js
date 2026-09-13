@@ -455,20 +455,31 @@ const PLOT_SECTION_HEADINGS = ["plot", "plot summary", "synopsis", "premise"];
 // Locates the page's Plot/Synopsis section (if it has one) via the sections
 // index, so the hint is pulled from what the movie is actually about rather
 // than the lead paragraph, which is mostly cast/crew/award trivia.
+async function fetchPlotSectionIndexOnce(pageTitle) {
+  const res = await fetch(
+    `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
+      pageTitle
+    )}&prop=sections&format=json`
+  );
+  if (!res.ok) throw new Error("plot section lookup failed");
+  const data = await res.json();
+  const sections = data?.parse?.sections || [];
+  const match = sections.find((s) => PLOT_SECTION_HEADINGS.includes((s.line || "").trim().toLowerCase()));
+  return match ? match.index : null;
+}
+
+// Same one-retry treatment as fetchGenreTags — this result (like genre) ends up
+// baked into the day's cached target, so a single cold-connection hiccup on a
+// first visit would otherwise disable "Show a hint" for the rest of the day.
 async function fetchPlotSectionIndex(pageTitle) {
   try {
-    const res = await fetch(
-      `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
-        pageTitle
-      )}&prop=sections&format=json`
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const sections = data?.parse?.sections || [];
-    const match = sections.find((s) => PLOT_SECTION_HEADINGS.includes((s.line || "").trim().toLowerCase()));
-    return match ? match.index : null;
+    return await fetchPlotSectionIndexOnce(pageTitle);
   } catch (e) {
-    return null;
+    try {
+      return await fetchPlotSectionIndexOnce(pageTitle);
+    } catch (e2) {
+      return null;
+    }
   }
 }
 
@@ -514,20 +525,38 @@ function redactProperNouns(text) {
   });
 }
 
+async function fetchPlotSectionWikitextOnce(pageTitle, sectionIndex) {
+  const res = await fetch(
+    `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
+      pageTitle
+    )}&prop=wikitext&section=${sectionIndex}&format=json`
+  );
+  if (!res.ok) throw new Error("plot section fetch failed");
+  const data = await res.json();
+  return data?.parse?.wikitext?.["*"] || "";
+}
+
+// Same one-retry treatment as fetchGenreTags/fetchPlotSectionIndex above.
+async function fetchPlotSectionWikitext(pageTitle, sectionIndex) {
+  try {
+    return await fetchPlotSectionWikitextOnce(pageTitle, sectionIndex);
+  } catch (e) {
+    try {
+      return await fetchPlotSectionWikitextOnce(pageTitle, sectionIndex);
+    } catch (e2) {
+      return "";
+    }
+  }
+}
+
 // Returns one or two redacted plot sentences to use as a late-game hint — empty
 // string if the page has no dedicated Plot/Synopsis section to draw from.
 export async function fetchPlotHint(pageTitle) {
   try {
     const sectionIndex = await fetchPlotSectionIndex(pageTitle);
     if (sectionIndex === null) return "";
-    const res = await fetch(
-      `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
-        pageTitle
-      )}&prop=wikitext&section=${sectionIndex}&format=json`
-    );
-    if (!res.ok) return "";
-    const data = await res.json();
-    const rawSection = data?.parse?.wikitext?.["*"] || "";
+    const rawSection = await fetchPlotSectionWikitext(pageTitle, sectionIndex);
+    if (!rawSection) return "";
     const withoutHeading = rawSection.replace(/^==+[^=\n]*==+\s*/, "");
     const cleaned = cleanWikitext(stripParentheticals(withoutHeading));
     const sentences = splitSentences(cleaned).filter((s) => s.length > 30 && s.length < 220);
