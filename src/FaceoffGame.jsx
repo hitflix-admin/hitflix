@@ -1,10 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Film, Check, X, Share2 } from "lucide-react";
+import { ArrowLeft, Film, Check, X, Share2, Info } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, FONTS, iconBtn, primaryBtn } from "./theme.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
+import MovieModal from "./MovieModal.jsx";
+
+// Same "movieReviews" localStorage shape the list-builder (App.jsx) reads and
+// writes, keyed by each movie's Wikipedia pageid — so a rating left here on a
+// Faceoff round shows up in "Your reviews" too, and vice versa.
+const REVIEWS_STORAGE_KEY = "movieReviews";
+
+function loadReviews() {
+  try {
+    const raw = localStorage.getItem(REVIEWS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveReviewsToStorage(reviews) {
+  try {
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviews));
+  } catch (e) {}
+}
 
 const ROUNDS = 5;
 // Give the current game's own resolution priority over background prefetch
@@ -76,7 +97,7 @@ function MoviePoster({ poster, title }) {
   );
 }
 
-function MovieCard({ movie, onClick, disabled, resultState, formatValue }) {
+function MovieCard({ movie, onClick, disabled, resultState, formatValue, onViewMovie }) {
   // resultState: null while choosing; otherwise "chosen-correct" | "chosen-wrong" | "actual-higher" | "faded"
   const borderColor =
     resultState === "chosen-correct"
@@ -135,6 +156,34 @@ function MovieCard({ movie, onClick, disabled, resultState, formatValue }) {
           {formatValue(movie.value)}
         </div>
       )}
+      {resultState && onViewMovie && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewMovie(movie);
+          }}
+          style={{
+            marginTop: 8,
+            width: "100%",
+            background: "none",
+            border: "1px solid rgba(231,233,236,0.18)",
+            borderRadius: 4,
+            color: COLORS.mute,
+            fontSize: 11.5,
+            fontWeight: 700,
+            padding: "6px 4px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
+            fontFamily: "'Montserrat', sans-serif",
+          }}
+        >
+          <Info size={12} strokeWidth={2} />
+          Movie Info
+        </button>
+      )}
     </div>
   );
 }
@@ -160,6 +209,8 @@ export default function FaceoffGame({
   const [justAnswered, setJustAnswered] = useState(null); // { pairIndex, choice, correct } | null
   const [countdown, setCountdown] = useState(() => formatCountdown(msUntilNextPuzzle()));
   const [copied, setCopied] = useState(false);
+  const [reviews, setReviews] = useState(() => loadReviews());
+  const [modalMovie, setModalMovie] = useState(null);
 
   useEffect(() => {
     document.title = pageTitle;
@@ -215,6 +266,22 @@ export default function FaceoffGame({
     setProgress(next);
     saveProgress(storageId, date, next);
     setJustAnswered({ pairIndex, choice: side, correct });
+  }
+
+  function saveRating(movie, rating) {
+    setReviews((prev) => {
+      const next = { ...prev, [movie.id]: { ...prev[movie.id], rating, movie } };
+      saveReviewsToStorage(next);
+      return next;
+    });
+  }
+
+  function saveDetails(movie, details) {
+    setReviews((prev) => {
+      const next = { ...prev, [movie.id]: { ...prev[movie.id], details } };
+      saveReviewsToStorage(next);
+      return next;
+    });
   }
 
   const wrap = {
@@ -305,13 +372,16 @@ export default function FaceoffGame({
 
                 return (
                   <>
-                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    {/* stretch (not flex-start) so both cards match height even when one
+                        title wraps to more lines than the other */}
+                    <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
                       <MovieCard
                         movie={pair.left}
                         onClick={() => chooseSide("left")}
                         disabled={!!feedback}
                         resultState={leftState}
                         formatValue={formatValue}
+                        onViewMovie={setModalMovie}
                       />
                       <div
                         style={{
@@ -330,6 +400,7 @@ export default function FaceoffGame({
                         disabled={!!feedback}
                         resultState={rightState}
                         formatValue={formatValue}
+                        onViewMovie={setModalMovie}
                       />
                     </div>
 
@@ -398,6 +469,20 @@ export default function FaceoffGame({
           </>
         )}
       </div>
+
+      {modalMovie && (
+        <MovieModal
+          movie={{
+            ...modalMovie,
+            uid: modalMovie.id,
+            rating: reviews[modalMovie.id]?.rating,
+            details: reviews[modalMovie.id]?.details,
+          }}
+          onClose={() => setModalMovie(null)}
+          onSaveRating={(rating) => saveRating(modalMovie, rating)}
+          onDetails={(details) => saveDetails(modalMovie, details)}
+        />
+      )}
     </div>
   );
 }

@@ -41,16 +41,22 @@ async function resolveFaceoffCandidate(candidate) {
   return {
     id: best.id,
     title: best.title,
+    pageTitle: best.pageTitle,
     year: candidate.year,
     poster: best.poster,
     pageUrl: best.pageUrl,
+    extract: best.extract,
     grossUSD,
     genreTags,
   };
 }
 
-function toPublicMovie({ title, year, poster, pageUrl, grossUSD }) {
-  return { title, year, poster, pageUrl, value: grossUSD };
+// id/pageTitle/extract are carried through so a round's movie can be opened in
+// MovieModal (the same "view details, leave a rating" popup used elsewhere on
+// the site) — id doubles as the rating's storage key, shared with any rating
+// left for the same movie outside this game.
+function toPublicMovie({ id, title, pageTitle, year, poster, pageUrl, extract, grossUSD }) {
+  return { id, title, pageTitle, year, poster, pageUrl, extract, value: grossUSD };
 }
 
 export async function getDailyFaceoff(dateString = todayGameDateString()) {
