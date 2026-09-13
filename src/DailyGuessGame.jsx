@@ -6,6 +6,7 @@ import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalize
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget, boxOfficeBracketLabel } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
+import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 
 // Give the current game's own first interactions (typing a guess) priority
 // over background prefetch requests before starting to warm the other games.
@@ -174,7 +175,7 @@ export default function DailyGuessGame({
         if (cached) {
           if (!cancelled) setTarget(JSON.parse(cached));
         } else {
-          const movie = await resolveTarget(date);
+          const movie = (await fetchPrecomputedPuzzle(date, storageId)) || (await resolveTarget(date));
           if (cancelled) return;
           setTarget(movie);
           try {

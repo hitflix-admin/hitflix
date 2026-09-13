@@ -5,6 +5,7 @@ import { COLORS, FONTS, iconBtn, primaryBtn } from "./theme.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
+import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 import MovieModal from "./MovieModal.jsx";
 
 // Same "movieReviews" localStorage shape the list-builder (App.jsx) reads and
@@ -224,7 +225,7 @@ export default function FaceoffGame({
         if (cached) {
           if (!cancelled) setTarget(JSON.parse(cached));
         } else {
-          const pairs = await resolvePairs(date);
+          const pairs = (await fetchPrecomputedPuzzle(date, storageId)) || (await resolvePairs(date));
           if (cancelled) return;
           setTarget(pairs);
           try {

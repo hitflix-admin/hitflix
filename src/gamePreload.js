@@ -6,6 +6,7 @@
 import { getDailyMovie, getDailyOscarWinner, todayGameDateString } from "./dailyMovie.js";
 import { getDailyFaceoff } from "./faceoff.js";
 import { getDailyNominationsFaceoff } from "./nominationsFaceoff.js";
+import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 
 const GAMES = [
   { storageId: "dailyGame", resolve: getDailyMovie },
@@ -46,11 +47,14 @@ function cacheTarget(storageId, date, data) {
 }
 
 // Resolves the other three games' puzzles one at a time, never in parallel:
-// each game's own resolution already fires many sequential Wikipedia
+// each game's own live resolution already fires many sequential Wikipedia
 // requests, and running several of those chains at once was enough
 // concurrent traffic to trip Wikipedia's rate limiting once already (see
-// facePairing.js). A failed prefetch is silently skipped — that game just
-// resolves normally, with its own loading state, when the player opens it.
+// facePairing.js). Each one tries today's precomputed file (see
+// dailyPuzzleFetch.js) before falling back to that live resolution, same as
+// the game screens themselves. A failed prefetch is silently skipped — that
+// game just resolves normally, with its own loading state, when the player
+// opens it.
 export async function preloadOtherGames(currentStorageId) {
   const date = todayGameDateString();
   pruneOldEntries(date);
@@ -59,7 +63,7 @@ export async function preloadOtherGames(currentStorageId) {
     if (game.storageId === currentStorageId) continue;
     if (isTargetCached(game.storageId, date)) continue;
     try {
-      const data = await game.resolve(date);
+      const data = (await fetchPrecomputedPuzzle(date, game.storageId)) || (await game.resolve(date));
       cacheTarget(game.storageId, date, data);
     } catch (e) {}
   }

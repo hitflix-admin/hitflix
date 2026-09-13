@@ -1,0 +1,50 @@
+name: Build Daily Puzzle
+
+# Precomputes the day's puzzle for all four daily games once (see
+# scripts/build-daily-puzzle.mjs) instead of leaving every visitor's browser to
+# resolve it live against Wikipedia. Commits public/puzzles/<date>.json to main,
+# which triggers the normal deploy workflow.
+on:
+  schedule:
+    # Cron is UTC-only and GitHub doesn't shift it for DST, so America/New_York
+    # midnight (the games' reset instant — see RESET_TIMEZONE in
+    # src/dailyMovie.js) falls at 04:00 UTC during EDT and 05:00 UTC during EST.
+    # Two fixed times, ~15 minutes after each, keep this within a reasonable
+    # buffer of actual local midnight year-round (plus GitHub's own scheduling
+    # jitter, which can run a few to several minutes late). Whichever run lands
+    # before real local midnight for the current season is a harmless no-op —
+    # the script reuses/skips anything already resolved for "today" rather than
+    # re-resolving it.
+    - cron: "15 4 * * *"
+    - cron: "15 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-puzzle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: node scripts/build-daily-puzzle.mjs
+
+      - name: Commit precomputed puzzle if it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/puzzles/
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "Precompute daily puzzle"
+            git push
+          fi
