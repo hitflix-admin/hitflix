@@ -406,32 +406,45 @@ const GENRE_KEYWORD_PATTERNS = GENRE_KEYWORDS.map((keyword) => ({
   pattern: new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"),
 }));
 
+async function fetchGenreTagsOnce(pageTitle) {
+  const res = await fetch(
+    `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=categories&clshow=!hidden&cllimit=500&format=json&titles=${encodeURIComponent(
+      pageTitle
+    )}`
+  );
+  if (!res.ok) throw new Error("genre lookup failed");
+  const data = await res.json();
+  const pages = data?.query?.pages || {};
+  const page = Object.values(pages)[0];
+  const categories = (page?.categories || []).map((c) => c.title.replace(/^Category:/i, "").toLowerCase());
+  // Wikipedia's genre categories are reliably phrased "<qualifiers> <genre> film(s)"
+  // (e.g. "American war films") — restricting to those excludes unrelated categories
+  // that happen to contain a genre word, like "Films set in Western Europe".
+  const genreCategories = categories.filter((c) => /\bfilms?$/.test(c));
+
+  const tags = new Set();
+  for (const category of genreCategories) {
+    for (const { keyword, pattern } of GENRE_KEYWORD_PATTERNS) {
+      if (pattern.test(category)) tags.add(normalizeGenreTag(keyword));
+    }
+  }
+  return [...tags];
+}
+
+// The result gets baked into localStorage for the rest of the day (see
+// DailyGuessGame's target cache), so a one-off network hiccup — common on a
+// device's very first request to a cold Wikipedia connection — would
+// otherwise show as "no genre" all day instead of just failing this once.
+// One retry absorbs that without letting a genuinely gone page hang the load.
 export async function fetchGenreTags(pageTitle) {
   try {
-    const res = await fetch(
-      `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=categories&clshow=!hidden&cllimit=500&format=json&titles=${encodeURIComponent(
-        pageTitle
-      )}`
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    const pages = data?.query?.pages || {};
-    const page = Object.values(pages)[0];
-    const categories = (page?.categories || []).map((c) => c.title.replace(/^Category:/i, "").toLowerCase());
-    // Wikipedia's genre categories are reliably phrased "<qualifiers> <genre> film(s)"
-    // (e.g. "American war films") — restricting to those excludes unrelated categories
-    // that happen to contain a genre word, like "Films set in Western Europe".
-    const genreCategories = categories.filter((c) => /\bfilms?$/.test(c));
-
-    const tags = new Set();
-    for (const category of genreCategories) {
-      for (const { keyword, pattern } of GENRE_KEYWORD_PATTERNS) {
-        if (pattern.test(category)) tags.add(normalizeGenreTag(keyword));
-      }
-    }
-    return [...tags];
+    return await fetchGenreTagsOnce(pageTitle);
   } catch (e) {
-    return [];
+    try {
+      return await fetchGenreTagsOnce(pageTitle);
+    } catch (e2) {
+      return [];
+    }
   }
 }
 
