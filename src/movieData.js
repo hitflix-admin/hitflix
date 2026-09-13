@@ -4,14 +4,16 @@
 import oscarAwardsData from "./oscarAwards.json" with { type: "json" };
 
 // Wikipedia's API throttles (429s) any request without a descriptive User-Agent
-// — browsers send their own automatically so this never bit the client-side
-// games, but a plain Node fetch (e.g. the daily-puzzle precompute script) gets
-// blocked immediately without it. Harmless to send everywhere: browsers ignore
-// attempts to override this header rather than erroring on it.
+// — a plain Node fetch (e.g. the daily-puzzle precompute script) gets blocked
+// immediately without it. Browsers already send their own real User-Agent, and
+// trying to override it isn't just redundant there: Safari throws a TypeError
+// ("forbidden header") on the attempt, which was silently swallowed by callers'
+// try/catch and made the in-game search return nothing. So only set it in Node.
 const WIKI_USER_AGENT = "Hitflix/1.0 (https://hitflix.club; contact: konnorroelofs@gmail.com)";
+const IS_NODE = typeof window === "undefined";
 
 function wikiFetch(url) {
-  return fetch(url, { headers: { "User-Agent": WIKI_USER_AGENT } });
+  return fetch(url, IS_NODE ? { headers: { "User-Agent": WIKI_USER_AGENT } } : {});
 }
 
 export function yearFromDescription(desc) {
