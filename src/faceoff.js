@@ -3,16 +3,20 @@
 // the player guesses which grossed more worldwide at the box office.
 
 import { searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, parseBoxOfficeUSD } from "./movieData.js";
-import { getCandidatePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
+import { getBoxOfficePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
 import { buildGenrePairs } from "./facePairing.js";
 
 const PAIRS_NEEDED = 5;
 const MAX_CANDIDATES_TO_TRY = 60;
 const FACEOFF_SEED_OFFSET = 20000;
 const SIDE_SEED_OFFSET = 20001;
+const FACEOFF_YEARS_BACK = 60;
 
 async function resolveFaceoffCandidate(candidate) {
-  const guessTitle = titleCaseGuess(candidate.normalizedTitle);
+  // Prefer the candidate's real Wikipedia-wikilink title (accents, colons,
+  // ampersands and all) over round-tripping through the normalized/title-cased
+  // form — see the matching comment in dailyMovie.js's resolveCandidate.
+  const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
   let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`);
   if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
   if (results.length === 0) return null;
@@ -51,7 +55,7 @@ function toPublicMovie({ title, year, poster, pageUrl, grossUSD }) {
 
 export async function getDailyFaceoff(dateString = todayGameDateString()) {
   const pairs = await buildGenrePairs({
-    pool: getCandidatePool(),
+    pool: getBoxOfficePool(FACEOFF_YEARS_BACK),
     dateString,
     seedOffset: FACEOFF_SEED_OFFSET,
     sideSeedOffset: SIDE_SEED_OFFSET,

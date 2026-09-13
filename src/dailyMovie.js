@@ -131,24 +131,37 @@ function buildPool(predicate) {
   return pool;
 }
 
-// The regular Daily Movie's pool: the top 10 highest-grossing films of each of
-// the last several decades (src/boxOfficeTop10.json, built by
-// scripts/build-boxoffice-data.mjs from Wikipedia's own yearly box-office
-// tables) — real box-office hits rather than an Oscar-nomination proxy for
-// fame, so mainstream movies with no awards pedigree (Transformers, Superbad-
-// style comedies that made their year's top 10) are eligible too.
-let cachedBoxOfficePool = null;
-function getBoxOfficePool() {
-  if (!cachedBoxOfficePool) {
+// The box-office-hit pool shared by the regular Daily Movie and regular Faceoff
+// games: the top 10 highest-grossing films of each year in src/boxOfficeTop10.json
+// (built by scripts/build-boxoffice-data.mjs from Wikipedia's own yearly box-office
+// tables) — real box-office hits rather than an Oscar-nomination proxy for fame,
+// so mainstream movies with no awards pedigree (Transformers, Meet the Fockers,
+// etc.) are eligible too. Daily Movie uses the most recent 45 years of it;
+// Faceoff — which needs more variety spread across more rounds — uses the full
+// 60-year dataset.
+const DAILY_MOVIE_YEARS_BACK = 45;
+
+let cachedFullBoxOfficePool = null;
+function getFullBoxOfficePool() {
+  if (!cachedFullBoxOfficePool) {
     const pool = [];
     for (const year of Object.keys(boxOfficeTop10).sort()) {
       for (const title of boxOfficeTop10[year]) {
         pool.push({ normalizedTitle: normalizeOscarTitle(title), year: parseInt(year, 10), displayTitle: title });
       }
     }
-    cachedBoxOfficePool = pool;
+    cachedFullBoxOfficePool = pool;
   }
-  return cachedBoxOfficePool;
+  return cachedFullBoxOfficePool;
+}
+
+// yearsBack lets each consumer take its own trailing slice of the same dataset
+// (see comment above) instead of every consumer needing its own scraped JSON.
+export function getBoxOfficePool(yearsBack = DAILY_MOVIE_YEARS_BACK) {
+  const pool = getFullBoxOfficePool();
+  const years = Object.keys(boxOfficeTop10).map(Number);
+  const minYear = Math.max(...years) - yearsBack + 1;
+  return pool.filter((c) => c.year >= minYear);
 }
 
 let cachedCandidatePool = null;

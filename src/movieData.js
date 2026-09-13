@@ -583,7 +583,11 @@ export function parseBoxOfficeUSD(cleanedGross) {
   const worldwideMatch = cleanedGross.match(/\$[\d,.]+\s*(?:million|billion|thousand)?[^()]*\(worldwide\)/i);
   const source = worldwideMatch ? worldwideMatch[0] : cleanedGross;
 
-  const matches = [...source.matchAll(/\$([\d,]+(?:\.\d+)?)\s*(million|billion|thousand)?/gi)];
+  // The optional "-56"-style range chunk lets a range figure ("$50–56 million",
+  // common on older films' infoboxes) still find its unit word — without it, the
+  // unit isn't adjacent to the first number and gets missed entirely, silently
+  // parsing "$50–56 million" as literal 50 instead of 50 million.
+  const matches = [...source.matchAll(/\$([\d,]+(?:\.\d+)?)(?:\s*[-–]\s*[\d,]+(?:\.\d+)?)?\s*(million|billion|thousand)?/gi)];
   if (matches.length === 0) return null;
 
   const values = matches.map(([, num, unit]) => {

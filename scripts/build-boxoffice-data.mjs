@@ -1,7 +1,9 @@
-// Builds src/boxOfficeTop10.json — the candidate pool for the regular Daily Movie
-// game: the top 10 highest-grossing films of each of the last 45 years, scraped
-// from the "Highest-grossing films" table on each year's Wikipedia "{year} in
-// film" page (the same table Wikipedia itself keeps up to date year to year).
+// Builds src/boxOfficeTop10.json — the box-office-hit candidate pool shared by
+// the regular Daily Movie game (its own most-recent-45-years slice of this) and
+// the regular Faceoff game (the full 60-year set) — see getBoxOfficePool in
+// dailyMovie.js. Each year's top 10 highest-grossing films are scraped from the
+// "Highest-grossing films" table on that year's Wikipedia "{year} in film" page
+// (the same table Wikipedia itself keeps up to date year to year).
 // Re-run this script periodically (e.g. once a year) to roll the window forward
 // and pick up the newly-completed year.
 //
@@ -12,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const UA = "HitflixDataBuild/1.0 (contact: konnorroelofs@gmail.com)";
-const YEARS_BACK = 45;
+const YEARS_BACK = 60; // widest window any consumer needs (Faceoff); Daily Movie takes the most recent 45 of these.
 const RANKS_PER_YEAR = 10; // Wikipedia's yearly tables consistently list a top 10, not more.
 
 async function fetchWikitext(page) {
@@ -31,7 +33,8 @@ async function fetchWikitext(page) {
 // and titles are always the first [[wikilink]] in the row (the rank cell itself
 // never contains one), so that part of the parse is style-independent.
 function extractTop10(wikitext) {
-  const sectionMatch = wikitext.match(/==\s*Highest-grossing films[^=]*==([\s\S]*?)(?:\n==[^=]|$)/i);
+  // 1960s pages use "Top-grossing films"; later years switched to "Highest-grossing films".
+  const sectionMatch = wikitext.match(/==\s*(?:Top|Highest)-grossing films[^=]*==([\s\S]*?)(?:\n==[^=]|$)/i);
   if (!sectionMatch) return null;
 
   const tableMatch = sectionMatch[1].match(/\{\|[\s\S]*?\n\|\}/);
