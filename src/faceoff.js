@@ -17,8 +17,8 @@ async function resolveFaceoffCandidate(candidate) {
   // ampersands and all) over round-tripping through the normalized/title-cased
   // form — see the matching comment in dailyMovie.js's resolveCandidate.
   const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
+  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
+  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
   if (results.length === 0) return null;
 
   // Require the result's own year to actually be near the candidate's — falling

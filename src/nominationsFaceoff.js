@@ -14,8 +14,8 @@ const SIDE_SEED_OFFSET = 40001;
 
 async function resolveCandidate(candidate) {
   const guessTitle = titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
+  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
+  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
   if (results.length === 0) return null;
 
   // Require the result's own year to actually be near the candidate's — falling

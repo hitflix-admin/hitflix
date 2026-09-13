@@ -5,7 +5,7 @@
 // the pick against Wikipedia for display data and score guesses against it.
 
 import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
-import boxOfficeTop10 from "./boxOfficeTop10.json";
+import boxOfficeTop10 from "./boxOfficeTop10.json" with { type: "json" };
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -328,8 +328,8 @@ async function resolveCandidate(candidate) {
   // normalized/title-cased form, which the Oscar pool's candidates fall back to
   // since they only have a normalized key to work from.
   const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle);
+  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
+  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
   if (results.length === 0) return null;
 
   // Require the result's own year to actually be near the candidate's — falling

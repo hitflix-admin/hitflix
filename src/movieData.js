@@ -1,7 +1,18 @@
 // Shared Wikipedia + Oscar-database plumbing used by both the ledger app (App.jsx)
 // and the daily movie game (DailyGame.jsx): search, infobox parsing, and award lookups.
 
-import oscarAwardsData from "./oscarAwards.json";
+import oscarAwardsData from "./oscarAwards.json" with { type: "json" };
+
+// Wikipedia's API throttles (429s) any request without a descriptive User-Agent
+// — browsers send their own automatically so this never bit the client-side
+// games, but a plain Node fetch (e.g. the daily-puzzle precompute script) gets
+// blocked immediately without it. Harmless to send everywhere: browsers ignore
+// attempts to override this header rather than erroring on it.
+const WIKI_USER_AGENT = "Hitflix/1.0 (https://hitflix.club; contact: konnorroelofs@gmail.com)";
+
+function wikiFetch(url) {
+  return fetch(url, { headers: { "User-Agent": WIKI_USER_AGENT } });
+}
 
 export function yearFromDescription(desc) {
   if (!desc) return "";
@@ -25,45 +36,70 @@ function isMovieDescription(desc) {
   return !NON_MOVIE_DESCRIPTION.test(desc);
 }
 
-export async function searchWikipediaFilms(query) {
+async function fetchFilmSummary(title) {
+  try {
+    const r = await wikiFetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`
+    );
+    if (!r.ok) return null;
+    const s = await r.json();
+    if (s.type === "disambiguation") return null;
+    return s;
+  } catch (e) {
+    return null;
+  }
+}
+
+function toFilmResult(s) {
+  return {
+    id: String(s.pageid),
+    title: cleanMovieTitle(s.title),
+    pageTitle: s.title,
+    year: yearFromDescription(s.description || s.extract),
+    description: s.description || "",
+    extract: s.extract || "",
+    poster: s.thumbnail ? s.thumbnail.source : null,
+    pageUrl: s.content_urls?.desktop?.page || "",
+  };
+}
+
+// targetYear is an optional caller hint (candidate-resolution callers already
+// know the year they're after and only ever use the single closest-matching
+// result — see resolveCandidate in dailyMovie.js/faceoff.js/nominationsFaceoff.js).
+// When given, summaries are fetched one at a time and fetching stops as soon as
+// a result lands within a year of it, instead of always fetching all 8 search
+// results — those callers discarded every non-matching summary anyway, so this
+// changes nothing about which movie is selected, only how many requests it takes.
+// Interactive search (DailyGuessGame's guess box) has no target year and still
+// wants the full result list as fast as possible, so it keeps the parallel fetch.
+export async function searchWikipediaFilms(query, targetYear = null) {
   const searchUrl = `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=search&srlimit=8&format=json&srsearch=${encodeURIComponent(
     query + " film"
   )}`;
-  const res = await fetch(searchUrl);
+  const res = await wikiFetch(searchUrl);
   if (!res.ok) throw new Error("search failed");
   const data = await res.json();
   const titles = (data?.query?.search || []).map((r) => r.title);
   if (titles.length === 0) return [];
 
-  const summaries = await Promise.all(
-    titles.map(async (t) => {
-      try {
-        const r = await fetch(
-          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(t)}`
-        );
-        if (!r.ok) return null;
-        const s = await r.json();
-        if (s.type === "disambiguation") return null;
-        return s;
-      } catch (e) {
-        return null;
-      }
-    })
-  );
+  if (targetYear === null) {
+    const summaries = await Promise.all(titles.map(fetchFilmSummary));
+    return summaries
+      .filter(Boolean)
+      .map(toFilmResult)
+      .filter((s) => s.title && isMovieDescription(s.description));
+  }
 
-  return summaries
-    .filter(Boolean)
-    .map((s) => ({
-      id: String(s.pageid),
-      title: cleanMovieTitle(s.title),
-      pageTitle: s.title,
-      year: yearFromDescription(s.description || s.extract),
-      description: s.description || "",
-      extract: s.extract || "",
-      poster: s.thumbnail ? s.thumbnail.source : null,
-      pageUrl: s.content_urls?.desktop?.page || "",
-    }))
-    .filter((s) => s.title && isMovieDescription(s.description));
+  const results = [];
+  for (const t of titles) {
+    const s = await fetchFilmSummary(t);
+    if (!s) continue;
+    const film = toFilmResult(s);
+    if (!film.title || !isMovieDescription(film.description)) continue;
+    results.push(film);
+    if (film.year && Math.abs(Number(film.year) - targetYear) <= 1) break;
+  }
+  return results;
 }
 
 /* ---------------- Wikipedia infobox parsing ---------------- */
@@ -306,7 +342,7 @@ export function lookupOscarAwards(title, year) {
 
 export async function fetchMovieDetails(title, year, displayTitle) {
   try {
-    const wikitextRes = await fetch(
+    const wikitextRes = await wikiFetch(
       `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
         title
       )}&prop=wikitext&section=0&format=json`
@@ -407,7 +443,7 @@ const GENRE_KEYWORD_PATTERNS = GENRE_KEYWORDS.map((keyword) => ({
 }));
 
 async function fetchGenreTagsOnce(pageTitle) {
-  const res = await fetch(
+  const res = await wikiFetch(
     `https://en.wikipedia.org/w/api.php?origin=*&action=query&prop=categories&clshow=!hidden&cllimit=500&format=json&titles=${encodeURIComponent(
       pageTitle
     )}`
@@ -456,7 +492,7 @@ const PLOT_SECTION_HEADINGS = ["plot", "plot summary", "synopsis", "premise"];
 // index, so the hint is pulled from what the movie is actually about rather
 // than the lead paragraph, which is mostly cast/crew/award trivia.
 async function fetchPlotSectionIndexOnce(pageTitle) {
-  const res = await fetch(
+  const res = await wikiFetch(
     `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
       pageTitle
     )}&prop=sections&format=json`
@@ -526,7 +562,7 @@ function redactProperNouns(text) {
 }
 
 async function fetchPlotSectionWikitextOnce(pageTitle, sectionIndex) {
-  const res = await fetch(
+  const res = await wikiFetch(
     `https://en.wikipedia.org/w/api.php?origin=*&action=parse&page=${encodeURIComponent(
       pageTitle
     )}&prop=wikitext&section=${sectionIndex}&format=json`
