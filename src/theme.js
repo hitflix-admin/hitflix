@@ -1,12 +1,12 @@
 // Shared visual language across Hitflix pages (the ledger app and the daily game).
 // Palette:   ink #141414 / surface #1E1E1E / paper #E7E9EC
-//            blue #6C86AB / rose #B5544B / mute #8D96A3
+//            blue #7B95BA / rose #B5544B / mute #8D96A3
 
 export const COLORS = {
   ink: "#141414",
   surface: "#1E1E1E",
   paper: "#E7E9EC",
-  blue: "#6C86AB",
+  blue: "#7B95BA",
   rose: "#B5544B",
   mute: "#8D96A3",
   green: "#4E8C5C",
@@ -30,7 +30,7 @@ export const inputStyle = {
 
 export const primaryBtn = {
   flex: 1,
-  background: "#6C86AB",
+  background: "#7B95BA",
   color: "#141414",
   border: "none",
   borderRadius: 3,
@@ -78,9 +78,9 @@ export const segmentBtn = {
 
 export const segmentBtnActive = {
   ...segmentBtn,
-  background: "#6C86AB",
+  background: "#7B95BA",
   color: "#141414",
-  border: "1px solid #6C86AB",
+  border: "1px solid #7B95BA",
 };
 
 export const iconBtn = {

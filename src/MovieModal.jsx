@@ -137,7 +137,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#6C86AB",
+                  color: "#7B95BA",
                   cursor: "pointer",
                   fontSize: 13.5,
                   fontWeight: 600,
@@ -156,7 +156,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    color: "#6C86AB",
+                    color: "#7B95BA",
                     fontSize: 12.5,
                     display: "inline-flex",
                     alignItems: "center",

@@ -87,7 +87,7 @@ function MoviePoster({ poster, title }) {
         width: "100%",
         aspectRatio: "2 / 3",
         borderRadius: 4,
-        background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #6C86AB 130%)",
+        background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #7B95BA 130%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -297,7 +297,7 @@ export default function FaceoffGame({
   const percent = Math.round((score / ROUNDS) * 100);
 
   return (
-    <div style={wrap}>
+    <main style={wrap}>
       <div style={{ padding: "20px 18px 48px", maxWidth: 560, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <a href="/" style={iconBtn} aria-label="Back to Hitflix">
@@ -483,7 +483,7 @@ export default function FaceoffGame({
           onDetails={(details) => saveDetails(modalMovie, details)}
         />
       )}
-    </div>
+    </main>
   );
 }
 

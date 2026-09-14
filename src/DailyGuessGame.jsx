@@ -86,8 +86,8 @@ function GenreHint({ genreTags }) {
         display: "flex",
         alignItems: "center",
         gap: 10,
-        background: "rgba(108,134,171,0.12)",
-        border: "1px solid rgba(108,134,171,0.4)",
+        background: "rgba(123,149,186,0.12)",
+        border: "1px solid rgba(123,149,186,0.4)",
         borderRadius: 6,
         padding: "12px 14px",
         marginTop: 16,
@@ -282,7 +282,7 @@ export default function DailyGuessGame({
   };
 
   return (
-    <div style={wrap}>
+    <main style={wrap}>
       <div style={{ padding: "20px 18px 48px", maxWidth: 560, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <a href="/" style={iconBtn} aria-label="Back to Hitflix">
@@ -451,7 +451,7 @@ export default function DailyGuessGame({
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -629,7 +629,7 @@ function EndScreen({ status, target, countdown, copied, onShare }) {
               height: 112,
               borderRadius: 4,
               flexShrink: 0,
-              background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #6C86AB 130%)",
+              background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #7B95BA 130%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

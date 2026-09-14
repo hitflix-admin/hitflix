@@ -16,7 +16,7 @@ import MovieModal from "./MovieModal.jsx";
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
    Palette:   ink #141414 / surface #1E1E1E / paper #E7E9EC
-              blue #6C86AB / rose #B5544B / mute #8D96A3
+              blue #7B95BA / rose #B5544B / mute #8D96A3
    Type: "Montserrat" — extrabold + tracked caps for display,
          regular/medium for body
 --------------------------------------------------------- */
@@ -492,14 +492,14 @@ export default function App() {
 
   if (lists === null) {
     return (
-      <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+      <main style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
         <div style={{ color: "#8D96A3", fontSize: 14 }}>Loading your lists…</div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div style={wrap}>
+    <main style={wrap}>
       {view === "home" && (
         <HomeView
           lists={lists}
@@ -586,7 +586,7 @@ export default function App() {
           onConfirm={confirmDeleteList}
         />
       )}
-    </div>
+    </main>
   );
 }
 
@@ -683,8 +683,8 @@ function DefaultMovieTile({ movie, onAddRating }) {
         style={{
           marginTop: "auto",
           background: "none",
-          border: "1px solid rgba(108,134,171,0.6)",
-          color: "#6C86AB",
+          border: "1px solid rgba(123,149,186,0.6)",
+          color: "#7B95BA",
           borderRadius: 3,
           padding: "5px 8px",
           fontSize: 11.5,
@@ -897,7 +897,7 @@ function HomeView({
         onClick={onCreate}
         style={{
           width: "100%",
-          background: "#6C86AB",
+          background: "#7B95BA",
           color: "#141414",
           border: "none",
           borderRadius: 3,
@@ -1416,7 +1416,7 @@ function EditorView({
                     fontWeight: 800,
                     fontVariantNumeric: "tabular-nums",
                     fontSize: 15,
-                    color: "#6C86AB",
+                    color: "#7B95BA",
                   }}
                 >
                   {dragOriginalOrder?.get(entry.uid) ?? i + 1}
@@ -1476,8 +1476,8 @@ function EditorView({
                     onClick={() => onOpenMovie(entry)}
                     style={{
                       background: "transparent",
-                      border: "1px solid #6C86AB",
-                      color: "#6C86AB",
+                      border: "1px solid #7B95BA",
+                      color: "#7B95BA",
                       borderRadius: 20,
                       padding: "6px 10px",
                       fontSize: 10.5,
@@ -1608,8 +1608,8 @@ function EditorView({
                           onClick={() => onOpenMovie(entry)}
                           style={{
                             background: "transparent",
-                            border: "1px solid #6C86AB",
-                            color: "#6C86AB",
+                            border: "1px solid #7B95BA",
+                            color: "#7B95BA",
                             borderRadius: 20,
                             padding: "4px 8px",
                             fontSize: 9.5,
@@ -1688,7 +1688,7 @@ function EditorView({
                     <button
                       onClick={() => onAdd(r)}
                       style={{
-                        background: "#6C86AB",
+                        background: "#7B95BA",
                         border: "none",
                         borderRadius: 3,
                         color: "#141414",
