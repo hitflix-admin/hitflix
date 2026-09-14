@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { COLORS, FONTS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
+import { COLORS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget, boxOfficeBracketLabel } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
@@ -283,7 +283,6 @@ export default function DailyGuessGame({
 
   return (
     <div style={wrap}>
-      <style>{FONTS}</style>
       <div style={{ padding: "20px 18px 48px", maxWidth: 560, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <a href="/" style={iconBtn} aria-label="Back to Hitflix">

@@ -17,6 +17,20 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="canonical" href="https://hitflix.club/" />
 
+    <!-- Loaded as real <link> tags (not a JS-injected @import) so the browser
+         can discover and fetch them from the raw HTML immediately, without
+         waiting on the JS bundle to load and render first. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+    />
+
+    <!-- The homepage's default movie previews fetch summaries from this origin
+         client-side; preconnecting shaves off the connection setup time. -->
+    <link rel="preconnect" href="https://en.wikipedia.org" />
+
     <title>Hitflix — Rate Movies, Build Lists, Play Daily Games</title>
     <meta
       name="description"

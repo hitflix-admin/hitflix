@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { FONTS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
+import { inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
 import {
   cleanMovieTitle,
@@ -493,7 +493,6 @@ export default function App() {
   if (lists === null) {
     return (
       <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
-        <style>{FONTS}</style>
         <div style={{ color: "#8D96A3", fontSize: 14 }}>Loading your lists…</div>
       </div>
     );
@@ -501,7 +500,6 @@ export default function App() {
 
   return (
     <div style={wrap}>
-      <style>{FONTS}</style>
       {view === "home" && (
         <HomeView
           lists={lists}
@@ -871,6 +869,7 @@ function HomeView({
         <img
           src={logo}
           alt="Hitflix Movie Club"
+          fetchpriority="high"
           style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
         />
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>

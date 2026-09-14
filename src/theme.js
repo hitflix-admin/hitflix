@@ -13,10 +13,6 @@ export const COLORS = {
   amber: "#C9A03D",
 };
 
-export const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-`;
-
 export const inputStyle = {
   width: "100%",
   background: "#141414",

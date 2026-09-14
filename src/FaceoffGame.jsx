@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Film, Check, X, Share2, Info } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { COLORS, FONTS, iconBtn, primaryBtn } from "./theme.js";
+import { COLORS, iconBtn, primaryBtn } from "./theme.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
@@ -298,7 +298,6 @@ export default function FaceoffGame({
 
   return (
     <div style={wrap}>
-      <style>{FONTS}</style>
       <div style={{ padding: "20px 18px 48px", maxWidth: 560, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <a href="/" style={iconBtn} aria-label="Back to Hitflix">
