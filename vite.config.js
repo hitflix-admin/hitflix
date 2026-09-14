@@ -129,4 +129,7 @@ function spaRoutes() {
 export default defineConfig({
   plugins: [react(), spaRoutes()],
   base: "/",
+  build: {
+    sourcemap: true,
+  },
 });
