@@ -73,12 +73,30 @@ function redirectHtml(toPath) {
 // meta description, canonical link, and og:url fixes both problems — the
 // client bundle is identical either way, main.jsx picks the page from the
 // real URL.
+// The built stylesheet is tiny (under 1 KB) but as a separate <link
+// rel="stylesheet"> it still blocks first render on its own network
+// round-trip. Inlining it into a <style> tag removes that request entirely.
+function inlineStylesheet(html, outDir) {
+  return html.replace(
+    /<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/,
+    (match, href) => {
+      const cssPath = path.join(outDir, href.replace(/^\//, ""));
+      const css = fs.readFileSync(cssPath, "utf8");
+      return `<style>${css}</style>`;
+    },
+  );
+}
+
 function spaRoutes() {
   return {
     name: "spa-routes",
     closeBundle() {
       const outDir = "dist";
-      const template = fs.readFileSync(path.join(outDir, "index.html"), "utf8");
+      const template = inlineStylesheet(
+        fs.readFileSync(path.join(outDir, "index.html"), "utf8"),
+        outDir,
+      );
+      fs.writeFileSync(path.join(outDir, "index.html"), template);
 
       // Unknown paths (typos, old links not covered by the redirects below)
       // still fall back to the SPA shell.
