@@ -99,6 +99,7 @@ export function PosterArt({ poster, title, size = "thumb" }) {
       <img
         src={poster}
         alt={title}
+        loading="lazy"
         style={{
           ...sizeStyle,
           objectFit: "cover",
