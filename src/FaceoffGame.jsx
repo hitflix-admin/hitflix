@@ -75,10 +75,12 @@ function formatCountdown(ms) {
 }
 
 function MoviePoster({ poster, title }) {
-  return poster ? (
+  const [failed, setFailed] = useState(false);
+  return poster && !failed ? (
     <img
       src={poster}
       alt={title}
+      onError={() => setFailed(true)}
       style={{ width: "100%", aspectRatio: "2 / 3", objectFit: "cover", borderRadius: 4, display: "block" }}
     />
   ) : (

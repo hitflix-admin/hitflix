@@ -2,6 +2,7 @@
 // anywhere else a movie can be shown with its calculated rating score (e.g. the
 // Faceoff games' movie detail popup, MovieModal.jsx).
 
+import { useState } from "react";
 import { Film } from "lucide-react";
 
 export function calcScore(rating) {
@@ -83,6 +84,7 @@ export function Gauge({ score, size = 44 }) {
 }
 
 export function PosterArt({ poster, title, size = "thumb" }) {
+  const [failed, setFailed] = useState(false);
   const initials = (title || "?")
     .split(" ")
     .filter((w) => w.length && /[A-Za-z0-9]/.test(w[0]))
@@ -94,12 +96,13 @@ export function PosterArt({ poster, title, size = "thumb" }) {
     size === "fill"
       ? { width: "100%", height: "auto", aspectRatio: "52 / 76" }
       : { width: dims.w, height: dims.h };
-  if (poster) {
+  if (poster && !failed) {
     return (
       <img
         src={poster}
         alt={title}
         loading="lazy"
+        onError={() => setFailed(true)}
         style={{
           ...sizeStyle,
           objectFit: "cover",
