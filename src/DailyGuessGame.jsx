@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, Film, Share2, Tag, Lightbulb, Users, Info } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { COLORS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
+import { COLORS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGuessToTarget, boxOfficeBracketLabel } from "./dailyMovie.js";
 import GameCard from "./GameCard.jsx";
@@ -167,6 +167,8 @@ function MatchedCastBlock({ guesses }) {
 
 // Shown upfront (before any guess) on both editions — genre is otherwise not
 // one of the compared fields, so this is the one hint every version shares.
+// Shares a row with the plot-hint button (HintButton below), so it takes no
+// margin/width of its own — the row wrapper owns that layout.
 function GenreHint({ genreTags }) {
   if (!genreTags || genreTags.length === 0) return null;
   const list = genreTags.slice(0, 3).map(capitalizeGenre).join(", ");
@@ -180,7 +182,8 @@ function GenreHint({ genreTags }) {
         border: "1px solid rgba(110,153,212,0.4)",
         borderRadius: 6,
         padding: "12px 14px",
-        marginTop: 16,
+        height: "100%",
+        boxSizing: "border-box",
       }}
     >
       <Tag size={20} strokeWidth={1.8} color={COLORS.cobalt} style={{ flexShrink: 0 }} />
@@ -191,22 +194,46 @@ function GenreHint({ genreTags }) {
   );
 }
 
-// Offered once the player is down to their last guess — a redacted plot beat
-// (no character or cast names) rather than another comparable stat, since
-// every stat category is already covered by the guess tiles.
-function PlotHintReveal({ plotHint, revealed, onReveal }) {
-  if (!plotHint) return null;
-  if (!revealed) {
-    return (
-      <button
-        onClick={onReveal}
-        style={{ ...secondaryBtn, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}
-      >
-        <Lightbulb size={15} strokeWidth={2} />
-        Show a hint
-      </button>
-    );
-  }
+// Sits beside GenreHint in the same row, always visible so the player knows a
+// hint is coming even before it unlocks — it just stays unclickable until the
+// guess count reaches HINT_AVAILABLE_AFTER_GUESSES, counting down until then.
+function HintButton({ guessCount, status, revealed, onReveal }) {
+  const remaining = Math.max(0, HINT_AVAILABLE_AFTER_GUESSES - guessCount);
+  const available = status === "playing" && remaining === 0;
+  const clickable = available && !revealed;
+  return (
+    <button
+      onClick={clickable ? onReveal : undefined}
+      disabled={!clickable}
+      title={revealed ? "Hint revealed" : available ? "Show a hint" : `Hint unlocks in ${remaining} more guess${remaining === 1 ? "" : "es"}`}
+      style={{
+        width: "100%",
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 3,
+        background: available ? "rgba(191,148,92,0.12)" : "rgba(231,233,236,0.05)",
+        border: `1px solid ${available ? "rgba(191,148,92,0.4)" : "rgba(231,233,236,0.14)"}`,
+        borderRadius: 6,
+        cursor: clickable ? "pointer" : "default",
+        padding: "8px 6px",
+      }}
+    >
+      <Lightbulb size={18} strokeWidth={1.8} color={available ? COLORS.caramel : COLORS.mute} />
+      <div style={{ fontSize: 11, fontWeight: 700, color: available ? COLORS.caramel : COLORS.mute, textAlign: "center", lineHeight: 1.2 }}>
+        {revealed ? "Hint" : available ? "Hint" : `${remaining} left`}
+      </div>
+    </button>
+  );
+}
+
+// The redacted plot beat (no character or cast names) that HintButton
+// unlocks — kept separate from the button itself so it can render full-width
+// under the genre/hint row once revealed.
+function PlotHintText({ plotHint }) {
   return (
     <div
       style={{
@@ -428,7 +455,31 @@ export default function DailyGuessGame({
         {target && (
           <>
             <MatchedCastBlock guesses={progress.guesses} />
-            <GenreHint genreTags={target.genreTags} />
+
+            {(target.genreTags?.length > 0 || target.plotHint) && (
+              <div style={{ display: "flex", gap: 8, marginTop: 16, alignItems: "stretch" }}>
+                {target.genreTags?.length > 0 && (
+                  <div style={{ flex: target.plotHint ? "3 1 0%" : "1 1 0%", minWidth: 0 }}>
+                    <GenreHint genreTags={target.genreTags} />
+                  </div>
+                )}
+                {target.plotHint && (
+                  <div style={{ flex: "1 1 0%", minWidth: 0 }}>
+                    <HintButton
+                      guessCount={progress.guesses.length}
+                      status={progress.status}
+                      revealed={!!progress.hintUsed}
+                      onReveal={() => {
+                        const next = { ...progress, hintUsed: true };
+                        setProgress(next);
+                        saveProgress(storageId, date, next);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {progress.hintUsed && target.plotHint && <PlotHintText plotHint={target.plotHint} />}
             {renderHint && renderHint(target)}
 
             <div style={{ display: "flex", gap: 8, margin: "18px 0 6px" }}>
@@ -517,18 +568,6 @@ export default function DailyGuessGame({
             )}
 
             <GuessHistory guesses={progress.guesses} />
-
-            {progress.status === "playing" && progress.guesses.length >= HINT_AVAILABLE_AFTER_GUESSES && (
-              <PlotHintReveal
-                plotHint={target.plotHint}
-                revealed={!!progress.hintUsed}
-                onReveal={() => {
-                  const next = { ...progress, hintUsed: true };
-                  setProgress(next);
-                  saveProgress(storageId, date, next);
-                }}
-              />
-            )}
 
             {progress.status !== "playing" && (
               <EndScreen
