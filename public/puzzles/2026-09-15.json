@@ -1,0 +1,310 @@
+{
+  "date": "2026-09-15",
+  "generatedAt": "2026-09-15T04:28:54.058Z",
+  "dailyGame": {
+    "id": "962010",
+    "title": "Meet the Fockers",
+    "pageTitle": "Meet the Fockers",
+    "year": 2004,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/2/27/Meet_The_Fockers.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Meet_the_Fockers",
+    "extract": "Meet the Fockers is a 2004 American romantic comedy film directed by Jay Roach. The second in the Meet the Parents film series, it features Robert De Niro, Ben Stiller, Blythe Danner, and Teri Polo reprising their roles from Meet the Parents, with Dustin Hoffman and Barbra Streisand. The film sees Greg Focker and his fiancée Pam introduce their respective parents to each other, creating tension over their contrasting lifestyles.",
+    "director": "Jay Roach",
+    "studio": [
+      "Universal Pictures",
+      "DreamWorks Pictures",
+      "Tribeca Productions",
+      "Everyman Pictures"
+    ],
+    "cast": [
+      "Robert De Niro",
+      "Ben Stiller",
+      "Dustin Hoffman",
+      "Barbra Streisand",
+      "Blythe Danner",
+      "Teri Polo"
+    ],
+    "runtimeMinutes": 115,
+    "boxOfficeUSD": 522700000.00000006,
+    "oscarNominations": 0,
+    "oscarWinners": [],
+    "normalizedTitle": "meet the fockers",
+    "genreTags": [
+      "comedy",
+      "romance"
+    ],
+    "plotHint": "With their wedding date six months away, someone and his fiancée someone decide to introduce their parents to each other."
+  },
+  "dailyWinner": {
+    "id": "48526729",
+    "title": "Get Out",
+    "pageTitle": "Get Out",
+    "year": 2017,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/a/a3/Get_Out_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Get_Out",
+    "extract": "Get Out is a 2017 American psychological horror film written, co-produced, and directed by Jordan Peele in his directorial debut. It stars Daniel Kaluuya, Allison Williams, Lil Rel Howery, LaKeith Stanfield, Bradley Whitford, Caleb Landry Jones, Stephen Root, Catherine Keener, and Betty Gabriel. The plot follows a young black man (Kaluuya), who uncovers shocking secrets when he meets the family of his white girlfriend (Williams).",
+    "director": "Jordan Peele",
+    "studio": [
+      "Blumhouse Productions",
+      "QC Entertainment",
+      "Monkeypaw Productions"
+    ],
+    "cast": [
+      "Daniel Kaluuya",
+      "Allison Williams",
+      "Bradley Whitford",
+      "Caleb Landry Jones",
+      "Stephen Root",
+      "Catherine Keener"
+    ],
+    "runtimeMinutes": 104,
+    "boxOfficeUSD": 259899999.99999997,
+    "oscarNominations": 4,
+    "oscarWinners": [
+      "Writing (Original Screenplay)"
+    ],
+    "normalizedTitle": "get out",
+    "genreTags": [
+      "horror",
+      "thriller",
+      "science fiction",
+      "action"
+    ],
+    "plotHint": "On a suburban street at night, a someone man walks alone, talking on his phone.",
+    "hintCategory": "Writing (Original Screenplay)"
+  },
+  "faceoff": [
+    {
+      "id": "2026-09-15-0",
+      "left": {
+        "id": "6641931",
+        "title": "I Am Legend",
+        "pageTitle": "I Am Legend (film)",
+        "year": 2007,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/d/df/I_am_legend_teaser.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/I_Am_Legend_(film)",
+        "extract": "I Am Legend is a 2007 American post-apocalyptic action horror thriller film directed by Francis Lawrence from a screenplay by Akiva Goldsman and Mark Protosevich and starring Will Smith as U.S. Army virologist Robert Neville. Loosely based on the 1954 novel of the same name by Richard Matheson, the film is set in New York City after a virus, which was originally created to cure cancer, has wiped out most of mankind, leaving Neville as the last human in New York City, other than nocturnal mutants. Immune to the virus, Neville works to develop a cure while defending himself against the hostile mutants. It is the third feature-film adaptation of Matheson's novel following 1964's The Last Man on Earth and 1971's The Omega Man.",
+        "value": 585000000
+      },
+      "right": {
+        "id": "61711372",
+        "title": "Mission: Impossible – Dead Reckoning Part One",
+        "pageTitle": "Mission: Impossible – Dead Reckoning Part One",
+        "year": 2023,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/e/ed/Mission-_Impossible_%E2%80%93_Dead_Reckoning_Part_One_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Mission%3A_Impossible_%E2%80%93_Dead_Reckoning_Part_One",
+        "extract": "Mission: Impossible – Dead Reckoning Part One is a 2023 American action spy film directed by Christopher McQuarrie from a screenplay he co-wrote with Erik Jendresen. It is the sequel to Mission: Impossible – Fallout (2018) and the seventh installment in the Mission: Impossible film series. The ensemble cast includes Tom Cruise, Hayley Atwell, Ving Rhames, Simon Pegg, Rebecca Ferguson, Vanessa Kirby, Esai Morales, Pom Klementieff, Mariela Garriga and Henry Czerny. Cruise plays the Impossible Missions Force agent Ethan Hunt, whose team faces a rogue artificial intelligence.",
+        "value": 571100000
+      }
+    },
+    {
+      "id": "2026-09-15-1",
+      "left": {
+        "id": "45230258",
+        "title": "Beauty and the Beast",
+        "pageTitle": "Beauty and the Beast (2017 film)",
+        "year": 2017,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/d/d6/Beauty_and_the_Beast_2017_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Beauty_and_the_Beast_(2017_film)",
+        "extract": "Beauty and the Beast is a 2017 American musical romantic fantasy film and a live-action adaptation of Disney Animation's 1991 film, itself based on the French fairy tale. Directed by Bill Condon and written by Stephen Chbosky and Evan Spiliotopoulos, the film stars Emma Watson as Belle and Dan Stevens as the Beast, with Luke Evans, Kevin Kline, Josh Gad, Ewan McGregor, Stanley Tucci, Audra McDonald, Gugu Mbatha-Raw, Ian McKellen, and Emma Thompson in supporting roles.",
+        "value": 1266000000
+      },
+      "right": {
+        "id": "43910733",
+        "title": "Star Wars: The Rise of Skywalker",
+        "pageTitle": "Star Wars: The Rise of Skywalker",
+        "year": 2019,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/a/af/Star_Wars_The_Rise_of_Skywalker_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Star_Wars%3A_The_Rise_of_Skywalker",
+        "extract": "Star Wars: The Rise of Skywalker, also known as Star Wars: Episode IX – The Rise of Skywalker, is a 2019 American epic space opera film produced, co-written, and directed by J. J. Abrams. Produced by Lucasfilm and Bad Robot, and distributed by Walt Disney Studios Motion Pictures, it is the third and final installment of the Star Wars sequel trilogy, following The Force Awakens (2015) and The Last Jedi (2017), and the last episode of the nine-part \"Skywalker saga\". Its cast includes Carrie Fisher, Mark Hamill, Adam Driver, Daisy Ridley, John Boyega, Oscar Isaac, Anthony Daniels, Naomi Ackie, Domhnall Gleeson, Richard E. Grant, Lupita Nyong'o, Keri Russell, Joonas Suotamo, Kelly Marie Tran, Ian McDiarmid, and Billy Dee Williams. The film follows Rey, Finn, and Poe Dameron as they lead the remnants of the Resistance in a final stand against Supreme Leader Kylo Ren and the First Order, who are now allied by the resurrected Sith Lord, Emperor Palpatine, Rey's paternal grandfather.",
+        "value": 1077000000
+      }
+    },
+    {
+      "id": "2026-09-15-2",
+      "left": {
+        "id": "38645474",
+        "title": "Minions",
+        "pageTitle": "Minions (film)",
+        "year": 2015,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/19/Minions_%282015_film%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Minions_(film)",
+        "extract": "Minions is a 2015 American animated comedy film directed by Pierre Coffin and Kyle Balda and written by Brian Lynch. Produced by Universal Pictures and Illumination Entertainment, it is a prequel to Despicable Me (2010) and the third overall installment in the franchise. The film features the voices of Coffin, Sandra Bullock, Jon Hamm, Michael Keaton, Allison Janney, Steve Coogan, Jennifer Saunders, and Geoffrey Rush as the narrator. In the film, the Minions search for their replaceable evil boss after, one-by-one, accidentally killing all their past leaders throughout history.",
+        "value": 1159000000
+      },
+      "right": {
+        "id": "75554265",
+        "title": "Kung Fu Panda 4",
+        "pageTitle": "Kung Fu Panda 4",
+        "year": 2024,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/7/7f/Kung_Fu_Panda_4_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Kung_Fu_Panda_4",
+        "extract": "Kung Fu Panda 4 is a 2024 American animated martial arts comedy film directed by Mike Mitchell and written by Darren Lemke, Jonathan Aibel and Glenn Berger. Produced by DreamWorks Animation, it is the fourth installment in the Kung Fu Panda franchise and the sequel to Kung Fu Panda 3 (2016). It features Jack Black, Bryan Cranston, James Hong, Ian McShane, and Dustin Hoffman reprising their roles from the previous films. In the film, Po—who must find and train his successor as the new Dragon Warrior—teams up with fox bandit Zhen to defeat evil sorceress The Chameleon, who plans to steal the kung fu skills of every deceased master in China.",
+        "value": 547700000
+      }
+    },
+    {
+      "id": "2026-09-15-3",
+      "left": {
+        "id": "45359871",
+        "title": "Spider-Man: Homecoming",
+        "pageTitle": "Spider-Man: Homecoming",
+        "year": 2017,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/f/f9/Spider-Man_Homecoming_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Spider-Man%3A_Homecoming",
+        "extract": "Spider-Man: Homecoming is a 2017 American superhero film based on the Marvel Comics character Spider-Man. Produced by Columbia Pictures, Marvel Studios, and Pascal Pictures, and distributed by Sony Pictures Releasing, it is the second Spider-Man film reboot and the 16th film in the Marvel Cinematic Universe (MCU). Directed by Jon Watts from a screenplay by the writing teams of Jonathan Goldstein and John Francis Daley, Watts and Christopher Ford, and Chris McKenna and Erik Sommers, the film stars Tom Holland as Peter Parker / Spider-Man alongside Michael Keaton, Jon Favreau, Gwyneth Paltrow, Zendaya, Donald Glover, Jacob Batalon, Laura Harrier, Tony Revolori, Bokeem Woodbine, Tyne Daly, Marisa Tomei, and Robert Downey Jr. In the film, Peter tries to balance high school life with being the hero Spider-Man while facing the Vulture (Keaton).",
+        "value": 880900000
+      },
+      "right": {
+        "id": "29075630",
+        "title": "The Dark Knight Rises",
+        "pageTitle": "The Dark Knight Rises",
+        "year": 2012,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/8/83/Dark_knight_rises_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Dark_Knight_Rises",
+        "extract": "The Dark Knight Rises is a 2012 superhero film based on the DC Comics character Batman. Directed by Christopher Nolan, who co-wrote the screenplay with his brother Jonathan, and the story with David S. Goyer, it is the final installment in Nolan's The Dark Knight trilogy, and the sequel to The Dark Knight (2008). The film stars Christian Bale as Bruce Wayne / Batman, alongside Anne Hathaway, Gary Oldman, Tom Hardy, Morgan Freeman, Marion Cotillard, Joseph Gordon-Levitt, and Michael Caine. Set eight years after the events of The Dark Knight, it follows a retired Wayne being forced to resume his role as Batman to save Gotham City from nuclear destruction at the hands of the terrorist Bane (Hardy).",
+        "value": 1085000000
+      }
+    },
+    {
+      "id": "2026-09-15-4",
+      "left": {
+        "id": "520990",
+        "title": "Trading Places",
+        "pageTitle": "Trading Places",
+        "year": 1983,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/4/4d/Trading_Places.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Trading_Places",
+        "extract": "Trading Places is a 1983 American comedy film directed by John Landis and written by Timothy Harris and Herschel Weingrod. Starring Dan Aykroyd, Eddie Murphy, Ralph Bellamy, Don Ameche, Denholm Elliott, and Jamie Lee Curtis, the film tells the story of an upper-class commodities broker (Aykroyd) and a poor street hustler (Murphy) whose lives intersect over the Christmas and New Year holidays when they are unwittingly made the subjects of an elaborate bet to test how each man will perform when their life circumstances are swapped.",
+        "value": 120600000
+      },
+      "right": {
+        "id": "89631",
+        "title": "The Goonies",
+        "pageTitle": "The Goonies",
+        "year": 1985,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/c/c6/The_Goonies.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Goonies",
+        "extract": "The Goonies is a 1985 American adventure comedy film directed by Richard Donner from a screenplay by Chris Columbus based on a story by Steven Spielberg. The film stars Sean Astin, Josh Brolin, Jeff Cohen, Corey Feldman, Kerri Green, Martha Plimpton and Ke Huy Quan with John Matuszak, Robert Davi, Joe Pantoliano and Anne Ramsey in supporting roles. In the film, a group of children who live in the \"Goon Docks\" neighborhood of Astoria, Oregon attempt to save their homes from foreclosure. In doing so, they discover an old treasure map which takes them on an adventure to unearth the long-lost fortune of One-Eyed Willy, a legendary 17th-century pirate, while being pursued by a family of criminals who are after the treasure as well.",
+        "value": 65000000
+      }
+    }
+  ],
+  "nominationsFaceoff": [
+    {
+      "id": "2026-09-15-0",
+      "left": {
+        "id": "33335392",
+        "title": "Skyfall",
+        "pageTitle": "Skyfall",
+        "year": 2012,
+        "poster": "https://thumb.wikimedia.org/wikipedia/en/thumb/a/a7/Skyfall_poster.jpg/330px-Skyfall_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "pageUrl": "https://en.wikipedia.org/wiki/Skyfall",
+        "extract": "Skyfall is a 2012 spy film and the twenty-third in the James Bond series produced by Eon Productions. The film is the third to star Daniel Craig as fictional MI6 agent James Bond and features Javier Bardem as Raoul Silva, the villain, with Judi Dench returning as M. The film was directed by Sam Mendes and written by Neal Purvis, Robert Wade, and John Logan. In the film, Bond investigates a series of targeted data leaks and co-ordinated attacks on MI6 led by Silva. It sees the return of two recurring characters, Miss Moneypenny and Q, after an absence of two films. Ralph Fiennes, Bérénice Marlohe, and Albert Finney are among the supporting cast.",
+        "value": 5
+      },
+      "right": {
+        "id": "518615",
+        "title": "King Kong",
+        "pageTitle": "King Kong (1976 film)",
+        "year": 1976,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/6c/King_kong_1976_movie_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/King_Kong_(1976_film)",
+        "extract": "King Kong is a 1976 American adventure monster film, directed by John Guillermin. It is a remake of the 1933 film about a giant ape who is captured and taken to New York City for exhibition. It stars Jeff Bridges, Charles Grodin, and Jessica Lange, and features mechanical effects by Carlo Rambaldi and makeup effects by Rick Baker, who also portrayed King Kong. It is the fifth entry in the King Kong franchise.",
+        "value": 3
+      }
+    },
+    {
+      "id": "2026-09-15-1",
+      "left": {
+        "id": "142461",
+        "title": "Elizabeth",
+        "pageTitle": "Elizabeth (film)",
+        "year": 1998,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/d/dd/Elizabeth_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Elizabeth_(film)",
+        "extract": "Elizabeth is a 1998 British biographical historical drama film directed by Shekhar Kapur and written by Michael Hirst. It stars Cate Blanchett as Elizabeth I of England, with Geoffrey Rush, Christopher Eccleston, Joseph Fiennes, John Gielgud, and Richard Attenborough in supporting roles. The film is based on the early years of Elizabeth's reign, when she is elevated to the throne after the death of her half-sister Mary I, who had imprisoned her. As she establishes herself on the throne, she faces plots and threats to take her down.",
+        "value": 7
+      },
+      "right": {
+        "id": "25506",
+        "title": "Raging Bull",
+        "pageTitle": "Raging Bull",
+        "year": 1980,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/5/5f/Raging_Bull_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Raging_Bull",
+        "extract": "Raging Bull is a 1980 American biographical sports drama film directed by Martin Scorsese from a screenplay by Paul Schrader and Mardik Martin, which adapts Jake LaMotta's 1970 memoir Raging Bull: My Story. Robert De Niro stars as LaMotta, a former middleweight boxing champion whose turbulent personal life is beset by rage and jealousy. Scorsese dedicated the film to Armenian-American NYU film professor Haig P. Manoogian. The supporting cast includes Joe Pesci, Cathy Moriarty, Theresa Saldana, Frank Vincent and Nicholas Colasanto in his final film role.",
+        "value": 8
+      }
+    },
+    {
+      "id": "2026-09-15-2",
+      "left": {
+        "id": "3600424",
+        "title": "A Passage to India",
+        "pageTitle": "A Passage to India (film)",
+        "year": 1984,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/2/20/PassageToIndiaPoster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/A_Passage_to_India_(film)",
+        "extract": "A Passage to India is a 1984 epic period drama film written, directed and edited by David Lean. The screenplay is based on the 1924 novel of the same name by E. M. Forster and the 1960 play adaptation by Santha Rama Rau. The film stars Peggy Ashcroft, Judy Davis, James Fox, Alec Guinness, Nigel Havers, and Victor Banerjee.",
+        "value": 11
+      },
+      "right": {
+        "id": "171047",
+        "title": "Restoration",
+        "pageTitle": "Restoration (1995 film)",
+        "year": 1995,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/9/94/Restauration1995.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Restoration_(1995_film)",
+        "extract": "Restoration is a 1995 historical drama film directed by Michael Hoffman from a screenplay by Rupert Walters, based on the 1989 novel of the same title by Rose Tremain. It stars Robert Downey Jr. as a 17th-century medical student exploited by King Charles II. The film was shot in Wales and won the Academy Awards for art direction and costume design.",
+        "value": 2
+      }
+    },
+    {
+      "id": "2026-09-15-3",
+      "left": {
+        "id": "1355085",
+        "title": "The Golden Compass",
+        "pageTitle": "The Golden Compass (film)",
+        "year": 2007,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/b/b6/The_Golden_Compass.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Golden_Compass_(film)",
+        "extract": "The Golden Compass is a 2007 fantasy adventure film written and directed by Chris Weitz, based on the 1995 novel Northern Lights by Philip Pullman. It stars Nicole Kidman, Sam Elliott, Eva Green, Dakota Blue Richards and Daniel Craig. In the film, Lyra joins a race of water-workers and seafarers on a trip to the far North in search of children kidnapped by the Gobblers, a group supported by the world's rulers, the Magisterium.",
+        "value": 2
+      },
+      "right": {
+        "id": "2821933",
+        "title": "The Time Machine",
+        "pageTitle": "The Time Machine (1960 film)",
+        "year": 1960,
+        "poster": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Poster_for_the_1960_film_The_Time_Machine.jpg/330px-Poster_for_the_1960_film_The_Time_Machine.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Time_Machine_(1960_film)",
+        "extract": "The Time Machine is a 1960 American period post-apocalyptic science fiction film based on the 1895 novella of the same title by H. G. Wells. It was produced and directed by George Pal, and stars Rod Taylor, Yvette Mimieux, and Alan Young. The story is set in Victorian England and follows an inventor who constructs a machine that enables him to travel into the distant future. Once there, he discovers that mankind's descendants have divided into two species, the passive, childlike, and vegetarian Eloi and the underground-dwelling Morlocks, who feed on the Eloi.\n It received the Academy Award for Best Special Effects for its time-lapse photographic effects, which show the world changing rapidly as the time traveler journeys into the future.",
+        "value": 1
+      }
+    },
+    {
+      "id": "2026-09-15-4",
+      "left": {
+        "id": "129295",
+        "title": "Fatal Attraction",
+        "pageTitle": "Fatal Attraction",
+        "year": 1987,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/b/ba/Fatal_Attraction_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Fatal_Attraction",
+        "extract": "Fatal Attraction is a 1987 American psychological thriller film directed by Adrian Lyne and written by James Dearden, based on his 1980 short film Diversion. It follows Dan Gallagher, a publishing attorney who cheats on his wife Beth with a colleague, Alex Forrest. When Dan ends the affair, Alex begins stalking him and his family.",
+        "value": 6
+      },
+      "right": {
+        "id": "1822067",
+        "title": "The Fugitive",
+        "pageTitle": "The Fugitive (1993 film)",
+        "year": 1993,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/c/c7/The_Fugitive_movie.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Fugitive_(1993_film)",
+        "extract": "The Fugitive is a 1993 American action thriller film, directed by Andrew Davis, with a script co-written by Jeb Stuart and David Twohy, from a previous story draft which Twohy had written. Based on the 1960s TV series, itself loosely inspired by the trial of Sam Sheppard, the film stars Harrison Ford, Tommy Lee Jones, Sela Ward, Julianne Moore, Joe Pantoliano, Andreas Katsulas, and Jeroen Krabbé.",
+        "value": 7
+      }
+    }
+  ]
+}
