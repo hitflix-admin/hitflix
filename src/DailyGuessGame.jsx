@@ -92,8 +92,11 @@ function buildShareText(shareLabel, shareUrl, date, guesses, status) {
   const lines = guesses.map((g) =>
     FIELD_META.map((f) => TILE_EMOJI[g.fields[f.key].status] || "⬛").join("")
   );
-  const result = status === "won" ? `${guesses.length}/${MAX_GUESSES}` : "X/" + MAX_GUESSES;
-  return `${shareLabel} #${puzzleNum} ${result}\n\n${lines.join("\n")}\n\n${shareUrl}`;
+  const headline =
+    status === "won"
+      ? `🏆 I solved ${shareLabel} #${puzzleNum} in ${guesses.length}/${MAX_GUESSES}!`
+      : `💀 ${shareLabel} #${puzzleNum} got the best of me (X/${MAX_GUESSES})`;
+  return `${headline}\n\n${lines.join("\n")}\n\n${shareUrl}`;
 }
 
 function capitalizeGenre(tag) {
