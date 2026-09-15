@@ -52,7 +52,7 @@ function toPublicMovie({ id, title, pageTitle, year, poster, pageUrl, extract, n
 
 export async function getDailyNominationsFaceoff(dateString = todayGameDateString()) {
   const pairs = await buildGenrePairs({
-    pool: getCandidatePool(),
+    pool: await getCandidatePool(),
     dateString,
     seedOffset: NOMINATIONS_FACEOFF_SEED_OFFSET,
     sideSeedOffset: SIDE_SEED_OFFSET,

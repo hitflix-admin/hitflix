@@ -1,7 +1,18 @@
 // Shared Wikipedia + Oscar-database plumbing used by both the ledger app (App.jsx)
 // and the daily movie game (DailyGame.jsx): search, infobox parsing, and award lookups.
 
-import oscarAwardsData from "./oscarAwards.json" with { type: "json" };
+// Loaded lazily (not a static import) — this dataset is 366KB, and only the
+// Oscar-edition games and movie-detail views ever need it, so every other
+// page (the homepage, the plain Daily Movie/Faceoff games) shouldn't pay to
+// parse it before anything can render. Cached after the first load since a
+// dynamic import of the same specifier is otherwise re-resolved each call.
+let oscarAwardsDataPromise = null;
+function loadOscarAwardsData() {
+  if (!oscarAwardsDataPromise) {
+    oscarAwardsDataPromise = import("./oscarAwards.json", { with: { type: "json" } }).then((m) => m.default);
+  }
+  return oscarAwardsDataPromise;
+}
 
 // Wikipedia's API throttles (429s) any request without a descriptive User-Agent
 // — a plain Node fetch (e.g. the daily-puzzle precompute script) gets blocked
@@ -328,7 +339,8 @@ export function normalizeOscarTitle(title) {
     .trim();
 }
 
-export function lookupOscarAwards(title, year) {
+export async function lookupOscarAwards(title, year) {
+  const oscarAwardsData = await loadOscarAwardsData();
   const byYear = oscarAwardsData[normalizeOscarTitle(title)];
   if (!byYear) return { oscarNominations: 0, oscarWinners: [] };
 
@@ -361,7 +373,7 @@ export async function fetchMovieDetails(title, year, displayTitle) {
     const cast = parseListField(fields.starring, 6);
     const runtimeMinutes = parseRuntimeMinutes(fields.runtime);
 
-    const awards = lookupOscarAwards(displayTitle || title, year);
+    const awards = await lookupOscarAwards(displayTitle || title, year);
 
     return {
       releaseDateUS,
@@ -638,4 +650,4 @@ export function parseBoxOfficeUSD(cleanedGross) {
   return Math.max(...values);
 }
 
-export { oscarAwardsData };
+export { loadOscarAwardsData };

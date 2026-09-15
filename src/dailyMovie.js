@@ -4,7 +4,7 @@
 // draws from the Oscar-nominations database's winners-only pool. Both resolve
 // the pick against Wikipedia for display data and score guesses against it.
 
-import { oscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
+import { loadOscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
 import boxOfficeTop10 from "./boxOfficeTop10.json" with { type: "json" };
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
@@ -116,7 +116,8 @@ function flashiestCategory(categories) {
   return categories.reduce((best, c) => (categoryRank(c) < categoryRank(best) ? c : best));
 }
 
-function buildPool(predicate) {
+async function buildPool(predicate) {
+  const oscarAwardsData = await loadOscarAwardsData();
   const pool = [];
   for (const normalizedTitle of Object.keys(oscarAwardsData).sort()) {
     const byYear = oscarAwardsData[normalizedTitle];
@@ -164,6 +165,9 @@ export function getBoxOfficePool(yearsBack = DAILY_MOVIE_YEARS_BACK) {
   return pool.filter((c) => c.year >= minYear);
 }
 
+// Caches the in-flight promise itself (not just its resolved value), so two
+// concurrent callers before the first resolves share one buildPool() call
+// instead of triggering it twice.
 let cachedCandidatePool = null;
 export function getCandidatePool() {
   if (!cachedCandidatePool) {
@@ -404,7 +408,7 @@ export async function getDailyMovie(dateString = todayGameDateString()) {
 // with the flashiest category it won (see CATEGORY_RANK_FAMILIES) picked as an
 // upfront hint — a movie with several wins only ever shows the single best one.
 export async function getDailyOscarWinner(dateString = todayGameDateString()) {
-  const pool = getWinnerPool();
+  const pool = await getWinnerPool();
   const startIndex = poolIndexForDate(dateString, pool.length, WINNER_SEED_OFFSET);
 
   for (let attempt = 0; attempt < 25; attempt++) {
