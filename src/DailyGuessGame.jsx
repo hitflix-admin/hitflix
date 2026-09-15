@@ -413,19 +413,24 @@ export default function DailyGuessGame({
             </div>
 
             {progress.status === "playing" && (
-              <div style={{ position: "relative", marginBottom: 10 }}>
-                <Search
-                  size={16}
-                  strokeWidth={1.8}
-                  style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: COLORS.mute }}
-                />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Guess any movie…"
-                  disabled={submitting}
-                  style={{ ...inputStyle, paddingLeft: 34 }}
-                />
+              <div style={{ marginBottom: 10 }}>
+                {/* Scoped to just the icon+input pair — top:50% needs to center
+                    against the input's own height, not the taller box below
+                    (Searching…/error text/results) that shares this section. */}
+                <div style={{ position: "relative" }}>
+                  <Search
+                    size={16}
+                    strokeWidth={1.8}
+                    style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: COLORS.mute }}
+                  />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Guess any movie…"
+                    disabled={submitting}
+                    style={{ ...inputStyle, paddingLeft: 34 }}
+                  />
+                </div>
                 {searching && <div style={{ color: COLORS.mute, fontSize: 12.5, marginTop: 6 }}>Searching…</div>}
                 {guessError && <div style={{ color: COLORS.rose, fontSize: 12.5, marginTop: 6 }}>{guessError}</div>}
 
