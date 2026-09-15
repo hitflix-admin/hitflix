@@ -358,6 +358,13 @@ async function resolveCandidate(candidate) {
   const boxOfficeUSD = parseBoxOfficeUSD(details.boxOffice);
   if (boxOfficeUSD === null || boxOfficeUSD < MIN_TARGET_BOX_OFFICE_USD) return null;
 
+  // A handful of infoboxes (foreign anthology films, articles still under
+  // construction) are genuinely missing director/cast credits rather than
+  // just hard to parse — as the target, that would leave the Director tile
+  // and the Matched Cast panel dead for every player all day, so skip to the
+  // next deterministic candidate instead.
+  if (!details.director || details.director === "TBD" || !details.cast || details.cast.length === 0) return null;
+
   return {
     id: best.id,
     title: best.title,

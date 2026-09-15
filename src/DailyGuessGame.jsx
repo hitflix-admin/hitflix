@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb, Users } from "lucide-react";
+import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, Film, Share2, Tag, Lightbulb, Users, Info } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
@@ -7,6 +7,28 @@ import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle, compareGue
 import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
+import MovieModal from "./MovieModal.jsx";
+
+// Same "movieReviews" localStorage shape the list-builder (App.jsx) and
+// Faceoff (FaceoffGame.jsx) read and write, keyed by each movie's Wikipedia
+// pageid — so a rating left here on today's movie shows up in "Your reviews"
+// (and in Faceoff) too, and vice versa.
+const REVIEWS_STORAGE_KEY = "movieReviews";
+
+function loadReviews() {
+  try {
+    const raw = localStorage.getItem(REVIEWS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveReviewsToStorage(reviews) {
+  try {
+    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviews));
+  } catch (e) {}
+}
 
 // Give the current game's own first interactions (typing a guess) priority
 // over background prefetch requests before starting to warm the other games.
@@ -229,6 +251,8 @@ export default function DailyGuessGame({
   const [guessError, setGuessError] = useState("");
   const [countdown, setCountdown] = useState(() => formatCountdown(msUntilNextPuzzle()));
   const [copied, setCopied] = useState(false);
+  const [reviews, setReviews] = useState(() => loadReviews());
+  const [modalMovie, setModalMovie] = useState(null);
 
   useEffect(() => {
     document.title = pageTitle;
@@ -341,6 +365,22 @@ export default function DailyGuessGame({
     },
     [target, submitting, progress, date, storageId]
   );
+
+  function saveRating(movie, rating) {
+    setReviews((prev) => {
+      const next = { ...prev, [movie.id]: { ...prev[movie.id], rating, movie } };
+      saveReviewsToStorage(next);
+      return next;
+    });
+  }
+
+  function saveDetails(movie, details) {
+    setReviews((prev) => {
+      const next = { ...prev, [movie.id]: { ...prev[movie.id], details } };
+      saveReviewsToStorage(next);
+      return next;
+    });
+  }
 
   const wrap = {
     fontFamily: "'Montserrat', sans-serif",
@@ -496,6 +536,7 @@ export default function DailyGuessGame({
                 target={target}
                 countdown={countdown}
                 copied={copied}
+                onViewMovie={() => setModalMovie(target)}
                 onShare={() => {
                   const text = buildShareText(shareLabel, shareUrl, date, progress.guesses, progress.status);
                   if (navigator.clipboard?.writeText) {
@@ -526,6 +567,20 @@ export default function DailyGuessGame({
           </>
         )}
       </div>
+
+      {modalMovie && (
+        <MovieModal
+          movie={{
+            ...modalMovie,
+            uid: modalMovie.id,
+            rating: reviews[modalMovie.id]?.rating,
+            details: reviews[modalMovie.id]?.details,
+          }}
+          onClose={() => setModalMovie(null)}
+          onSaveRating={(rating) => saveRating(modalMovie, rating)}
+          onDetails={(details) => saveDetails(modalMovie, details)}
+        />
+      )}
     </main>
   );
 }
@@ -673,7 +728,7 @@ function GuessHistory({ guesses }) {
   );
 }
 
-function EndScreen({ status, target, countdown, copied, onShare }) {
+function EndScreen({ status, target, countdown, copied, onShare, onViewMovie }) {
   return (
     <div
       style={{
@@ -722,20 +777,29 @@ function EndScreen({ status, target, countdown, copied, onShare }) {
         )}
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{target.title}</div>
-          <div style={{ color: COLORS.mute, fontSize: 12.5, marginBottom: 6 }}>
+          <div style={{ color: COLORS.mute, fontSize: 12.5, marginBottom: 8 }}>
             {target.year} · Dir. {target.director || "Unknown"}
           </div>
-          {target.pageUrl && (
-            <a
-              href={target.pageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: COLORS.blue, fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none" }}
-            >
-              More on Wikipedia
-              <ExternalLink size={11} strokeWidth={2} />
-            </a>
-          )}
+          <button
+            onClick={onViewMovie}
+            style={{
+              background: "none",
+              border: "1px solid rgba(231,233,236,0.18)",
+              borderRadius: 4,
+              color: COLORS.mute,
+              fontSize: 11.5,
+              fontWeight: 700,
+              padding: "6px 10px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              fontFamily: "'Montserrat', sans-serif",
+            }}
+          >
+            <Info size={12} strokeWidth={2} />
+            Movie Info
+          </button>
         </div>
       </div>
 

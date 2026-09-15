@@ -142,13 +142,17 @@ function MovieCard({ movie, onClick, disabled, resultState, formatValue, onViewM
         {movie.title}
       </div>
       <div style={{ color: COLORS.mute, fontSize: 11.5, marginTop: 2 }}>{movie.year}</div>
-      {resultState && resultState !== "faded" && (
+      {resultState && (
+        // Shown for every resultState, "faded" included — a correct guess used
+        // to hide the losing movie's value entirely, leaving the player unable
+        // to see the number they beat. Faded just drops the bold color/icon
+        // used to call out the answer's correctness.
         <div
           style={{
             marginTop: 6,
             fontSize: 13,
-            fontWeight: 800,
-            color: borderColor,
+            fontWeight: resultState === "faded" ? 600 : 800,
+            color: resultState === "faded" ? COLORS.mute : borderColor,
             display: "flex",
             alignItems: "center",
             gap: 4,

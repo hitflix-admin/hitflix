@@ -68,7 +68,15 @@ function toFilmResult(s) {
     id: String(s.pageid),
     title: cleanMovieTitle(s.title),
     pageTitle: s.title,
-    year: yearFromDescription(s.description || s.extract),
+    // Checked independently, not "description || extract" — Wikipedia's short
+    // description often omits the year (e.g. "American film by Jan de Bont")
+    // even when one exists, and description || extract would then never even
+    // look at the extract, which almost always states it ("Twister is a 1996
+    // American disaster film..."). Without this, a same-year same-title
+    // non-film page (a soundtrack, a franchise entry) with a year in ITS
+    // description can outrank the correct film result during candidate
+    // resolution, since that only keeps results with a parsed year.
+    year: yearFromDescription(s.description) || yearFromDescription(s.extract),
     description: s.description || "",
     extract: s.extract || "",
     poster: s.thumbnail ? s.thumbnail.source : null,
@@ -166,7 +174,11 @@ function cleanWikitext(raw) {
   s = stripFootnoteTemplates(s);
   s = s.replace(/\{\{nbsp\}\}/gi, " ");
   s = s.replace(
-    /\{\{(?:Plainlist|plainlist|ubl|hlist|flatlist)\s*\|([\s\S]*?)\}\}/gi,
+    // Wikipedia infoboxes use several spelling variants of the same list
+    // templates interchangeably (e.g. "ubl" / "unbulleted list", "Plainlist" /
+    // "Plain list") — missing a variant here left the whole field wiped out by
+    // the generic template-stripping pass below, producing a false "TBD".
+    /\{\{(?:Plain\s*list|ubl|unbulleted\s*list|hlist|flat\s*list)\s*\|([\s\S]*?)\}\}/gi,
     (_, inner) =>
       splitTopLevel(inner, "|")
         .flatMap((x) => x.split(/\n?\*/))
@@ -369,7 +381,13 @@ export async function fetchMovieDetails(title, year, displayTitle) {
     const director = cleanWikitext(fields.director) || "TBD";
     const budget = cleanWikitext(fields.budget) || "TBD";
     const boxOffice = cleanWikitext(fields.gross) || "TBD";
-    const studio = parseListField(fields.studio, 4);
+    // Template:Infobox film accepts "production_companies" as an alias for
+    // "studio" — older/other film articles use one name or the other for the
+    // same slot. Some classic-era infoboxes (e.g. 1960s films) list neither
+    // and only give a distributor, which for that era was often the same
+    // company that produced the film — a much better guess than leaving the
+    // field empty.
+    const studio = parseListField(fields.studio || fields.production_companies || fields.distributor, 4);
     const cast = parseListField(fields.starring, 6);
     const runtimeMinutes = parseRuntimeMinutes(fields.runtime);
 
