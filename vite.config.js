@@ -11,26 +11,31 @@ const ROUTE_META = [
     title: "Daily Movie — Guess the Featured Movie | Hitflix",
     description:
       "Guess the featured Oscar-nominated movie in 5 tries. Its genre is revealed upfront as a clue, and each guess is scored on year, director, country, cast, runtime, and Oscar nominations. A new movie every day.",
+    entry: "src/DailyGame.jsx",
   },
   {
     path: "/games/daily-oscar-edition",
     title: "Daily Movie (Oscar Edition) — Guess the Oscar Winner | Hitflix",
     description:
       "Guess the Oscar-winning movie in 5 tries. Its genre and the category it won are revealed upfront as clues. A new movie every day.",
+    entry: "src/OscarWinnerGame.jsx",
   },
   {
     path: "/games/faceoff",
     title: "Faceoff — Box Office Head-to-Head Game | Hitflix",
     description:
       "Pick which of two similar movies made more at the worldwide box office across 5 head-to-head rounds. New matchups every day.",
+    entry: "src/Faceoff.jsx",
   },
   {
     path: "/games/faceoff-oscar-edition",
     title: "Faceoff (Oscar Edition) — Oscar Nominations Head-to-Head | Hitflix",
     description:
       "Pick which of two similar movies earned more Oscar nominations across 5 head-to-head rounds. New matchups every day.",
+    entry: "src/NominationsFaceoff.jsx",
   },
 ];
+const HOME_ENTRY = "src/App.jsx";
 
 // The games used to live at these flat paths, before moving under /games/ —
 // redirect each to its new home so anything already shared or indexed under
@@ -87,20 +92,52 @@ function inlineStylesheet(html, outDir) {
   );
 }
 
+// main.jsx picks its route component via React.lazy(() => import(...)), so the
+// browser doesn't even start fetching that route's JS chunk until the shared
+// entry chunk has downloaded AND executed AND reached that import() call —
+// an extra sequential round-trip that a throttled mobile connection feels
+// much more than a fast one. Since every route already gets its own
+// pre-rendered HTML file (below, for SEO), that's also the right place to
+// tell the browser about the exact chunk that page needs, via
+// <link rel="modulepreload">, so it starts fetching in parallel with the
+// entry chunk instead of waiting to discover it at runtime. oscarAwards.json
+// (366KB) deliberately isn't part of any route's synchronous import graph —
+// see movieData.js — so it's never preloaded here either.
+function collectChunkKeys(manifest, key, seen = new Set()) {
+  if (seen.has(key)) return seen;
+  seen.add(key);
+  for (const dep of manifest[key]?.imports || []) {
+    if (dep !== "index.html") collectChunkKeys(manifest, dep, seen);
+  }
+  return seen;
+}
+
+function modulePreloadTags(manifest, entryKey) {
+  const keys = collectChunkKeys(manifest, entryKey);
+  return [...keys]
+    .map((k) => manifest[k]?.file)
+    .filter(Boolean)
+    .map((file) => `<link rel="modulepreload" href="/${file}" />`)
+    .join("\n    ");
+}
+
 function spaRoutes() {
   return {
     name: "spa-routes",
     closeBundle() {
       const outDir = "dist";
+      const manifest = JSON.parse(fs.readFileSync(path.join(outDir, ".vite/manifest.json"), "utf8"));
+
       const template = inlineStylesheet(
         fs.readFileSync(path.join(outDir, "index.html"), "utf8"),
         outDir,
       );
-      fs.writeFileSync(path.join(outDir, "index.html"), template);
+      const homeHtml = template.replace("</head>", `    ${modulePreloadTags(manifest, HOME_ENTRY)}\n  </head>`);
+      fs.writeFileSync(path.join(outDir, "index.html"), homeHtml);
 
       // Unknown paths (typos, old links not covered by the redirects below)
-      // still fall back to the SPA shell.
-      fs.writeFileSync(path.join(outDir, "404.html"), template);
+      // still fall back to the SPA shell, which resolves to the homepage.
+      fs.writeFileSync(path.join(outDir, "404.html"), homeHtml);
 
       const homeTitle = template.match(/<title>([^<]*)<\/title>/)[1];
       const homeDescription = template.match(/name="description"\s+content="([^"]*)"/)[1];
@@ -111,6 +148,7 @@ function spaRoutes() {
         html = html.replace('href="https://hitflix.club/"', `href="https://hitflix.club${route.path}"`);
         html = html.replace('content="https://hitflix.club/"', `content="https://hitflix.club${route.path}"`);
         html = html.replace('"url": "https://hitflix.club/"', `"url": "https://hitflix.club${route.path}"`);
+        html = html.replace("</head>", `    ${modulePreloadTags(manifest, route.entry)}\n  </head>`);
 
         const dir = path.join(outDir, route.path);
         fs.mkdirSync(dir, { recursive: true });
@@ -131,5 +169,6 @@ export default defineConfig({
   base: "/",
   build: {
     sourcemap: true,
+    manifest: true,
   },
 });
