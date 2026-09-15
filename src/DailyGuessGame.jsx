@@ -567,8 +567,6 @@ export default function DailyGuessGame({
               </div>
             )}
 
-            <GuessHistory guesses={progress.guesses} />
-
             {progress.status !== "playing" && (
               <EndScreen
                 status={progress.status}
@@ -590,6 +588,8 @@ export default function DailyGuessGame({
                 }}
               />
             )}
+
+            <GuessHistory guesses={progress.guesses} />
 
             {crossLinks && crossLinks.length > 0 && (
               <div style={{ marginTop: 26 }}>
@@ -707,7 +707,15 @@ function guessDisplayValueForField(key, comparison) {
 // One guess's card: a title line plus its 6 category chips, wrapping onto as
 // many rows as the screen needs — no fixed-width grid, so it never requires
 // horizontal scrolling on narrow phones.
-function GuessRowCard({ title, italic, fields, values }) {
+// "First", "Second", "Third"… reads more naturally next to a guess's title
+// than a bare "Guess 3" once guesses are listed newest-first and no longer
+// line up with their position on the page.
+const GUESS_ORDINALS = ["First", "Second", "Third", "Fourth", "Fifth"];
+function ordinalGuessLabel(guessNumber) {
+  return GUESS_ORDINALS[guessNumber - 1] || `${guessNumber}th`;
+}
+
+function GuessRowCard({ title, italic, guessNumber, fields, values }) {
   return (
     <div
       style={{
@@ -717,20 +725,26 @@ function GuessRowCard({ title, italic, fields, values }) {
         padding: "10px 12px",
       }}
     >
-      <div
-        style={{
-          fontWeight: italic ? 500 : 700,
-          fontStyle: italic ? "italic" : "normal",
-          color: italic ? COLORS.mute : COLORS.paper,
-          fontSize: 13,
-          marginBottom: 8,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={italic ? undefined : title}
-      >
-        {title}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+        <div
+          style={{
+            fontWeight: italic ? 500 : 700,
+            fontStyle: italic ? "italic" : "normal",
+            color: italic ? COLORS.mute : COLORS.paper,
+            fontSize: 13,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            minWidth: 0,
+            flex: 1,
+          }}
+          title={italic ? undefined : title}
+        >
+          {title}
+        </div>
+        {guessNumber && (
+          <div style={{ color: COLORS.mute, fontSize: 11, flexShrink: 0 }}>{ordinalGuessLabel(guessNumber)} guess</div>
+        )}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {FIELD_META.map((f) => (
@@ -759,9 +773,9 @@ function GuessHistory({ guesses }) {
         </div>
       )}
       {guesses.length === 0 && <PlaceholderRow />}
-      {guesses.map((g, i) => {
+      {guesses.map((g, i) => ({ g, i })).reverse().map(({ g, i }) => {
         const values = Object.fromEntries(FIELD_META.map((f) => [f.key, guessDisplayValueForField(f.key, g)]));
-        return <GuessRowCard key={i} title={g.guess.title} fields={g.fields} values={values} />;
+        return <GuessRowCard key={i} title={g.guess.title} guessNumber={i + 1} fields={g.fields} values={values} />;
       })}
     </div>
   );
