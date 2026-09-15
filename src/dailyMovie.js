@@ -463,8 +463,12 @@ export function compareGuessToTarget(guess, target) {
   );
 
   const studio = setOverlapStatus(guess.studio, target.studio);
+  // Not one of the displayed tiles (see FIELD_META) — kept here so the Matched
+  // Cast block can accumulate shared names across guesses without re-deriving
+  // the overlap itself.
   const cast = setOverlapStatus(guess.cast, target.cast);
   const year = numericStatus(Number(guess.year) || null, Number(target.year));
+  const runtime = numericStatus(guess.runtimeMinutes, target.runtimeMinutes);
   const boxOffice = numericStatus(boxOfficeBracketIndex(guess.boxOfficeUSD), boxOfficeBracketIndex(target.boxOfficeUSD));
   const nominations = numericStatus(guess.oscarNominations, target.oscarNominations);
 
@@ -476,9 +480,10 @@ export function compareGuessToTarget(guess, target) {
       director: guess.director,
       studio: guess.studio,
       cast: guess.cast,
+      runtime: guess.runtimeMinutes,
       boxOffice: guess.boxOfficeUSD,
       nominations: guess.oscarNominations,
     },
-    fields: { director, studio, cast, year, boxOffice, nominations },
+    fields: { director, studio, cast, year, runtime, boxOffice, nominations },
   };
 }

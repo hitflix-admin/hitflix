@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb } from "lucide-react";
+import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, ExternalLink, Film, Share2, Tag, Lightbulb, Users } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, iconBtn, primaryBtn, secondaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
@@ -17,11 +17,14 @@ const MAX_GUESSES = 5;
 // it's meant as help for the last attempt, not a shortcut through the puzzle.
 const HINT_AVAILABLE_AFTER_GUESSES = 4;
 
+// Cast isn't in this list — it's tracked instead by the Matched Cast block up
+// top, which already surfaces every overlapping name across all guesses, so a
+// per-guess Cast tile here would just be a redundant, noisier view of the same data.
 const FIELD_META = [
   { key: "year", label: "Year" },
   { key: "director", label: "Director" },
   { key: "studio", label: "Studio" },
-  { key: "cast", label: "Cast" },
+  { key: "runtime", label: "Runtime" },
   { key: "boxOffice", label: "Box Office" },
   { key: "nominations", label: "Oscar Noms" },
 ];
@@ -73,6 +76,71 @@ function buildShareText(shareLabel, shareUrl, date, guesses, status) {
 
 function capitalizeGenre(tag) {
   return tag.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// Every cast name shared with the target across all guesses so far, deduped
+// case-insensitively (keeping the first-seen casing) so the same actor found
+// via two different guesses only shows up once.
+function collectMatchedCast(guesses) {
+  const seen = new Map();
+  for (const g of guesses) {
+    for (const name of g.fields?.cast?.shared || []) {
+      const key = name.toLowerCase().trim();
+      if (!seen.has(key)) seen.set(key, name);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+// A running tally of confirmed cast overlap, built up guess by guess — lets a
+// player track who's actually in the mystery movie without having to re-scan
+// every past guess card for cast tiles that turned yellow or green.
+function MatchedCastBlock({ guesses }) {
+  const matched = collectMatchedCast(guesses);
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        background: "rgba(78,140,92,0.12)",
+        border: "1px solid rgba(78,140,92,0.4)",
+        borderRadius: 6,
+        padding: "12px 14px",
+        marginTop: 10,
+      }}
+    >
+      <Users size={20} strokeWidth={1.8} color={COLORS.green} style={{ flexShrink: 0, marginTop: 1 }} />
+      <div style={{ fontSize: 13.5, lineHeight: 1.4, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, color: COLORS.green, marginBottom: matched.length ? 6 : 2 }}>
+          Matched cast{matched.length ? ` (${matched.length})` : ""}
+        </div>
+        {matched.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {matched.map((name) => (
+              <span
+                key={name}
+                style={{
+                  background: "rgba(78,140,92,0.18)",
+                  border: "1px solid rgba(78,140,92,0.4)",
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div style={{ color: COLORS.mute, fontSize: 12.5 }}>
+            Cast members from your guesses who are also in today's movie will show up here.
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // Shown upfront (before any guess) on both editions — genre is otherwise not
@@ -253,6 +321,7 @@ export default function DailyGuessGame({
           director: details.director,
           studio: details.studio,
           cast: details.cast,
+          runtimeMinutes: details.runtimeMinutes,
           boxOfficeUSD: parseBoxOfficeUSD(details.boxOffice),
           oscarNominations: details.oscarNominations,
         };
@@ -318,6 +387,7 @@ export default function DailyGuessGame({
 
         {target && (
           <>
+            <MatchedCastBlock guesses={progress.guesses} />
             <GenreHint genreTags={target.genreTags} />
             {renderHint && renderHint(target)}
 
@@ -510,6 +580,13 @@ function FieldTile({ label, field, guessValue }) {
 
 function guessDisplayValueForField(key, comparison) {
   const raw = comparison.guessRaw || {};
+  const field = comparison.fields?.[key];
+  // A partial match on a list field (director/studio) is otherwise ambiguous
+  // — the raw guessed value doesn't say *which* name overlapped with the
+  // target, so show the actual shared name(s) instead.
+  if (field?.status === "partial" && field.shared?.length) {
+    return field.shared.join(", ");
+  }
   switch (key) {
     case "year":
       return raw.year || "?";
@@ -517,8 +594,8 @@ function guessDisplayValueForField(key, comparison) {
       return raw.director || "?";
     case "studio":
       return (raw.studio || []).join(", ") || "?";
-    case "cast":
-      return (raw.cast || []).slice(0, 2).join(", ") || "?";
+    case "runtime":
+      return raw.runtime ? `${raw.runtime} min` : "?";
     case "boxOffice":
       return boxOfficeBracketLabel(raw.boxOffice) || "?";
     case "nominations":
