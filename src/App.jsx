@@ -891,7 +891,7 @@ function HomeView({
           marginBottom: 4,
         }}
       >
-        My Lists
+        My Movie Lists
       </div>
       <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 10 }}>
         {lists.length === 0 ? "Start your first list below" : `${lists.length} list${lists.length === 1 ? "" : "s"}`}
@@ -931,7 +931,10 @@ function HomeView({
             fontSize: 14,
           }}
         >
-          No lists yet. Start one above — give it a name, decide how many titles it holds, then search to fill it in.
+          <div>No lists yet. Start one above — give it a name, decide how many titles it holds, then search to fill it in.</div>
+          <div style={{ marginTop: 10, fontSize: 12.5, color: "#6B7280" }}>
+            Try something like "Top 10 of the 2000s," "Movies to Watch with Friends," or "90s Comfort Rewatches."
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
