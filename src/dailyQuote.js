@@ -7,18 +7,21 @@
 
 import { daysSinceEpoch, todayGameDateString } from "./dailyMovie.js";
 
+// Ordering here fixes which line lands on which calendar day (index N shows
+// up daysSinceEpoch(today) % length days from the launch epoch) — reorder
+// deliberately, not just to add/remove lines.
 export const DAILY_QUOTES = [
+  "You had me at 'Add to List.'",
+  "Shall we play a game?",
+  "Did we just become best friends?",
+  "I had strings, but now I'm free.",
+  "Amaze amaze amaze!",
   "Why bad review longer than good review, question.",
   "Why one star mean bad, star is good thing, question.",
   "Why critic say overrated. Rated by who, question.",
   "Why human need stranger opinion before watching, question.",
   "Why critic watch movie once, then know everything, question.",
   "We're gonna need a longer list.",
-  "You had me at 'Add to List.'",
-  "Shall we play a game?",
-  "Did we just become best friends?",
-  "I had strings, but now I'm free.",
-  "Amaze amaze amaze!",
 ];
 
 // Cycles through the pool in order, one per calendar day, wrapping back to
