@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
-import { inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
+import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
 import {
   cleanMovieTitle,
@@ -15,8 +15,10 @@ import MovieModal from "./MovieModal.jsx";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
-   Palette:   ink #141414 / surface #1E1E1E / paper #E7E9EC
-              blue #7B95BA / rose #B5544B / mute #8D96A3
+   Palette:   ink #141414 / surface #1E1E1E / paper #E7E9EC / mute #8D96A3
+              cobalt #6E99D4 (primary accent) — see theme.js COLORS for
+              the rest (orchid/caramel/fern/scarlet) and why they're split
+              from the decorative-vs-semantic original blue/rose/amber/green
    Type: "Montserrat" — extrabold + tracked caps for display,
          regular/medium for body
 --------------------------------------------------------- */
@@ -683,8 +685,8 @@ function DefaultMovieTile({ movie, onAddRating }) {
         style={{
           marginTop: "auto",
           background: "none",
-          border: "1px solid rgba(123,149,186,0.6)",
-          color: "#7B95BA",
+          border: "1px solid rgba(110,153,212,0.6)",
+          color: COLORS.cobalt,
           borderRadius: 3,
           padding: "5px 8px",
           fontSize: 11.5,
@@ -897,7 +899,7 @@ function HomeView({
         onClick={onCreate}
         style={{
           width: "100%",
-          background: "#7B95BA",
+          background: COLORS.cobalt,
           color: "#141414",
           border: "none",
           borderRadius: 3,
@@ -1052,7 +1054,7 @@ function MovieLookup({ query, setQuery, results, searching, searchError, onSelec
       </div>
 
       {searching && <div style={{ color: "#8D96A3", fontSize: 13 }}>Searching…</div>}
-      {searchError && <div style={{ color: "#B5544B", fontSize: 13 }}>{searchError}</div>}
+      {searchError && <div style={{ color: COLORS.scarlet, fontSize: 13 }}>{searchError}</div>}
       {!searching && query.trim() && !searchError && results.length === 0 && (
         <div style={{ color: "#8D96A3", fontSize: 13 }}>No titles found for "{query}".</div>
       )}
@@ -1416,7 +1418,7 @@ function EditorView({
                     fontWeight: 800,
                     fontVariantNumeric: "tabular-nums",
                     fontSize: 15,
-                    color: "#7B95BA",
+                    color: COLORS.cobalt,
                   }}
                 >
                   {dragOriginalOrder?.get(entry.uid) ?? i + 1}
@@ -1476,8 +1478,8 @@ function EditorView({
                     onClick={() => onOpenMovie(entry)}
                     style={{
                       background: "transparent",
-                      border: "1px solid #7B95BA",
-                      color: "#7B95BA",
+                      border: `1px solid ${COLORS.cobalt}`,
+                      color: COLORS.cobalt,
                       borderRadius: 20,
                       padding: "6px 10px",
                       fontSize: 10.5,
@@ -1608,8 +1610,8 @@ function EditorView({
                           onClick={() => onOpenMovie(entry)}
                           style={{
                             background: "transparent",
-                            border: "1px solid #7B95BA",
-                            color: "#7B95BA",
+                            border: `1px solid ${COLORS.cobalt}`,
+                            color: COLORS.cobalt,
                             borderRadius: 20,
                             padding: "4px 8px",
                             fontSize: 9.5,
@@ -1650,12 +1652,12 @@ function EditorView({
           </div>
 
           {full && (
-            <div style={{ color: "#B5544B", fontSize: 13, marginBottom: 8 }}>
+            <div style={{ color: COLORS.scarlet, fontSize: 13, marginBottom: 8 }}>
               This list is full ({list.entries.length}/{list.targetLength}). Remove a title to add another.
             </div>
           )}
           {!full && searching && <div style={{ color: "#8D96A3", fontSize: 13 }}>Searching…</div>}
-          {!full && searchError && <div style={{ color: "#B5544B", fontSize: 13 }}>{searchError}</div>}
+          {!full && searchError && <div style={{ color: COLORS.scarlet, fontSize: 13 }}>{searchError}</div>}
           {!full && !searching && query.trim() && !searchError && results.length === 0 && (
             <div style={{ color: "#8D96A3", fontSize: 13 }}>No titles found for "{query}".</div>
           )}
@@ -1688,7 +1690,7 @@ function EditorView({
                     <button
                       onClick={() => onAdd(r)}
                       style={{
-                        background: "#7B95BA",
+                        background: COLORS.cobalt,
                         border: "none",
                         borderRadius: 3,
                         color: "#141414",

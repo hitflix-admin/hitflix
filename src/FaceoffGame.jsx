@@ -89,7 +89,7 @@ function MoviePoster({ poster, title }) {
         width: "100%",
         aspectRatio: "2 / 3",
         borderRadius: 4,
-        background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #7B95BA 130%)",
+        background: "linear-gradient(160deg, #1B2430 0%, #2F527A 55%, #6E99D4 130%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -104,11 +104,11 @@ function MovieCard({ movie, onClick, disabled, resultState, formatValue, onViewM
   // resultState: null while choosing; otherwise "chosen-correct" | "chosen-wrong" | "actual-higher" | "faded"
   const borderColor =
     resultState === "chosen-correct"
-      ? COLORS.green
+      ? COLORS.fern
       : resultState === "chosen-wrong"
-      ? COLORS.rose
+      ? COLORS.scarlet
       : resultState === "actual-higher"
-      ? COLORS.amber
+      ? COLORS.caramel
       : "rgba(231,233,236,0.1)";
 
   return (
@@ -322,7 +322,7 @@ export default function FaceoffGame({
           </div>
         </div>
 
-        {loadError && <div style={{ color: COLORS.rose, fontSize: 13.5, marginTop: 20 }}>{loadError}</div>}
+        {loadError && <div style={{ color: COLORS.scarlet, fontSize: 13.5, marginTop: 20 }}>{loadError}</div>}
 
         {!target && !loadError && (
           <div style={{ color: COLORS.mute, fontSize: 13.5, marginTop: 30 }}>Loading today's puzzle…</div>
@@ -335,8 +335,8 @@ export default function FaceoffGame({
                 const answer = progress.answers[i];
                 const color = answer
                   ? answer.correct
-                    ? COLORS.green
-                    : COLORS.rose
+                    ? COLORS.fern
+                    : COLORS.scarlet
                   : "rgba(231,233,236,0.14)";
                 return <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: color }} />;
               })}
@@ -418,7 +418,7 @@ export default function FaceoffGame({
                             fontWeight: 800,
                             fontSize: 15,
                             marginBottom: 12,
-                            color: feedback.correct ? COLORS.green : COLORS.rose,
+                            color: feedback.correct ? COLORS.fern : COLORS.scarlet,
                           }}
                         >
                           {feedback.correct ? "Correct!" : "Not quite"}
@@ -529,9 +529,9 @@ function FaceoffEndScreen({ answers, target, score, percent, countdown, copied, 
               }}
             >
               {a.correct ? (
-                <Check size={16} strokeWidth={2.5} color={COLORS.green} style={{ flexShrink: 0 }} />
+                <Check size={16} strokeWidth={2.5} color={COLORS.fern} style={{ flexShrink: 0 }} />
               ) : (
-                <X size={16} strokeWidth={2.5} color={COLORS.rose} style={{ flexShrink: 0 }} />
+                <X size={16} strokeWidth={2.5} color={COLORS.scarlet} style={{ flexShrink: 0 }} />
               )}
               <div style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 <span style={{ fontWeight: 700 }}>{winner.title}</span>

@@ -121,7 +121,7 @@ export function PosterArt({ poster, title, size = "thumb" }) {
         borderRadius: 3,
         border: "1px solid rgba(231,233,236,0.14)",
         flexShrink: 0,
-        background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #7B95BA 130%)",
+        background: "linear-gradient(160deg, #1B2430 0%, #2F527A 55%, #6E99D4 130%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

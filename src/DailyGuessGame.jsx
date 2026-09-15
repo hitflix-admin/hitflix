@@ -125,16 +125,16 @@ function MatchedCastBlock({ guesses }) {
         display: "flex",
         alignItems: "flex-start",
         gap: 10,
-        background: "rgba(78,140,92,0.12)",
-        border: "1px solid rgba(78,140,92,0.4)",
+        background: "rgba(92,191,99,0.12)",
+        border: "1px solid rgba(92,191,99,0.4)",
         borderRadius: 6,
         padding: "12px 14px",
         marginTop: 10,
       }}
     >
-      <Users size={20} strokeWidth={1.8} color={COLORS.green} style={{ flexShrink: 0, marginTop: 1 }} />
+      <Users size={20} strokeWidth={1.8} color={COLORS.fern} style={{ flexShrink: 0, marginTop: 1 }} />
       <div style={{ fontSize: 13.5, lineHeight: 1.4, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, color: COLORS.green, marginBottom: matched.length ? 6 : 2 }}>
+        <div style={{ fontWeight: 700, color: COLORS.fern, marginBottom: matched.length ? 6 : 2 }}>
           Matched cast{matched.length ? ` (${matched.length})` : ""}
         </div>
         {matched.length > 0 ? (
@@ -143,8 +143,8 @@ function MatchedCastBlock({ guesses }) {
               <span
                 key={name}
                 style={{
-                  background: "rgba(78,140,92,0.18)",
-                  border: "1px solid rgba(78,140,92,0.4)",
+                  background: "rgba(92,191,99,0.18)",
+                  border: "1px solid rgba(92,191,99,0.4)",
                   borderRadius: 999,
                   padding: "3px 10px",
                   fontSize: 12,
@@ -176,16 +176,16 @@ function GenreHint({ genreTags }) {
         display: "flex",
         alignItems: "center",
         gap: 10,
-        background: "rgba(123,149,186,0.12)",
-        border: "1px solid rgba(123,149,186,0.4)",
+        background: "rgba(110,153,212,0.12)",
+        border: "1px solid rgba(110,153,212,0.4)",
         borderRadius: 6,
         padding: "12px 14px",
         marginTop: 16,
       }}
     >
-      <Tag size={20} strokeWidth={1.8} color={COLORS.blue} style={{ flexShrink: 0 }} />
+      <Tag size={20} strokeWidth={1.8} color={COLORS.cobalt} style={{ flexShrink: 0 }} />
       <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>
-        Genre: <span style={{ fontWeight: 700, color: COLORS.blue }}>{list}</span>
+        Genre: <span style={{ fontWeight: 700, color: COLORS.cobalt }}>{list}</span>
       </div>
     </div>
   );
@@ -213,14 +213,14 @@ function PlotHintReveal({ plotHint, revealed, onReveal }) {
         display: "flex",
         alignItems: "center",
         gap: 10,
-        background: "rgba(201,160,61,0.12)",
-        border: "1px solid rgba(201,160,61,0.4)",
+        background: "rgba(191,148,92,0.12)",
+        border: "1px solid rgba(191,148,92,0.4)",
         borderRadius: 6,
         padding: "12px 14px",
         marginTop: 10,
       }}
     >
-      <Lightbulb size={20} strokeWidth={1.8} color={COLORS.amber} style={{ flexShrink: 0 }} />
+      <Lightbulb size={20} strokeWidth={1.8} color={COLORS.caramel} style={{ flexShrink: 0 }} />
       <div style={{ fontSize: 13.5, lineHeight: 1.4 }}>{plotHint}</div>
     </div>
   );
@@ -418,7 +418,7 @@ export default function DailyGuessGame({
         </div>
 
         {loadError && (
-          <div style={{ color: COLORS.rose, fontSize: 13.5, marginTop: 20 }}>{loadError}</div>
+          <div style={{ color: COLORS.scarlet, fontSize: 13.5, marginTop: 20 }}>{loadError}</div>
         )}
 
         {!target && !loadError && (
@@ -439,7 +439,7 @@ export default function DailyGuessGame({
                     flex: 1,
                     height: 4,
                     borderRadius: 2,
-                    background: i < progress.guesses.length ? COLORS.blue : "rgba(231,233,236,0.14)",
+                    background: i < progress.guesses.length ? COLORS.cobalt : "rgba(231,233,236,0.14)",
                   }}
                 />
               ))}
@@ -472,7 +472,7 @@ export default function DailyGuessGame({
                   />
                 </div>
                 {searching && <div style={{ color: COLORS.mute, fontSize: 12.5, marginTop: 6 }}>Searching…</div>}
-                {guessError && <div style={{ color: COLORS.rose, fontSize: 12.5, marginTop: 6 }}>{guessError}</div>}
+                {guessError && <div style={{ color: COLORS.scarlet, fontSize: 12.5, marginTop: 6 }}>{guessError}</div>}
 
                 {results.length > 0 && (
                   <div
@@ -598,10 +598,10 @@ function tileStyle(status) {
     minWidth: 0,
   };
   if (status === "correct" || status === "full") {
-    return { ...base, background: COLORS.green, color: "#0d160f", fontWeight: 700 };
+    return { ...base, background: COLORS.fern, color: "#0d160f", fontWeight: 700 };
   }
   if (status === "partial") {
-    return { ...base, background: COLORS.amber, color: "#1a1405", fontWeight: 700 };
+    return { ...base, background: COLORS.caramel, color: "#1a1405", fontWeight: 700 };
   }
   if (status === "unknown") {
     return { ...base, background: "transparent", border: "1px dashed rgba(231,233,236,0.2)", color: COLORS.mute };
@@ -746,7 +746,7 @@ function EndScreen({ status, target, countdown, copied, onShare, onViewMovie }) 
           fontSize: 16,
           letterSpacing: 0.4,
           marginBottom: 12,
-          color: status === "won" ? COLORS.green : COLORS.rose,
+          color: status === "won" ? COLORS.fern : COLORS.scarlet,
         }}
       >
         {status === "won" ? "You got it!" : "Better luck tomorrow"}
@@ -766,7 +766,7 @@ function EndScreen({ status, target, countdown, copied, onShare, onViewMovie }) 
               height: 112,
               borderRadius: 4,
               flexShrink: 0,
-              background: "linear-gradient(160deg, #1B2430 0%, #35506B 55%, #7B95BA 130%)",
+              background: "linear-gradient(160deg, #1B2430 0%, #2F527A 55%, #6E99D4 130%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

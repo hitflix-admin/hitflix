@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { X, ExternalLink } from "lucide-react";
-import { primaryBtn } from "./theme.js";
+import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
 
@@ -137,7 +137,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
                 style={{
                   background: "none",
                   border: "none",
-                  color: "#7B95BA",
+                  color: COLORS.cobalt,
                   cursor: "pointer",
                   fontSize: 13.5,
                   fontWeight: 600,
@@ -156,7 +156,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    color: "#7B95BA",
+                    color: COLORS.cobalt,
                     fontSize: 12.5,
                     display: "inline-flex",
                     alignItems: "center",
