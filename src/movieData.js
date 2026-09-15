@@ -585,12 +585,20 @@ const PLOT_SAFE_CAP_WORDS = new Set([
 // allows either case after the leading capital (not just lowercase) so names
 // with an internal capital after an apostrophe (e.g. "T'Challa") match as one
 // token instead of splitting into two separately-redacted, run-together words.
+// A bracketed "[blank]" reads as an obvious fill-in-the-blank rather than a
+// pronoun standing in for a person, so it holds up for place names too ("rob
+// a bank in [blank]") and combines cleanly with an article already in the
+// sentence ("the sole survivor, the [blank], reveals himself") — both of
+// which broke when a person-shaped word like "someone" was swapped in there.
 function redactProperNouns(text) {
-  return text.replace(/\b[A-Z][A-Za-z'’-]*(?:\s+[A-Z][A-Za-z'’-]*){0,2}\b/g, (match) => {
+  let redactionCount = 0;
+  const redacted = text.replace(/\b[A-Z][A-Za-z'’-]*(?:\s+[A-Z][A-Za-z'’-]*){0,2}\b/g, (match) => {
     const parts = match.split(/\s+/);
     if (parts.length === 1 && PLOT_SAFE_CAP_WORDS.has(parts[0].toLowerCase())) return match;
-    return "someone";
+    redactionCount++;
+    return "[blank]";
   });
+  return { text: redacted, redactionCount };
 }
 
 async function fetchPlotSectionWikitextOnce(pageTitle, sectionIndex) {
@@ -631,9 +639,10 @@ export async function fetchPlotHint(pageTitle) {
     if (sentences.length === 0) return "";
 
     // Prefer an early sentence that doesn't come back too name-heavy once
-    // redacted — a wall of "someone"s isn't a useful clue.
+    // redacted — too many blanked-out names isn't a useful clue.
     const candidates = sentences.slice(0, 4).map(redactProperNouns);
-    return candidates.find((s) => (s.match(/\bsomeone\b/g) || []).length <= 2) || candidates[0];
+    const best = candidates.find((c) => c.redactionCount <= 2) || candidates[0];
+    return best.text;
   } catch (e) {
     return "";
   }
