@@ -3,6 +3,7 @@ import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, C
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
+import { getDailyQuote } from "./dailyQuote.js";
 import {
   cleanMovieTitle,
   yearFromDescription,
@@ -865,6 +866,7 @@ function HomeView({
   defaultMovies,
   onOpenStandaloneMovie,
 }) {
+  const dailyQuote = getDailyQuote();
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
@@ -875,7 +877,7 @@ function HomeView({
           style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
         />
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
-          Build a list, one reel at a time.
+          {dailyQuote}
         </div>
       </div>
 
