@@ -1,0 +1,304 @@
+{
+  "date": "2026-09-17",
+  "generatedAt": "2026-09-17T04:27:35.423Z",
+  "dailyGame": {
+    "id": "877743",
+    "title": "Footloose",
+    "pageTitle": "Footloose",
+    "year": 1984,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/e/e4/FootloosePoster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Footloose",
+    "extract": "Footloose is a 1984 American musical drama film directed by Herbert Ross and written by Dean Pitchford. It tells the story of Ren McCormack, a teenager from Chicago who moves to a small town, where he attempts to overturn a ban on dancing enforced by the efforts of a local minister.",
+    "director": "Herbert Ross",
+    "studio": [
+      "IndieProd"
+    ],
+    "cast": [
+      "Kevin Bacon",
+      "Lori Singer",
+      "Dianne Wiest",
+      "John Lithgow"
+    ],
+    "runtimeMinutes": 107,
+    "boxOfficeUSD": 80000000,
+    "oscarNominations": 2,
+    "oscarWinners": [],
+    "normalizedTitle": "footloose",
+    "genreTags": [
+      "drama",
+      "romance",
+      "musical"
+    ],
+    "plotHint": "At school [blank] befriends [blank]."
+  },
+  "dailyWinner": {
+    "id": "129331",
+    "title": "Moonstruck",
+    "pageTitle": "Moonstruck",
+    "year": 1987,
+    "poster": "https://upload.wikimedia.org/wikipedia/en/7/7d/Chermoonstruck.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "pageUrl": "https://en.wikipedia.org/wiki/Moonstruck",
+    "extract": "Moonstruck is a 1987 American romantic comedy film directed by Norman Jewison and written by John Patrick Shanley. It stars Cher as a widowed Italian American woman who falls in love with her fiancé's hot-tempered, estranged younger brother, played by Nicolas Cage. The supporting cast includes Vincent Gardenia, Olympia Dukakis, and Danny Aiello.",
+    "director": "Norman Jewison",
+    "studio": [
+      "Metro-Goldwyn-Mayer",
+      "Star Partners II Ltd."
+    ],
+    "cast": [
+      "Cher",
+      "Nicolas Cage",
+      "Vincent Gardenia",
+      "Olympia Dukakis",
+      "Danny Aiello"
+    ],
+    "runtimeMinutes": 102,
+    "boxOfficeUSD": 122100000,
+    "oscarNominations": 6,
+    "oscarWinners": [
+      "Actress in a Leading Role",
+      "Actress in a Supporting Role",
+      "Writing (Screenplay Written Directly for the Screen)"
+    ],
+    "normalizedTitle": "moonstruck",
+    "genreTags": [
+      "comedy",
+      "romantic comedy"
+    ],
+    "plotHint": "[blank] accepts, insisting on following tradition as she believes failing to do so led to her first husband's sudden death after two years of marriage.",
+    "hintCategory": "Actress in a Leading Role"
+  },
+  "faceoff": [
+    {
+      "id": "2026-09-17-0",
+      "left": {
+        "id": "2159529",
+        "title": "Airport 1975",
+        "pageTitle": "Airport 1975",
+        "year": 1974,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/6d/Airport_nineteen_seventy_five_movie_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Airport_1975",
+        "extract": "Airport 75  is a 1974 American disaster film, and the second installment in the Airport film series. It is directed by Jack Smight, produced by William Frye, and from a screenplay by Don Ingalls. The film stars Charlton Heston, Karen Black, George Kennedy, Efrem Zimbalist Jr., Susan Clark, Sid Caesar, Linda Blair, Dana Andrews, Roy Thinnes, Nancy Olson, Ed Nelson, Myrna Loy, Martha Scott, Augusta Summerland, Erik Estrada, Helen Reddy, in her film debut, and Gloria Swanson in her final film role.",
+        "value": 103000000
+      },
+      "right": {
+        "id": "4276475",
+        "title": "The Dark Knight",
+        "pageTitle": "The Dark Knight",
+        "year": 2008,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/1c/The_Dark_Knight_%282008_film%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Dark_Knight",
+        "extract": "The Dark Knight is a 2008 superhero film directed by Christopher Nolan, who co-wrote the screenplay with his brother Jonathan. Based on the DC Comics superhero Batman, it is the sequel to Batman Begins (2005), and the second installment in The Dark Knight trilogy. The plot follows the vigilante Batman, police lieutenant James Gordon, and district attorney Harvey Dent, who form an alliance to dismantle organized crime in Gotham City. Their efforts are derailed by the Joker, an anarchistic mastermind who seeks to test how far Batman will go to save the city from chaos. The cast includes Christian Bale, Michael Caine, Heath Ledger, Gary Oldman, Aaron Eckhart, Maggie Gyllenhaal, and Morgan Freeman.",
+        "value": 1008999999.9999999
+      }
+    },
+    {
+      "id": "2026-09-17-1",
+      "left": {
+        "id": "695023",
+        "title": "Meet the Parents",
+        "pageTitle": "Meet the Parents",
+        "year": 2000,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/05/Meet_the_parents_ver2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Meet_the_Parents",
+        "extract": "Meet the Parents is a 2000 American romantic comedy film directed by Jay Roach, and written by Jim Herzfeld and John Hamburg. It stars Ben Stiller as Greg Focker, a nurse who visits his girlfriend Pam's parents, overprotective Jack and pacifistic Dina, and suffers from a series of unfortunate events. Teri Polo stars as Pam, and Owen Wilson stars as Pam's ex-boyfriend Kevin.",
+        "value": 330000000
+      },
+      "right": {
+        "id": "12260598",
+        "title": "Ice Age: Dawn of the Dinosaurs",
+        "pageTitle": "Ice Age: Dawn of the Dinosaurs",
+        "year": 2009,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/2/24/Ice_Age_Dawn_of_the_Dinosaurs_theatrical_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Ice_Age%3A_Dawn_of_the_Dinosaurs",
+        "extract": "Ice Age: Dawn of the Dinosaurs is a 2009 American animated adventure comedy film directed by Carlos Saldanha and written by Michael Berg, Peter Ackerman, Mike Reiss, and Yoni Brenner. Produced by 20th Century Fox Animation and Blue Sky Studios, it is the third installment in the Ice Age film series and the sequel to Ice Age: The Meltdown (2006). Ray Romano, John Leguizamo, Denis Leary, Josh Peck, Seann William Scott and Queen Latifah reprise their roles from the previous two films, with Simon Pegg joining the cast. In the film, while Manny and Ellie are preparing for their baby, Sid the Sloth is kidnapped by a female Tyrannosaurus after stealing her eggs, leading the rest of the herd to rescue him in a tropical lost world inhabited by dinosaurs underneath the ice.",
+        "value": 886700000
+      }
+    },
+    {
+      "id": "2026-09-17-2",
+      "left": {
+        "id": "667372",
+        "title": "Harry Potter and the Goblet of Fire",
+        "pageTitle": "Harry Potter and the Goblet of Fire (film)",
+        "year": 2005,
+        "poster": "https://thumb.wikimedia.org/wikipedia/en/thumb/c/c9/Harry_Potter_and_the_Goblet_of_Fire_Poster.jpg/330px-Harry_Potter_and_the_Goblet_of_Fire_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "pageUrl": "https://en.wikipedia.org/wiki/Harry_Potter_and_the_Goblet_of_Fire_(film)",
+        "extract": "Harry Potter and the Goblet of Fire is a 2005 fantasy film directed by Mike Newell from a screenplay by Steve Kloves. It is based on the 2000 novel Harry Potter and the Goblet of Fire by J. K. Rowling. It is the sequel to Harry Potter and the Prisoner of Azkaban (2004) and the fourth instalment in the Harry Potter film series. The film stars Daniel Radcliffe as Harry Potter, alongside Rupert Grint and Emma Watson as Harry's best friends Ron Weasley and Hermione Granger, respectively. The film follows Harry's fourth year at Hogwarts, as he is chosen by the Goblet of Fire to compete in the Triwizard Tournament.",
+        "value": 900400000
+      },
+      "right": {
+        "id": "6446061",
+        "title": "Live and Let Die",
+        "pageTitle": "Live and Let Die (film)",
+        "year": 1973,
+        "poster": "https://thumb.wikimedia.org/wikipedia/en/thumb/3/36/Live_and_Let_Die-_UK_cinema_poster.jpg/330px-Live_and_Let_Die-_UK_cinema_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+        "pageUrl": "https://en.wikipedia.org/wiki/Live_and_Let_Die_(film)",
+        "extract": "Live and Let Die is a 1973 spy film, the eighth film in the James Bond series produced by Eon Productions, the first to star Roger Moore as the fictional MI6 agent James Bond, and the third in the series directed by Guy Hamilton. It was produced by Harry Saltzman and Albert R. Broccoli and written by Tom Mankiewicz.",
+        "value": 161800000
+      }
+    },
+    {
+      "id": "2026-09-17-3",
+      "left": {
+        "id": "69428680",
+        "title": "F1",
+        "pageTitle": "F1 (film)",
+        "year": 2025,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/3/38/F1_%282025_film%29.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/F1_(film)",
+        "extract": "F1 is a 2025 American sports drama film directed by Joseph Kosinski from a screenplay by Ehren Kruger, and a story by Kosinski and Kruger. The film stars Brad Pitt, Damson Idris, Kerry Condon, Tobias Menzies, and Javier Bardem. The plot follows a Formula One (F1) racing driver who returns after a 30-year absence to save his former teammate's underdog team from collapse.",
+        "value": 634100000
+      },
+      "right": {
+        "id": "649482",
+        "title": "Jeremiah Johnson",
+        "pageTitle": "Jeremiah Johnson (film)",
+        "year": 1972,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/9/97/Jeremiah_Johnsonposter.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Jeremiah_Johnson_(film)",
+        "extract": "Jeremiah Johnson is a 1972 American Western film directed by Sydney Pollack and starring Robert Redford as the title character and Will Geer as \"Bear Claw\" Chris Lapp. It is based partly on the life of the legendary mountain man John Jeremiah Johnson, recounted in Raymond Thorp and Robert Bunker's book Crow Killer: The Saga of Liver-Eating Johnson and Vardis Fisher's 1965 novel Mountain Man.",
+        "value": 44700000
+      }
+    },
+    {
+      "id": "2026-09-17-4",
+      "left": {
+        "id": "12319656",
+        "title": "Paint Your Wagon",
+        "pageTitle": "Paint Your Wagon (film)",
+        "year": 1969,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/10/Original_movie_poster_for_the_film_Paint_Your_Wagon.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Paint_Your_Wagon_(film)",
+        "extract": "Paint Your Wagon is a 1969 American Western musical film directed by Joshua Logan, adapted by Paddy Chayefsky and Alan Jay Lerner from the 1951 Lerner and Loewe stage musical. It stars Lee Marvin, Clint Eastwood, Jean Seberg, Ray Walston and Harve Presnell. The plot centers on a love triangle in a mining camp in Gold Rush-era California.",
+        "value": 31600000
+      },
+      "right": {
+        "id": "1064068",
+        "title": "Woodstock",
+        "pageTitle": "Woodstock (film)",
+        "year": 1970,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/3/35/WoodstockFilmPoster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Woodstock_(film)",
+        "extract": "Woodstock is a 1970 American documentary concert film of the watershed counterculture Woodstock Festival which took place in August 1969 near Bethel, New York.",
+        "value": 50000000
+      }
+    }
+  ],
+  "nominationsFaceoff": [
+    {
+      "id": "2026-09-17-0",
+      "left": {
+        "id": "113442",
+        "title": "The Right Stuff",
+        "pageTitle": "The Right Stuff (film)",
+        "year": 1983,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/d/d4/Right_stuff_ver1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Right_Stuff_(film)",
+        "extract": "The Right Stuff is a 1983 American epic historical drama film written and directed by Philip Kaufman and based on the 1979 book of the same name by Tom Wolfe. The film follows the Navy, Marine, and Air Force test pilots who were involved in aeronautical research at Edwards Air Force Base, California, as well as the Mercury Seven, the seven military pilots who were selected to be the astronauts for Project Mercury, the first human spaceflight by the United States. The film stars Sam Shepard, Ed Harris, Scott Glenn, Fred Ward, Dennis Quaid, Barbara Hershey and Kim Stanley ; Levon Helm narrates and plays Air Force test pilot Jack Ridley.",
+        "value": 8
+      },
+      "right": {
+        "id": "41684727",
+        "title": "Whiplash",
+        "pageTitle": "Whiplash (2014 film)",
+        "year": 2014,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/01/Whiplash_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Whiplash_(2014_film)",
+        "extract": "Whiplash is a 2014 American drama film written and directed by Damien Chazelle, and starring Miles Teller, J. K. Simmons, and Paul Reiser. It focuses on an ambitious music student and aspiring jazz drummer (Teller), who is pushed to his limit by his abusive instructor (Simmons).",
+        "value": 5
+      }
+    },
+    {
+      "id": "2026-09-17-1",
+      "left": {
+        "id": "31724592",
+        "title": "Lincoln",
+        "pageTitle": "Lincoln (film)",
+        "year": 2012,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/6/6a/Lincoln_2012_Teaser_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Lincoln_(film)",
+        "extract": "Lincoln is a 2012 American biographical film directed and produced by Steven Spielberg, starring Daniel Day-Lewis as United States President Abraham Lincoln. The film features Sally Field, David Strathairn, Joseph Gordon-Levitt, James Spader, Hal Holbrook, and Tommy Lee Jones in supporting roles. Its screenplay by Tony Kushner was loosely based on Doris Kearns Goodwin's 2005 biography Team of Rivals: The Political Genius of Abraham Lincoln and covers the final four months of Lincoln's life. The film focuses on President Lincoln's efforts in January 1865 to abolish slavery and involuntary servitude by having the Thirteenth Amendment to the United States Constitution passed by the United States House of Representatives.",
+        "value": 12
+      },
+      "right": {
+        "id": "1623960",
+        "title": "Brokeback Mountain",
+        "pageTitle": "Brokeback Mountain",
+        "year": 2005,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/a/a1/Brokeback_mountain.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Brokeback_Mountain",
+        "extract": "Brokeback Mountain is a 2005 American romantic drama film directed by Ang Lee and produced by Diana Ossana and James Schamus. Adapted from the 1997 short story by Annie Proulx, the screenplay was written by Ossana and Larry McMurtry. The film stars Heath Ledger, Jake Gyllenhaal, Anne Hathaway, and Michelle Williams. Its plot depicts the complex romantic relationship between two American cowboys, Ennis Del Mar and Jack Twist, in the American West from 1963 to 1983.",
+        "value": 8
+      }
+    },
+    {
+      "id": "2026-09-17-2",
+      "left": {
+        "id": "770184",
+        "title": "The Grifters",
+        "pageTitle": "The Grifters (film)",
+        "year": 1990,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/a/ae/TheGrifters.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Grifters_(film)",
+        "extract": "The Grifters is a 1990 American neo-noir crime thriller film directed by Stephen Frears, produced by Martin Scorsese, and starring John Cusack, Anjelica Huston, and Annette Bening. The film follows a lifelong con artist (Huston) who reunites with her estranged son (Cusack) and, along with his girlfriend (Bening), becomes embroiled in a complex web of criminal activity. The screenplay by Donald E. Westlake was adapted from Jim Thompson's 1963 novel.",
+        "value": 4
+      },
+      "right": {
+        "id": "25244870",
+        "title": "127 Hours",
+        "pageTitle": "127 Hours",
+        "year": 2010,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/b/b3/127_Hours_Poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/127_Hours",
+        "extract": "127 Hours is a 2010 biographical drama film co-written, produced, and directed by Danny Boyle. The film mainly stars James Franco, with Kate Mara, Amber Tamblyn, and Clémence Poésy appearing in brief supporting roles. In the film, canyoneer Aron Ralston (Franco) must find a way to escape after he gets trapped by a boulder in an isolated slot canyon in Bluejohn Canyon, southeastern Utah, on April 26, 2003. It is a British and American venture produced by Pathé, Everest Entertainment, Film4, HandMade Films and Cloud Eight Films.",
+        "value": 6
+      }
+    },
+    {
+      "id": "2026-09-17-3",
+      "left": {
+        "id": "2001498",
+        "title": "Father Goose",
+        "pageTitle": "Father Goose (film)",
+        "year": 1964,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/07/Father_Goose_film_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Father_Goose_(film)",
+        "extract": "Father Goose is a 1964 American Technicolor romantic comedy film set in World War II, starring Cary Grant, Leslie Caron and Trevor Howard. The title is a play on the children's fiction character of \"Mother Goose,\" which is used as a code name assigned to the coast watcher character played by Grant. Based on a story A Place of Dragons by Sanford Barnett, the film won an Oscar for Best Original Screenplay. It introduced the song \"Pass Me By\" by Cy Coleman and Carolyn Leigh, later recorded by Peggy Lee, Frank Sinatra and others.",
+        "value": 3
+      },
+      "right": {
+        "id": "164401",
+        "title": "Arthur",
+        "pageTitle": "Arthur (1981 film)",
+        "year": 1981,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/7/7b/Arthur_%281981_film%29_poster.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/Arthur_(1981_film)",
+        "extract": "Arthur is a 1981 American romantic comedy film written and directed by Steve Gordon. It stars Dudley Moore as Arthur Bach, a drunken New York City millionaire who is on the brink of an arranged marriage to wealthy heiress Susan Johnson but ends up falling for Linda Marolla, a common working-class young woman from Queens. It was the sole film directed by Gordon, who died in 1982 of a heart attack at age 44.",
+        "value": 4
+      }
+    },
+    {
+      "id": "2026-09-17-4",
+      "left": {
+        "id": "1827624",
+        "title": "White Nights",
+        "pageTitle": "White Nights (1985 film)",
+        "year": 1985,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/8/84/White_Nights_theatrical_release_poster.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/White_Nights_(1985_film)",
+        "extract": "White Nights is a 1985 American musical drama film directed by Taylor Hackford and starring Mikhail Baryshnikov, Gregory Hines, Jerzy Skolimowski, Helen Mirren and Isabella Rossellini. It was choreographed by Twyla Tharp. The title refers to the sunlit summer nights of Leningrad, the setting for the majority of the film, situated just a few degrees below the Arctic Circle.",
+        "value": 2
+      },
+      "right": {
+        "id": "2466773",
+        "title": "The Godfather",
+        "pageTitle": "The Godfather",
+        "year": 1972,
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/1c/Godfather_ver1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+        "pageUrl": "https://en.wikipedia.org/wiki/The_Godfather",
+        "extract": "The Godfather is a 1972 American epic gangster film directed by Francis Ford Coppola, who co-wrote the screenplay with Mario Puzo based on Puzo's best-selling 1969 novel. The film features an ensemble cast that includes Marlon Brando, Al Pacino, James Caan, Richard Castellano, Robert Duvall, Sterling Hayden, John Marley, Richard Conte and Diane Keaton. It is the first installment in The Godfather trilogy, which chronicles the Corleone family under patriarch Vito Corleone (Brando) and the transformation of his youngest son, Michael Corleone (Pacino), from reluctant family outsider to ruthless Mafia boss.",
+        "value": 11
+      }
+    }
+  ]
+}
