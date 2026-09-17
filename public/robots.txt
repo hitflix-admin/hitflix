@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /puzzles/
 
 Sitemap: https://hitflix.club/sitemap.xml

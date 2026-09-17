@@ -4,15 +4,22 @@
 // The puzzle is identical for every player on a given date (see RESET_TIMEZONE in
 // src/dailyMovie.js), so resolving it once here — instead of every visitor's
 // browser separately hitting Wikipedia — is what the scheduled workflow
-// (.github/workflows/build-daily-puzzle.yml) exists for. It commits whatever this
-// script writes, which pushes to main and triggers the normal deploy.
+// (.github/workflows/build-daily-puzzle.yml) exists for. That workflow builds and
+// deploys the site directly in the same run right after this script writes the
+// file — it never commits public/puzzles/ (see .gitignore), so the day's answer
+// exists only in that ephemeral runner and in the deployed output, not in the
+// public repo or its history. One consequence: each scheduled run starts from a
+// clean checkout, so the "reuse what's already resolved" logic below only helps
+// within a single run, not across the day's two cron firings.
 //
 // The client (FaceoffGame.jsx / DailyGuessGame.jsx) fetches /puzzles/<date>.json
 // first and only falls back to live client-side resolution if a game's key is
 // missing from it — so a game failing to resolve here (a network hiccup, or
 // Wikipedia rate-limiting a run that touches all four games back to back) just
 // means that game's players get today's puzzle the old way; it doesn't block the
-// other three games' precomputed entries from shipping.
+// other three games' precomputed entries from shipping. The same fallback covers
+// an ordinary code-push deploy too, since that build has no puzzle file at all
+// until the next scheduled run regenerates and redeploys one.
 //
 // Usage: node scripts/build-daily-puzzle.mjs
 

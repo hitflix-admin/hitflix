@@ -4,14 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # A push made with the default GITHUB_TOKEN (e.g. build-daily-puzzle.yml's
-  # commit) doesn't trigger other workflows' `push` events — GitHub blocks
-  # that to prevent workflow loops — so that workflow's commit would otherwise
-  # land on main without ever getting deployed. Firing on its completion
-  # closes that gap.
-  workflow_run:
-    workflows: ["Build Daily Puzzle"]
-    types: [completed]
 
 permissions:
   contents: read
@@ -24,7 +16,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

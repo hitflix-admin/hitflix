@@ -3,3 +3,8 @@ dist
 .DS_Store
 *.local
 .claude
+
+# Precomputed daily-puzzle answers (see scripts/build-daily-puzzle.mjs) are
+# deployed straight from CI without ever being committed, so a public repo
+# checkout/history never doubles as an answer key for the daily games.
+public/puzzles/*.json
