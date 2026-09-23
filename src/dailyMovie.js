@@ -411,15 +411,23 @@ export async function getDailyMovie(dateString = todayGameDateString()) {
   throw new Error("Could not resolve a daily movie");
 }
 
+// Manual pins for specific dates — take priority over the deterministic pool
+// pick below (as attempt 0), falling back to the normal pool if a pin fails to
+// resolve. Remove an entry once its date has passed.
+const OSCAR_WINNER_DATE_OVERRIDES = {
+  "2026-09-22": { normalizedTitle: normalizeOscarTitle("The Lord of the Rings: The Return of the King"), year: 2003 },
+};
+
 // Same mechanics as getDailyMovie, but drawn only from actual Oscar winners, and
 // with the flashiest category it won (see CATEGORY_RANK_FAMILIES) picked as an
 // upfront hint — a movie with several wins only ever shows the single best one.
 export async function getDailyOscarWinner(dateString = todayGameDateString()) {
   const pool = await getWinnerPool();
   const startIndex = poolIndexForDate(dateString, pool.length, WINNER_SEED_OFFSET);
+  const override = OSCAR_WINNER_DATE_OVERRIDES[dateString];
 
-  for (let attempt = 0; attempt < 25; attempt++) {
-    const candidate = pool[(startIndex + attempt) % pool.length];
+  for (let attempt = 0; attempt < (override ? 26 : 25); attempt++) {
+    const candidate = override && attempt === 0 ? override : pool[(startIndex + attempt - (override ? 1 : 0)) % pool.length];
     try {
       const resolved = await resolveCandidate(candidate);
       if (!resolved) continue;
