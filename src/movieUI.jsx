@@ -8,9 +8,10 @@ import { Film } from "lucide-react";
 export function calcScore(rating) {
   if (!rating) return null;
   const subTotal = rating.writing + rating.performance + rating.visuals + rating.audio;
-  const subFrac = subTotal / 20;
-  const overallFrac = rating.overall / 10;
-  return Math.round(((subFrac + overallFrac) / 2) * 100);
+  // ((subTotal/20 + overall/10) / 2) * 100, kept in integers until the final
+  // halving so .5 always rounds up — the float version sometimes landed just
+  // under .5 (e.g. 57.49999…) and disagreed with reviews.score in the database
+  return Math.round((subTotal * 5 + rating.overall * 10) / 2);
 }
 
 export function ratingColor(value, min, max) {
