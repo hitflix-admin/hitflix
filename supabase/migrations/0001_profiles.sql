@@ -47,3 +47,8 @@ create policy "Users can update their own profile"
 
 -- No insert/delete policies: inserts come only from the trigger above, and
 -- deletes cascade from auth.users when an account is deleted.
+
+-- Explicit grants, so this works even with the dashboard's "automatically
+-- expose new tables" setting turned off. RLS above still decides which rows.
+grant select on public.profiles to anon, authenticated;
+grant update (username, display_name) on public.profiles to authenticated;
