@@ -202,6 +202,7 @@ export default function App() {
   // per drag gesture) never act on a stale snapshot of lists/currentId
   const listsRef = useRef(null);
   const currentIdRef = useRef(null);
+  const reviewsRef = useRef({});
 
   // ---- load ----
   // Signed out, lists and reviews live in this browser's localStorage, as they
@@ -299,6 +300,7 @@ export default function App() {
     setStatus("Saving…");
     const owner = userIdRef.current;
     saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
       // signed in or out since this edit — it belongs to the other storage
       if (userIdRef.current !== owner) return;
       if (owner) {
@@ -323,6 +325,7 @@ export default function App() {
     setStatus("Saving…");
     const owner = userIdRef.current;
     saveReviewsTimer.current = setTimeout(() => {
+      saveReviewsTimer.current = null;
       if (userIdRef.current !== owner) return;
       if (owner) {
         writeDetailsCache(next);
@@ -340,6 +343,38 @@ export default function App() {
       }
     }, 500);
   }, []);
+
+  // Another tab (or device) may have changed the account while this tab sat in
+  // the background, and saving from a stale copy would undo those changes — so
+  // coming back to the tab reloads from the account first. Skipped whenever
+  // this tab has its own edits waiting to save, so those are never dropped.
+  useEffect(() => {
+    if (!userId) return;
+    const hasPendingEdits = () => saveTimer.current || saveReviewsTimer.current || dragState.current;
+    function refresh() {
+      if (document.visibilityState !== "visible" || hasPendingEdits()) return;
+      // queued behind any in-flight save so the reload sees its result
+      syncQueue.current = syncQueue.current.then(async () => {
+        try {
+          const cloud = await loadCloud(reviewsRef.current);
+          if (userIdRef.current !== userId || hasPendingEdits()) return;
+          syncedListsRef.current = cloud.lists;
+          syncedReviewsRef.current = cloud.reviews;
+          setLists(cloud.lists);
+          setReviews(cloud.reviews);
+          // the open list may have been deleted elsewhere
+          if (currentIdRef.current && !cloud.lists.some((l) => l.id === currentIdRef.current)) {
+            setView("home");
+            setCurrentId(null);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+    document.addEventListener("visibilitychange", refresh);
+    return () => document.removeEventListener("visibilitychange", refresh);
+  }, [userId]);
 
   function runImport() {
     const offer = importOffer;
@@ -376,6 +411,7 @@ export default function App() {
 
   const currentList = lists && currentId ? lists.find((l) => l.id === currentId) : null;
   listsRef.current = lists;
+  reviewsRef.current = reviews;
   currentIdRef.current = currentId;
   const modalList = lists && modalRef?.listId ? lists.find((l) => l.id === modalRef.listId) : null;
   const modalEntry =
