@@ -1,6 +1,8 @@
 -- Phase 2: movies, reviews, and lists.
--- Lists are owner-only for now; shared lists (Phase 4) add a list_members
--- table and widen the list/list_entries policies.
+-- Lists belong to their members (list_members), not to one owner: every
+-- member can rename and edit a list, "deleting" a list only removes you from
+-- it, and the list itself is deleted once its last member leaves. Until
+-- sharing lands (Phase 4) every list just has one member, its creator.
 
 -- ---------------------------------------------------------------- movies
 -- A shared cache of Wikipedia film metadata, keyed by Wikipedia pageid (the
@@ -57,8 +59,10 @@ create index reviews_movie_id_idx on public.reviews (movie_id);
 
 alter table public.reviews enable row level security;
 
--- Individual ratings are private to their author for now. Community scores
--- (Phase 5) will be exposed as aggregates only.
+-- Individual ratings are private to their author — never shown to other
+-- users, collaborators included. The Hitflix score (Phase 5) will expose
+-- aggregates only, and leave out suspended accounts; deleting an account
+-- deletes its reviews (cascade above), so they drop out of the score too.
 create policy "Users can read their own reviews"
   on public.reviews for select
   to authenticated
@@ -86,7 +90,9 @@ grant update (overall, writing, performance, visuals, audio) on public.reviews t
 -- ---------------------------------------------------------------- lists
 create table public.lists (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  -- informational only; access comes from list_members, so the list outlives
+  -- its creator leaving or deleting their account
+  created_by uuid default auth.uid() references auth.users (id) on delete set null,
   name text not null check (char_length(name) between 1 and 100),
   target_length integer not null default 0 check (target_length between 0 and 1000),
   ranked boolean not null default true,
@@ -95,33 +101,108 @@ create table public.lists (
   updated_at timestamptz not null default now()
 );
 
-create index lists_owner_id_idx on public.lists (owner_id);
+create table public.list_members (
+  list_id uuid not null references public.lists (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (list_id, user_id)
+);
+
+create index list_members_user_id_idx on public.list_members (user_id);
+
+-- security definer so policies on lists/list_members/list_entries can check
+-- membership without recursing into list_members' own policy
+create function public.is_list_member(target_list_id uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = ''
+as $$
+  select exists (
+    select 1 from public.list_members m
+    where m.list_id = target_list_id and m.user_id = auth.uid()
+  );
+$$;
+
+-- Creating a list goes through this function (not a direct insert) so the
+-- list and its first membership are created together — a bare insert couldn't
+-- read back its own row, since reading requires the membership.
+create function public.create_list(
+  list_name text,
+  list_target_length integer default 0,
+  list_ranked boolean default true,
+  list_add_order text default 'bottomUp'
+)
+returns uuid
+language plpgsql
+security definer set search_path = ''
+as $$
+declare
+  new_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'must be signed in';
+  end if;
+  insert into public.lists (created_by, name, target_length, ranked, add_order)
+  values (auth.uid(), list_name, list_target_length, list_ranked, list_add_order)
+  returning id into new_id;
+  insert into public.list_members (list_id, user_id) values (new_id, auth.uid());
+  return new_id;
+end;
+$$;
+
+-- Leaving a list (including via account deletion) deletes it once nobody is
+-- left in it.
+create function public.delete_list_if_empty()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.list_members where list_id = old.list_id) then
+    delete from public.lists where id = old.list_id;
+  end if;
+  return null;
+end;
+$$;
+
+create trigger list_members_delete_empty_list
+  after delete on public.list_members
+  for each row execute function public.delete_list_if_empty();
 
 alter table public.lists enable row level security;
+alter table public.list_members enable row level security;
 
-create policy "Owners can read their lists"
+create policy "Members can read their lists"
   on public.lists for select
   to authenticated
-  using (auth.uid() = owner_id);
+  using (public.is_list_member(id));
 
-create policy "Users can create their own lists"
-  on public.lists for insert
-  to authenticated
-  with check (auth.uid() = owner_id);
-
-create policy "Owners can update their lists"
+create policy "Members can edit their lists"
   on public.lists for update
   to authenticated
-  using (auth.uid() = owner_id)
-  with check (auth.uid() = owner_id);
+  using (public.is_list_member(id))
+  with check (public.is_list_member(id));
 
-create policy "Owners can delete their lists"
-  on public.lists for delete
+-- no insert policy (use create_list) and no delete policy (leave instead)
+
+create policy "Members can see who else is on their lists"
+  on public.list_members for select
   to authenticated
-  using (auth.uid() = owner_id);
+  using (public.is_list_member(list_id));
 
-grant select, insert, delete on public.lists to authenticated;
+create policy "Members can leave a list"
+  on public.list_members for delete
+  to authenticated
+  using (user_id = auth.uid());
+
+-- no insert policy yet: joining a shared list arrives with invites (Phase 4)
+
+grant select on public.lists to authenticated;
 grant update (name, target_length, ranked, add_order) on public.lists to authenticated;
+grant select, delete on public.list_members to authenticated;
+revoke execute on function public.create_list(text, integer, boolean, text) from public, anon;
+grant execute on function public.create_list(text, integer, boolean, text) to authenticated;
 
 -- ---------------------------------------------------------------- list entries
 -- One row per movie in a list. id is the entry's own id (the app's per-entry
@@ -133,7 +214,9 @@ create table public.list_entries (
   movie_id text not null references public.movies (id),
   section text not null default 'main' check (section in ('main', 'honorable')),
   position integer not null check (position >= 0),
-  added_by uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  -- set null (not cascade) so a collaborator deleting their account doesn't
+  -- pull the movies they added out of a shared list
+  added_by uuid default auth.uid() references auth.users (id) on delete set null,
   created_at timestamptz not null default now(),
   unique (list_id, movie_id)
 );
@@ -142,29 +225,26 @@ create index list_entries_list_idx on public.list_entries (list_id, section, pos
 
 alter table public.list_entries enable row level security;
 
-create policy "Owners can read their list entries"
+create policy "Members can read list entries"
   on public.list_entries for select
   to authenticated
-  using (exists (select 1 from public.lists l where l.id = list_id and l.owner_id = auth.uid()));
+  using (public.is_list_member(list_id));
 
-create policy "Owners can add list entries"
+create policy "Members can add list entries"
   on public.list_entries for insert
   to authenticated
-  with check (
-    added_by = auth.uid()
-    and exists (select 1 from public.lists l where l.id = list_id and l.owner_id = auth.uid())
-  );
+  with check (added_by = auth.uid() and public.is_list_member(list_id));
 
-create policy "Owners can reorder list entries"
+create policy "Members can reorder list entries"
   on public.list_entries for update
   to authenticated
-  using (exists (select 1 from public.lists l where l.id = list_id and l.owner_id = auth.uid()))
-  with check (exists (select 1 from public.lists l where l.id = list_id and l.owner_id = auth.uid()));
+  using (public.is_list_member(list_id))
+  with check (public.is_list_member(list_id));
 
-create policy "Owners can remove list entries"
+create policy "Members can remove list entries"
   on public.list_entries for delete
   to authenticated
-  using (exists (select 1 from public.lists l where l.id = list_id and l.owner_id = auth.uid()));
+  using (public.is_list_member(list_id));
 
 grant select, insert, delete on public.list_entries to authenticated;
 grant update (section, position) on public.list_entries to authenticated;
@@ -191,7 +271,7 @@ create trigger lists_set_updated_at
 
 -- Adding, removing, or reordering entries counts as editing the list, so the
 -- home page's most-recently-edited ordering keeps working. security definer
--- so it still works once non-owner editors exist (Phase 4).
+-- so it doesn't depend on the editing member's update rights on lists.
 create function public.touch_list_from_entry()
 returns trigger
 language plpgsql
