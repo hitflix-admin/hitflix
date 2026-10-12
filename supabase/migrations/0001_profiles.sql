@@ -7,7 +7,8 @@
 
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  -- null until the user picks one on first sign-in (see UsernameModal)
+  -- null until the user picks one on first sign-in (see UsernameModal);
+  -- 0002 relaxes this to keep capitalization, unique case-insensitively
   username text unique
     check (username ~ '^[a-z0-9_]{3,20}$'),
   display_name text check (char_length(display_name) <= 40),

@@ -275,8 +275,10 @@ export function UsernameModal({ auth }) {
 
   async function save(e) {
     e.preventDefault();
-    const value = username.trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(value)) {
+    // saved with its capitalization as typed; the database compares
+    // lower(username) for uniqueness, so "Allfather" also claims "allfather"
+    const value = username.trim();
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(value)) {
       setError("3–20 characters: letters, numbers, or underscores.");
       return;
     }
