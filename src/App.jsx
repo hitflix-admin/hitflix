@@ -13,6 +13,7 @@ import {
 } from "./movieData.js";
 import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
+import { useAuth, AccountButton, SignInModal, AccountModal, UsernameModal } from "./Account.jsx";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -87,6 +88,9 @@ export default function App() {
   const [modalRef, setModalRef] = useState(null); // { listId, uid } | { movie } | null
   const [reviews, setReviews] = useState({}); // movieId -> { rating, details }, shared across all lists
   const [defaultMovies, setDefaultMovies] = useState([]); // the 4 "add rating" starter placeholders
+
+  const auth = useAuth();
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const dragState = useRef(null);
   const dragOriginalOrderRef = useRef(null); // uid -> pre-drag rank, frozen for the duration of a drag
@@ -519,6 +523,8 @@ export default function App() {
           onOpenSearchResult={openMovieDirect}
           defaultMovies={defaultMovies}
           onOpenStandaloneMovie={openMovieDirect}
+          auth={auth}
+          onOpenAccount={() => setAccountOpen(true)}
         />
       )}
 
@@ -581,6 +587,15 @@ export default function App() {
           onDetails={(details) => setMovieDetails(details)}
         />
       )}
+
+      {accountOpen &&
+        (auth.user ? (
+          <AccountModal auth={auth} onClose={() => setAccountOpen(false)} />
+        ) : (
+          <SignInModal onClose={() => setAccountOpen(false)} />
+        ))}
+
+      {auth.user && auth.profile && !auth.profile.username && <UsernameModal auth={auth} />}
 
       {deleteTarget && (
         <ConfirmDeleteModal
@@ -865,17 +880,22 @@ function HomeView({
   onOpenSearchResult,
   defaultMovies,
   onOpenStandaloneMovie,
+  auth,
+  onOpenAccount,
 }) {
   const dailyQuote = getDailyQuote();
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
-        <img
-          src={logo}
-          alt="Hitflix Movie Club"
-          fetchpriority="high"
-          style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
-        />
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <img
+            src={logo}
+            alt="Hitflix Movie Club"
+            fetchpriority="high"
+            style={{ height: 84, width: "auto", maxWidth: "100%", minWidth: 0, display: "block" }}
+          />
+          <AccountButton auth={auth} onClick={onOpenAccount} />
+        </div>
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           {dailyQuote}
         </div>

@@ -1,0 +1,319 @@
+import React, { useState, useEffect } from "react";
+import { User } from "lucide-react";
+import { supabase, googleAuthEnabled } from "./supabase.js";
+import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
+
+/* ---------------------------------------------------------
+   Accounts (Phase 1). Lists and reviews still live in
+   localStorage either way — signing in only establishes who
+   the user is, ready for the data to move server-side.
+--------------------------------------------------------- */
+
+// session: undefined while loading, null when signed out.
+// profile: null until loaded; profile.username is null until picked.
+export function useAuth() {
+  const [session, setSession] = useState(supabase ? undefined : null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    // don't await other supabase calls inside this callback — supabase-js holds
+    // an auth lock while it runs, so they'd deadlock; the profile fetch below
+    // runs from its own effect instead
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const userId = session?.user?.id;
+  useEffect(() => {
+    setProfile(null);
+    if (!userId) return;
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("username, display_name")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setProfile(data ?? { username: null, display_name: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  return {
+    enabled: Boolean(supabase),
+    loading: session === undefined,
+    session,
+    user: session?.user ?? null,
+    profile,
+    setProfile,
+    signOut: () => supabase.auth.signOut(),
+  };
+}
+
+export function AccountButton({ auth, onClick }) {
+  if (!auth.enabled || auth.loading) return null;
+  const label = auth.user ? (auth.profile?.username ? `@${auth.profile.username}` : "Account") : "Sign in";
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: "transparent",
+        color: "#E7E9EC",
+        border: "1px solid rgba(231,233,236,0.2)",
+        borderRadius: 3,
+        padding: "8px 12px",
+        fontSize: 13,
+        fontFamily: "'Montserrat', sans-serif",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      <User size={15} />
+      {label}
+    </button>
+  );
+}
+
+function ModalShell({ onClose, title, children }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(20,20,20,0.72)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        zIndex: 55,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#1E1E1E",
+          width: "100%",
+          maxWidth: 400,
+          borderRadius: 10,
+          padding: "22px 20px 20px",
+          border: "1px solid rgba(231,233,236,0.1)",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Montserrat', sans-serif",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 19,
+            letterSpacing: 0.4,
+            marginBottom: 10,
+          }}
+        >
+          {title}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const hintStyle = { color: "#8D96A3", fontSize: 13.5, lineHeight: 1.5, marginBottom: 16 };
+const errorStyle = { color: COLORS.scarlet, fontSize: 13, marginTop: 10 };
+
+// Email sign-in sends a magic link; the email can also carry a 6-digit code
+// (if the Supabase email template includes {{ .Token }}), which matters on
+// phones where the link opens in the mail app's own browser instead of the
+// one the user started in.
+export function SignInModal({ onClose }) {
+  const [email, setEmail] = useState("");
+  const [sentTo, setSentTo] = useState(null);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function sendEmail(e) {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setBusy(true);
+    setError("");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: trimmed,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setBusy(false);
+    if (error) setError(error.message);
+    else setSentTo(trimmed);
+  }
+
+  async function verifyCode(e) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setBusy(true);
+    setError("");
+    const { error } = await supabase.auth.verifyOtp({ email: sentTo, token: code.trim(), type: "email" });
+    setBusy(false);
+    if (error) setError(error.message);
+    else onClose();
+  }
+
+  async function signInWithGoogle() {
+    setError("");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) setError(error.message);
+  }
+
+  if (sentTo) {
+    return (
+      <ModalShell onClose={onClose} title="Check your email">
+        <div style={hintStyle}>
+          We sent a sign-in link to <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{sentTo}</span>. Open it on
+          this device, or enter the code from the email.
+        </div>
+        <form onSubmit={verifyCode}>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="6-digit code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            style={inputStyle}
+          />
+          {error && <div style={errorStyle}>{error}</div>}
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button type="button" onClick={onClose} style={secondaryBtn}>
+              Close
+            </button>
+            <button type="submit" disabled={busy} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }}>
+              Verify
+            </button>
+          </div>
+        </form>
+      </ModalShell>
+    );
+  }
+
+  return (
+    <ModalShell onClose={onClose} title="Sign in">
+      <div style={hintStyle}>
+        Sign in to save your lists and reviews to your account. No password needed. We'll email you a link.
+      </div>
+      <form onSubmit={sendEmail}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          autoFocus
+          style={inputStyle}
+        />
+        {error && <div style={errorStyle}>{error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+          <button type="button" onClick={onClose} style={secondaryBtn}>
+            Cancel
+          </button>
+          <button type="submit" disabled={busy} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }}>
+            Email me a link
+          </button>
+        </div>
+      </form>
+      {googleAuthEnabled && (
+        <button onClick={signInWithGoogle} style={{ ...secondaryBtn, width: "100%", marginTop: 10 }}>
+          Continue with Google
+        </button>
+      )}
+    </ModalShell>
+  );
+}
+
+export function AccountModal({ auth, onClose }) {
+  return (
+    <ModalShell onClose={onClose} title="Account">
+      <div style={hintStyle}>
+        {auth.profile?.username && (
+          <div style={{ color: "#E7E9EC", fontWeight: 600 }}>@{auth.profile.username}</div>
+        )}
+        <div>{auth.user.email}</div>
+      </div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onClose} style={secondaryBtn}>
+          Close
+        </button>
+        <button
+          onClick={async () => {
+            await auth.signOut();
+            onClose();
+          }}
+          style={primaryBtn}
+        >
+          Sign out
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+// Shown once, right after first sign-in (the profile row exists from the
+// signup trigger, but username starts out null).
+export function UsernameModal({ auth }) {
+  const [username, setUsername] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save(e) {
+    e.preventDefault();
+    const value = username.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(value)) {
+      setError("3–20 characters: letters, numbers, or underscores.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const { error } = await supabase.from("profiles").update({ username: value }).eq("id", auth.user.id);
+    setBusy(false);
+    if (error) {
+      setError(error.code === "23505" ? "That username is taken." : error.message);
+      return;
+    }
+    auth.setProfile((p) => ({ ...p, username: value }));
+  }
+
+  return (
+    <ModalShell onClose={() => {}} title="Pick a username">
+      <div style={hintStyle}>This is how you'll show up on shared lists and reviews.</div>
+      <form onSubmit={save}>
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoFocus
+          style={inputStyle}
+        />
+        {error && <div style={errorStyle}>{error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+          <button type="button" onClick={auth.signOut} style={secondaryBtn}>
+            Sign out
+          </button>
+          <button type="submit" disabled={busy} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }}>
+            Save
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
