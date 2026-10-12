@@ -13,7 +13,16 @@ import {
 } from "./movieData.js";
 import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
-import { useAuth, AccountButton, SignInModal, AccountModal, UsernameModal } from "./Account.jsx";
+import { useAuth, AccountButton, SignInModal, AccountModal, UsernameModal, ImportModal } from "./Account.jsx";
+import {
+  loadCloud,
+  syncLists,
+  syncRatings,
+  writeDetailsCache,
+  importLocal,
+  countImportable,
+  importDoneKey,
+} from "./cloudStore.js";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -25,7 +34,9 @@ import { useAuth, AccountButton, SignInModal, AccountModal, UsernameModal } from
          regular/medium for body
 --------------------------------------------------------- */
 
-const uid = () => Math.random().toString(36).slice(2, 10);
+// UUIDs (not short random strings) so list and entry ids double as their
+// database ids once signed in
+const uid = () => crypto.randomUUID();
 
 // Shown as "Add rating" placeholders in an otherwise-empty library so new users
 // see what rating a movie looks like before they've rated anything themselves.
@@ -63,6 +74,93 @@ async function fetchDefaultLibraryMovies() {
   }));
 }
 
+function loadLocalLists() {
+  let loadedLists = [];
+  try {
+    const raw = localStorage.getItem("lists");
+    loadedLists = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    loadedLists = [];
+  }
+
+  // strip Wikipedia disambiguation suffixes like "(film)" from titles saved before
+  // this was cleaned at search time; keep the raw title as pageTitle for lookups
+  let titlesChanged = false;
+  const cleanEntry = (e) => {
+    if (!e.title) return e;
+    const cleaned = cleanMovieTitle(e.title);
+    if (cleaned === e.title) return e;
+    titlesChanged = true;
+    return { ...e, pageTitle: e.pageTitle || e.title, title: cleaned };
+  };
+  loadedLists = loadedLists.map((l) => ({
+    ...l,
+    entries: (l.entries || []).map(cleanEntry),
+    honorableMentions: (l.honorableMentions || []).map(cleanEntry),
+  }));
+  if (titlesChanged) {
+    try {
+      localStorage.setItem("lists", JSON.stringify(loadedLists));
+    } catch (e) {}
+  }
+
+  return loadedLists;
+}
+
+function loadLocalReviews(loadedLists) {
+  let reviews = {};
+  try {
+    const rawReviews = localStorage.getItem("movieReviews");
+    if (rawReviews) {
+      // fields cached before the copy change said "Unknown" — swap to "TBD" in place
+      const loadedReviews = JSON.parse(rawReviews);
+      let unknownChanged = false;
+      const normalized = {};
+      for (const [id, entry] of Object.entries(loadedReviews)) {
+        let details = entry.details;
+        if (details) {
+          const fixedDetails = { ...details };
+          for (const key of ["releaseDateUS", "director", "budget", "boxOffice"]) {
+            if (fixedDetails[key] === "Unknown") {
+              fixedDetails[key] = "TBD";
+              unknownChanged = true;
+            }
+          }
+          details = fixedDetails;
+        }
+        normalized[id] = { ...entry, details };
+      }
+      reviews = normalized;
+      if (unknownChanged) {
+        localStorage.setItem("movieReviews", JSON.stringify(normalized));
+      }
+    } else {
+      // migrate ratings/details that used to live per-list-entry onto the shared-by-id map;
+      // when the same movie was rated differently across lists, keep the highest score
+      const migrated = {};
+      for (const l of loadedLists) {
+        const pool = [...(l.entries || []), ...(l.honorableMentions || [])];
+        for (const e of pool) {
+          if (!e.rating) continue;
+          const existingScore = calcScore(migrated[e.id]?.rating);
+          const candidateScore = calcScore(e.rating);
+          if (!migrated[e.id] || (existingScore ?? -Infinity) < (candidateScore ?? -Infinity)) {
+            migrated[e.id] = { rating: e.rating, details: e.details || migrated[e.id]?.details };
+          }
+        }
+      }
+      reviews = migrated;
+      if (Object.keys(migrated).length > 0) {
+        localStorage.setItem("movieReviews", JSON.stringify(migrated));
+      }
+    }
+  } catch (e) {
+    reviews = {};
+  }
+
+  return reviews;
+}
+
 export default function App() {
   const [view, setView] = useState("home"); // home | editor
   const [lists, setLists] = useState(null); // null = loading
@@ -91,6 +189,7 @@ export default function App() {
 
   const auth = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const dragState = useRef(null);
   const dragOriginalOrderRef = useRef(null); // uid -> pre-drag rank, frozen for the duration of a drag
@@ -105,88 +204,63 @@ export default function App() {
   const currentIdRef = useRef(null);
 
   // ---- load ----
+  // Signed out, lists and reviews live in this browser's localStorage, as they
+  // always have. Signed in, they live in the account (cloudStore.js), and
+  // localStorage is left alone as the signed-out copy.
+  const userId = auth.user?.id ?? null;
+  const userIdRef = useRef(null);
+  userIdRef.current = userId;
+  // what the database is known to hold — each save pushes the diff from here
+  const syncedListsRef = useRef([]);
+  const syncedReviewsRef = useRef({});
+  const syncQueue = useRef(Promise.resolve());
+  const [loadError, setLoadError] = useState("");
+  const [importOffer, setImportOffer] = useState(null); // { counts, localLists, localReviews, busy, error }
+
   useEffect(() => {
+    if (auth.loading) return;
+    let cancelled = false;
+    setLists(null);
+    setLoadError("");
+    setImportOffer(null);
+    setView("home");
+    setCurrentId(null);
+    setModalRef(null);
     (async () => {
-      let loadedLists = [];
-      try {
-        const raw = localStorage.getItem("lists");
-        loadedLists = raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        loadedLists = [];
+      const localLists = loadLocalLists();
+      const localReviews = loadLocalReviews(localLists);
+      if (!userId) {
+        setLists(localLists);
+        setReviews(localReviews);
+        return;
       }
-
-      // strip Wikipedia disambiguation suffixes like "(film)" from titles saved before
-      // this was cleaned at search time; keep the raw title as pageTitle for lookups
-      let titlesChanged = false;
-      const cleanEntry = (e) => {
-        if (!e.title) return e;
-        const cleaned = cleanMovieTitle(e.title);
-        if (cleaned === e.title) return e;
-        titlesChanged = true;
-        return { ...e, pageTitle: e.pageTitle || e.title, title: cleaned };
-      };
-      loadedLists = loadedLists.map((l) => ({
-        ...l,
-        entries: (l.entries || []).map(cleanEntry),
-        honorableMentions: (l.honorableMentions || []).map(cleanEntry),
-      }));
-      if (titlesChanged) {
+      try {
+        const cloud = await loadCloud(localReviews);
+        if (cancelled) return;
+        syncedListsRef.current = cloud.lists;
+        syncedReviewsRef.current = cloud.reviews;
+        setLists(cloud.lists);
+        setReviews(cloud.reviews);
+        const counts = countImportable(localLists, localReviews);
+        let alreadyAsked = false;
         try {
-          localStorage.setItem("lists", JSON.stringify(loadedLists));
+          alreadyAsked = localStorage.getItem(importDoneKey(userId)) !== null;
         } catch (e) {}
-      }
-
-      setLists(loadedLists);
-
-      try {
-        const rawReviews = localStorage.getItem("movieReviews");
-        if (rawReviews) {
-          // fields cached before the copy change said "Unknown" — swap to "TBD" in place
-          const loadedReviews = JSON.parse(rawReviews);
-          let unknownChanged = false;
-          const normalized = {};
-          for (const [id, entry] of Object.entries(loadedReviews)) {
-            let details = entry.details;
-            if (details) {
-              const fixedDetails = { ...details };
-              for (const key of ["releaseDateUS", "director", "budget", "boxOffice"]) {
-                if (fixedDetails[key] === "Unknown") {
-                  fixedDetails[key] = "TBD";
-                  unknownChanged = true;
-                }
-              }
-              details = fixedDetails;
-            }
-            normalized[id] = { ...entry, details };
-          }
-          setReviews(normalized);
-          if (unknownChanged) {
-            localStorage.setItem("movieReviews", JSON.stringify(normalized));
-          }
-        } else {
-          // migrate ratings/details that used to live per-list-entry onto the shared-by-id map;
-          // when the same movie was rated differently across lists, keep the highest score
-          const migrated = {};
-          for (const l of loadedLists) {
-            const pool = [...(l.entries || []), ...(l.honorableMentions || [])];
-            for (const e of pool) {
-              if (!e.rating) continue;
-              const existingScore = calcScore(migrated[e.id]?.rating);
-              const candidateScore = calcScore(e.rating);
-              if (!migrated[e.id] || (existingScore ?? -Infinity) < (candidateScore ?? -Infinity)) {
-                migrated[e.id] = { rating: e.rating, details: e.details || migrated[e.id]?.details };
-              }
-            }
-          }
-          setReviews(migrated);
-          if (Object.keys(migrated).length > 0) {
-            localStorage.setItem("movieReviews", JSON.stringify(migrated));
-          }
+        if ((counts.lists > 0 || counts.ratings > 0) && !alreadyAsked) {
+          setImportOffer({ counts, localLists, localReviews });
         }
       } catch (e) {
-        setReviews({});
+        console.error(e);
+        if (!cancelled) setLoadError("Couldn't load your lists. Check your connection and try again.");
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.loading, userId, loadAttempt]);
 
+  useEffect(() => {
+    (async () => {
       try {
         const rawDefaults = localStorage.getItem("defaultLibraryMovies");
         const cached = rawDefaults ? JSON.parse(rawDefaults) : null;
@@ -206,11 +280,34 @@ export default function App() {
   }, []);
 
   // ---- persist (debounced) ----
+  // Signed-in saves run one at a time, in order, so each diff is taken against
+  // what the previous save actually left in the database.
+  function enqueueSync(task) {
+    syncQueue.current = syncQueue.current.then(task).then(
+      () => setStatus("Saved"),
+      (e) => {
+        console.error(e);
+        setStatus("Couldn't save");
+      }
+    );
+    return syncQueue.current;
+  }
+
   const persist = useCallback((next) => {
     setLists(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setStatus("Saving…");
-    saveTimer.current = setTimeout(async () => {
+    const owner = userIdRef.current;
+    saveTimer.current = setTimeout(() => {
+      // signed in or out since this edit — it belongs to the other storage
+      if (userIdRef.current !== owner) return;
+      if (owner) {
+        enqueueSync(async () => {
+          await syncLists(syncedListsRef.current, next, owner);
+          syncedListsRef.current = next;
+        });
+        return;
+      }
       try {
         localStorage.setItem("lists", JSON.stringify(next));
         setStatus("Saved");
@@ -224,7 +321,17 @@ export default function App() {
     setReviews(next);
     if (saveReviewsTimer.current) clearTimeout(saveReviewsTimer.current);
     setStatus("Saving…");
+    const owner = userIdRef.current;
     saveReviewsTimer.current = setTimeout(() => {
+      if (userIdRef.current !== owner) return;
+      if (owner) {
+        writeDetailsCache(next);
+        enqueueSync(async () => {
+          await syncRatings(syncedReviewsRef.current, next, listsRef.current);
+          syncedReviewsRef.current = next;
+        });
+        return;
+      }
       try {
         localStorage.setItem("movieReviews", JSON.stringify(next));
         setStatus("Saved");
@@ -233,6 +340,35 @@ export default function App() {
       }
     }, 500);
   }, []);
+
+  function runImport() {
+    const offer = importOffer;
+    const owner = userId;
+    setImportOffer({ ...offer, busy: true, error: "" });
+    enqueueSync(async () => {
+      await importLocal(offer.localLists, offer.localReviews, syncedReviewsRef.current);
+      try {
+        localStorage.setItem(importDoneKey(owner), "imported");
+      } catch (e) {}
+      const cloud = await loadCloud(offer.localReviews);
+      if (userIdRef.current !== owner) return;
+      syncedListsRef.current = cloud.lists;
+      syncedReviewsRef.current = cloud.reviews;
+      setLists(cloud.lists);
+      setReviews(cloud.reviews);
+      setImportOffer(null);
+    }).then(() => {
+      // enqueueSync swallows errors into the status text; surface them here too
+      setImportOffer((o) => (o?.busy ? { ...o, busy: false, error: "Import failed. Try again." } : o));
+    });
+  }
+
+  function skipImport() {
+    try {
+      localStorage.setItem(importDoneKey(userId), "skipped");
+    } catch (e) {}
+    setImportOffer(null);
+  }
 
   function openMovieDirect(movie) {
     setModalRef({ movie });
@@ -500,7 +636,18 @@ export default function App() {
   if (lists === null) {
     return (
       <main style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
-        <div style={{ color: "#8D96A3", fontSize: 14 }}>Loading your lists…</div>
+        {loadError ? (
+          <div style={{ color: "#8D96A3", fontSize: 14, textAlign: "center", padding: 20 }}>
+            {loadError}
+            <div style={{ marginTop: 14 }}>
+              <button onClick={() => setLoadAttempt((n) => n + 1)} style={{ ...secondaryBtn, flex: "none" }}>
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ color: "#8D96A3", fontSize: 14 }}>Loading your lists…</div>
+        )}
       </main>
     );
   }
@@ -596,6 +743,10 @@ export default function App() {
         ))}
 
       {auth.user && auth.profile && !auth.profile.username && <UsernameModal auth={auth} />}
+
+      {importOffer && auth.profile?.username && (
+        <ImportModal offer={importOffer} onImport={runImport} onSkip={skipImport} />
+      )}
 
       {deleteTarget && (
         <ConfirmDeleteModal

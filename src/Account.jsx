@@ -4,9 +4,9 @@ import { supabase, googleAuthEnabled } from "./supabase.js";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
 /* ---------------------------------------------------------
-   Accounts (Phase 1). Lists and reviews still live in
-   localStorage either way — signing in only establishes who
-   the user is, ready for the data to move server-side.
+   Accounts. Signed in, lists and reviews are stored on the
+   account (see cloudStore.js); signed out, they stay in this
+   browser's localStorage.
 --------------------------------------------------------- */
 
 // session: undefined while loading, null when signed out.
@@ -316,6 +316,34 @@ export function UsernameModal({ auth }) {
           </button>
         </div>
       </form>
+    </ModalShell>
+  );
+}
+
+// Offered once per account per browser, after sign-in, when this browser has
+// signed-out lists or ratings. Importing copies them; the local copies stay as
+// they were (they're what you see when signed out).
+export function ImportModal({ offer, onImport, onSkip }) {
+  const { counts, busy, error } = offer;
+  const parts = [];
+  if (counts.lists) parts.push(`${counts.lists} list${counts.lists === 1 ? "" : "s"}`);
+  if (counts.ratings) parts.push(`${counts.ratings} rating${counts.ratings === 1 ? "" : "s"}`);
+  return (
+    <ModalShell onClose={() => {}} title="Import from this browser?">
+      <div style={hintStyle}>
+        This browser has <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{parts.join(" and ")}</span> saved from
+        before you signed in. Add them to your account? Movies you've already rated on your account keep their
+        account rating.
+      </div>
+      {error && <div style={{ ...errorStyle, marginTop: 0, marginBottom: 14 }}>{error}</div>}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onSkip} disabled={busy} style={secondaryBtn}>
+          Don't import
+        </button>
+        <button onClick={onImport} disabled={busy} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Importing…" : "Import"}
+        </button>
+      </div>
     </ModalShell>
   );
 }
