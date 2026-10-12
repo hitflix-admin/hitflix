@@ -74,6 +74,16 @@ async function fetchDefaultLibraryMovies() {
   }));
 }
 
+// Lets tabs signed into the same account in this browser tell each other a
+// save landed, so the others reload right away instead of showing stale data.
+const syncChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("hitflix-account-sync") : null;
+
+function announceSaved(userId) {
+  try {
+    syncChannel?.postMessage({ userId });
+  } catch (e) {}
+}
+
 function loadLocalLists() {
   let loadedLists = [];
   try {
@@ -307,6 +317,7 @@ export default function App() {
         enqueueSync(async () => {
           await syncLists(syncedListsRef.current, next, owner);
           syncedListsRef.current = next;
+          announceSaved(owner);
         });
         return;
       }
@@ -332,6 +343,7 @@ export default function App() {
         enqueueSync(async () => {
           await syncRatings(syncedReviewsRef.current, next, listsRef.current);
           syncedReviewsRef.current = next;
+          announceSaved(owner);
         });
         return;
       }
@@ -344,17 +356,21 @@ export default function App() {
     }, 500);
   }, []);
 
-  // Another tab (or device) may have changed the account while this tab sat in
-  // the background, and saving from a stale copy would undo those changes — so
-  // coming back to the tab reloads from the account first. Skipped whenever
-  // this tab has its own edits waiting to save, so those are never dropped.
+  // Another tab or device may have changed the account since this tab loaded,
+  // and saving from a stale copy would undo those changes. So this tab reloads
+  // from the account when another tab here announces a save, and when you
+  // switch or click back into it. Skipped whenever this tab has its own edits
+  // waiting to save, so those are never dropped.
   useEffect(() => {
     if (!userId) return;
     const hasPendingEdits = () => saveTimer.current || saveReviewsTimer.current || dragState.current;
+    let refreshQueued = false;
     function refresh() {
-      if (document.visibilityState !== "visible" || hasPendingEdits()) return;
+      if (document.visibilityState !== "visible" || hasPendingEdits() || refreshQueued) return;
+      refreshQueued = true;
       // queued behind any in-flight save so the reload sees its result
       syncQueue.current = syncQueue.current.then(async () => {
+        refreshQueued = false;
         try {
           const cloud = await loadCloud(reviewsRef.current);
           if (userIdRef.current !== userId || hasPendingEdits()) return;
@@ -372,8 +388,17 @@ export default function App() {
         }
       });
     }
+    function onAnnounce(e) {
+      if (e.data?.userId === userId) refresh();
+    }
     document.addEventListener("visibilitychange", refresh);
-    return () => document.removeEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    syncChannel?.addEventListener("message", onAnnounce);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+      syncChannel?.removeEventListener("message", onAnnounce);
+    };
   }, [userId]);
 
   function runImport() {
@@ -392,6 +417,7 @@ export default function App() {
       setLists(cloud.lists);
       setReviews(cloud.reviews);
       setImportOffer(null);
+      announceSaved(owner);
     }).then(() => {
       // enqueueSync swallows errors into the status text; surface them here too
       setImportOffer((o) => (o?.busy ? { ...o, busy: false, error: "Import failed. Try again." } : o));
