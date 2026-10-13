@@ -160,34 +160,15 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
           boxSizing: "border-box",
         }}
       >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            background: "rgba(20,20,20,0.6)",
-            border: "none",
-            borderRadius: "50%",
-            width: 30,
-            height: 30,
-            color: "#E7E9EC",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1,
-          }}
-          aria-label="Close"
-        >
-          <X size={17} strokeWidth={2} />
-        </button>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 18, marginRight: 40 }}>
+        {/* tabs size to their labels and share the row with the close button,
+            so all four fit even on a 320px-wide phone */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 18 }}>
           {[
             ["card", "Card"],
             ["stats", "Stats"],
             ["achievements", "Awards"],
+            ["account", "Account"],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -195,11 +176,37 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
                 setTab(key);
                 setEditing(false);
               }}
-              style={{ ...(tab === key ? segmentBtnActive : segmentBtn), padding: "8px 6px", fontSize: 13 }}
+              style={{
+                ...(tab === key ? segmentBtnActive : segmentBtn),
+                flex: "1 1 auto",
+                padding: "8px 4px",
+                fontSize: 12.5,
+                whiteSpace: "nowrap",
+              }}
             >
               {label}
             </button>
           ))}
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(20,20,20,0.6)",
+              border: "none",
+              borderRadius: "50%",
+              width: 30,
+              height: 30,
+              flexShrink: 0,
+              marginLeft: 4,
+              color: "#E7E9EC",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            aria-label="Close"
+          >
+            <X size={17} strokeWidth={2} />
+          </button>
         </div>
 
         {loadError ? (
@@ -227,24 +234,32 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
                 listsCount={listsCount}
                 ratingsCount={ratingsCount}
               />
-              <button
-                onClick={() => setEditing(true)}
-                style={{
-                  ...secondaryBtn,
-                  width: "100%",
-                  marginTop: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Pencil size={15} />
-                Edit card
-              </button>
-              <AccountSection auth={auth} onClose={onClose} />
+              {/* kept small so the card itself is the focus */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button
+                  onClick={() => setEditing(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: MUTE,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: "'Montserrat', sans-serif",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "4px 2px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Pencil size={12} />
+                  Edit card
+                </button>
+              </div>
             </>
           )
+        ) : tab === "account" ? (
+          <AccountSection auth={auth} onClose={onClose} />
         ) : tab === "stats" ? (
           <StatsPanel stats={stats} />
         ) : (
@@ -557,7 +572,7 @@ function CardEditor({ card, onCancel, onSaved }) {
 
 /* ---------------- Account settings ---------------- */
 
-// Under the card: username (changeable), email, sign out, delete account.
+// The Account tab: username (changeable), email, sign out, delete account.
 function AccountSection({ auth, onClose }) {
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState("");
@@ -588,8 +603,7 @@ function AccountSection({ auth, onClose }) {
   const smallBtn = { ...secondaryBtn, flex: "none", padding: "7px 12px", fontSize: 12.5 };
 
   return (
-    <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(231,233,236,0.1)" }}>
-      <div style={{ ...labelStyle, marginBottom: 10 }}>Account</div>
+    <div>
 
       {editingName ? (
         <form onSubmit={saveName}>
