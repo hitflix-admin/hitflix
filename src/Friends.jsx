@@ -43,27 +43,30 @@ export function useFriends(userId) {
   };
 }
 
+// Round icon button used in the homepage header (Friends, movie search).
+export const headerIconButtonStyle = {
+  position: "relative",
+  width: 42,
+  height: 42,
+  flexShrink: 0,
+  borderRadius: "50%",
+  background: "#1E1E1E",
+  border: "1px solid rgba(231,233,236,0.14)",
+  boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+  color: "#E7E9EC",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  padding: 0,
+};
+
 export function FriendsButton({ count, onClick }) {
   return (
     <button
       onClick={onClick}
       aria-label={count ? `Friends, ${count} new request${count === 1 ? "" : "s"}` : "Friends"}
-      style={{
-        position: "relative",
-        width: 42,
-        height: 42,
-        flexShrink: 0,
-        borderRadius: "50%",
-        background: "#1E1E1E",
-        border: "1px solid rgba(231,233,236,0.14)",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
-        color: "#E7E9EC",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        padding: 0,
-      }}
+      style={headerIconButtonStyle}
     >
       <Users size={18} />
       {count > 0 && (

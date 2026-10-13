@@ -16,6 +16,7 @@ import MovieModal from "./MovieModal.jsx";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
 import ProfileModal from "./Profile.jsx";
 import { useFriends, FriendsButton, FriendsModal } from "./Friends.jsx";
+import { MovieSearchButton, MovieSearchModal } from "./MovieSearch.jsx";
 import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 import {
   loadCloud,
@@ -203,6 +204,7 @@ export default function App() {
   const auth = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [movieSearchOpen, setMovieSearchOpen] = useState(false);
   const [viewUser, setViewUser] = useState(null); // someone else's profile, opened from Friends
   const [loadAttempt, setLoadAttempt] = useState(0);
 
@@ -740,12 +742,7 @@ export default function App() {
           onOpen={openList}
           onDelete={requestDeleteList}
           onOpenMovie={(listId, uid) => setModalRef({ listId, uid })}
-          homeQuery={homeQuery}
-          setHomeQuery={setHomeQuery}
-          homeResults={homeResults}
-          homeSearching={homeSearching}
-          homeSearchError={homeSearchError}
-          onOpenSearchResult={openMovieDirect}
+          onOpenMovieSearch={() => setMovieSearchOpen(true)}
           defaultMovies={defaultMovies}
           onOpenStandaloneMovie={openMovieDirect}
           auth={auth}
@@ -826,6 +823,20 @@ export default function App() {
         ) : (
           <SignInModal onClose={() => setAccountOpen(false)} />
         ))}
+
+      {/* zIndex 58, below MovieModal's 60, so a picked movie opens on top and
+          closing it lands back on these results */}
+      {movieSearchOpen && (
+        <MovieSearchModal
+          query={homeQuery}
+          setQuery={setHomeQuery}
+          results={homeResults}
+          searching={homeSearching}
+          searchError={homeSearchError}
+          onSelect={openMovieDirect}
+          onClose={() => setMovieSearchOpen(false)}
+        />
+      )}
 
       {friendsOpen && auth.user && (
         <FriendsModal friends={friends} onClose={() => setFriendsOpen(false)} onOpenProfile={setViewUser} />
@@ -1122,12 +1133,7 @@ function HomeView({
   onOpen,
   onDelete,
   onOpenMovie,
-  homeQuery,
-  setHomeQuery,
-  homeResults,
-  homeSearching,
-  homeSearchError,
-  onOpenSearchResult,
+  onOpenMovieSearch,
   defaultMovies,
   onOpenStandaloneMovie,
   auth,
@@ -1140,8 +1146,8 @@ function HomeView({
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
         {/* The logo and the account button always share the top row. On
-            phone-width screens the Friends button sits under the account
-            button (.header-account-group in index.css). The button group never
+            phone-width screens the movie search and Friends buttons sit
+            under the account button (.header-account-group in index.css). The button group never
             takes more than the room beside a 96px logo — a long username
             truncates with "…" instead — and the logo scales down only as far
             as it has to. */}
@@ -1164,9 +1170,12 @@ function HomeView({
             className="header-account-group"
             style={{ flex: "0 0 auto", marginLeft: "auto", minWidth: 0, maxWidth: "calc(100% - 108px)" }}
           >
-            {auth.user && auth.profile?.username && (
-              <FriendsButton count={friendRequestCount} onClick={onOpenFriends} />
-            )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <MovieSearchButton onClick={onOpenMovieSearch} />
+              {auth.user && auth.profile?.username && (
+                <FriendsButton count={friendRequestCount} onClick={onOpenFriends} />
+              )}
+            </div>
             <div style={{ minWidth: 0, maxWidth: "100%" }}>
               <AccountButton auth={auth} onClick={onOpenAccount} />
             </div>
@@ -1304,15 +1313,6 @@ function HomeView({
 
       <GamesSection />
 
-      <MovieLookup
-        query={homeQuery}
-        setQuery={setHomeQuery}
-        results={homeResults}
-        searching={homeSearching}
-        searchError={homeSearchError}
-        onSelect={onOpenSearchResult}
-      />
-
       <ReviewedLibrary
         lists={lists}
         reviews={reviews}
@@ -1324,75 +1324,6 @@ function HomeView({
   );
 }
 
-function MovieLookup({ query, setQuery, results, searching, searchError, onSelect }) {
-  return (
-    <div style={{ marginTop: 34 }}>
-      <div
-        style={{
-          fontFamily: "'Montserrat', sans-serif",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          fontSize: 17,
-          letterSpacing: 0.5,
-          marginBottom: 10,
-        }}
-      >
-        Look up a movie
-      </div>
-
-      <div style={{ position: "relative", marginBottom: 12 }}>
-        <Search
-          size={16}
-          strokeWidth={1.8}
-          style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "#8D96A3" }}
-        />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search any movie…"
-          style={{ ...inputStyle, paddingLeft: 34 }}
-        />
-      </div>
-
-      {searching && <div style={{ color: "#8D96A3", fontSize: 13 }}>Searching…</div>}
-      {searchError && <div style={{ color: COLORS.scarlet, fontSize: 13 }}>{searchError}</div>}
-      {!searching && query.trim() && !searchError && results.length === 0 && (
-        <div style={{ color: "#8D96A3", fontSize: 13 }}>No titles found for "{query}".</div>
-      )}
-
-      {results.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {results.map((r) => (
-            <div
-              key={r.id}
-              onClick={() => onSelect(r)}
-              style={{
-                background: "#1E1E1E",
-                border: "1px solid rgba(231,233,236,0.08)",
-                borderRadius: 4,
-                padding: 10,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-              }}
-            >
-              <PosterArt poster={r.poster} title={r.title} size="thumb" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {r.title}
-                </div>
-                <div style={{ fontSize: 11.5, color: "#8D96A3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {r.description || r.year}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ---------------- Create modal ---------------- */
 

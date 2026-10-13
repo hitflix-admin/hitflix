@@ -55,10 +55,10 @@ body {
   }
 }
 
-/* Homepage header: Friends button beside the account button, or — on
-   phone-width screens — under it, so the account button can always sit in
-   line with the logo. DOM order is Friends, Account; column-reverse puts the
-   account button on top. */
+/* Homepage header: the movie search + Friends buttons beside the account
+   button, or — on phone-width screens — under it, so the account button can
+   always sit in line with the logo. DOM order is [search, friends], account;
+   column-reverse puts the account button on top. */
 .header-account-group {
   display: flex;
   flex-direction: row;
