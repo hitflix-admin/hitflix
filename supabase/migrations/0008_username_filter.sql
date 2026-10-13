@@ -22,6 +22,12 @@ create table private.username_blocklist (
   reason text not null check (reason in ('profanity', 'reserved'))
 );
 
+-- Defense in depth: the private schema isn't exposed by the API anyway, and
+-- RLS with no policies blocks the anon/authenticated roles outright. The
+-- username check reads the list through a security definer function, which
+-- runs as the table owner and so isn't affected.
+alter table private.username_blocklist enable row level security;
+
 insert into private.username_blocklist (term, match, reason) values
   -- profanity and slurs, blocked anywhere
   ('fuck', 'anywhere', 'profanity'),
