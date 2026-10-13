@@ -264,7 +264,7 @@ function Popup({ title, onClose, children, maxWidth = 420 }) {
 }
 
 // Share: who's on the list, invite friends, and the join link.
-export function ShareListModal({ list, userId, friends, onClose }) {
+export function ShareListModal({ list, userId, friends, onLinkChange, onClose }) {
   const [invited, setInvited] = useState(null); // Set of friend ids with a pending invite; null = loading
   const [link, setLink] = useState(undefined); // undefined = loading, null = none
   const [copied, setCopied] = useState(false);
@@ -287,6 +287,8 @@ export function ShareListModal({ list, userId, friends, onClose }) {
       if (lnk.error) console.error(lnk.error);
       setInvited(new Set((inv.data || []).map((r) => r.invitee)));
       setLink(lnk.data?.token ?? null);
+      // keep the home-page icon in step if the link changed on another device
+      if (!lnk.error && !!lnk.data?.token !== !!list.linkOn) onLinkChange?.(!!lnk.data?.token);
     })();
     return () => {
       cancelled = true;
@@ -327,7 +329,10 @@ export function ShareListModal({ list, userId, friends, onClose }) {
     if (e) {
       console.error(e);
       setError("Couldn't make a link. Try again.");
-    } else setLink(data);
+    } else {
+      setLink(data);
+      onLinkChange?.(true);
+    }
   }
 
   async function turnOffLink() {
@@ -341,6 +346,7 @@ export function ShareListModal({ list, userId, friends, onClose }) {
     } else {
       setLink(null);
       setCopied(false);
+      onLinkChange?.(false);
     }
   }
 

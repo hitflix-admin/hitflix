@@ -109,17 +109,21 @@ export function writeDetailsCache(reviews) {
 
 // ---- load ----
 
-// Every list the user is on, with its members (oldest first) and, per entry,
-// who added it.
+// Every list the user is on, with its members (oldest first), whether its
+// join link is on, and, per entry, who added it.
 export async function loadLists() {
-  const [listsRes, peopleRes] = await Promise.all([
+  const [listsRes, peopleRes, linksRes] = await Promise.all([
     supabase
       .from("lists")
       .select("id, name, target_length, ranked, add_order, updated_at, list_entries(id, section, position, added_by, movie:movies(*))"),
     supabase.rpc("my_list_people"),
+    // only ever the caller's own lists' links (RLS)
+    supabase.from("list_join_links").select("list_id"),
   ]);
   if (listsRes.error) throw listsRes.error;
   if (peopleRes.error) throw peopleRes.error;
+  if (linksRes.error) throw linksRes.error;
+  const linkOn = new Set(linksRes.data.map((r) => r.list_id));
 
   const names = new Map(); // user id -> username, members and former members alike
   const membersByList = new Map();
@@ -149,6 +153,7 @@ export async function loadLists() {
       addOrder: l.add_order,
       updatedAt: Date.parse(l.updated_at),
       members,
+      linkOn: linkOn.has(l.id),
       entries: sorted.filter((e) => e.section === "main").map(toEntry),
       honorableMentions: sorted.filter((e) => e.section === "honorable").map(toEntry),
     };

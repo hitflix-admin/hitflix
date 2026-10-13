@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check, Users, UserPlus } from "lucide-react";
+import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check, Users, UserPlus, Lock, Link2 } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
@@ -669,6 +669,15 @@ export default function App() {
     setDeleteTarget(null);
   }
 
+  // turning a list's join link on/off isn't a list edit (no op to save), so
+  // the home-page privacy icon is just updated here; other devices pick it up
+  // on their next reload
+  function setLinkOn(listId, on) {
+    const next = (listsRef.current || []).map((l) => (l.id === listId ? { ...l, linkOn: on } : l));
+    listsRef.current = next;
+    setLists(next);
+  }
+
   // after accepting an invite or opening a join link: load it, then open it
   function onJoinedList(listId) {
     // joining by link also clears any invite to the same list
@@ -1060,7 +1069,13 @@ export default function App() {
       )}
 
       {shareOpen && currentList && userId && (
-        <ShareListModal list={currentList} userId={userId} friends={friends} onClose={() => setShareOpen(false)} />
+        <ShareListModal
+          list={currentList}
+          userId={userId}
+          friends={friends}
+          onLinkChange={(on) => setLinkOn(currentList.id, on)}
+          onClose={() => setShareOpen(false)}
+        />
       )}
 
       {deleteTarget && (
@@ -1506,11 +1521,7 @@ function HomeView({
                       {l.entries.length}
                       {l.targetLength ? ` / ${l.targetLength}` : ""} titles
                     </span>
-                    {(l.members || []).length > 1 && (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-                        · <Users size={12} strokeWidth={2} /> {l.members.length}
-                      </span>
-                    )}
+                    {userId && <ListPrivacy list={l} />}
                   </div>
                 </div>
                 <button
@@ -1544,6 +1555,26 @@ function HomeView({
   );
 }
 
+
+/* ---------------- Home list privacy ---------------- */
+
+// Who can see a list, at a glance: just you, collaborators, or (just you,
+// but) anyone with its join link. Signed out, lists only live in this
+// browser and can't be shared, so nothing is shown.
+function ListPrivacy({ list }) {
+  const members = (list.members || []).length;
+  const [Icon, label, title] =
+    members > 1
+      ? [Users, String(members), `Shared with ${members - 1} other${members === 2 ? "" : "s"}`]
+      : list.linkOn
+      ? [Link2, "Link on", "Only you're on it, but anyone with its join link can view it"]
+      : [Lock, "Private", "Only you can see this list"];
+  return (
+    <span title={title} aria-label={title} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      · <Icon size={12} strokeWidth={2.2} aria-hidden="true" /> {label}
+    </span>
+  );
+}
 
 /* ---------------- Create modal ---------------- */
 
