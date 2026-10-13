@@ -26,6 +26,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Regenerate today's precomputed puzzle (see build-daily-puzzle.yml) so
+      # a code deploy doesn't ship without it — the answer file is never
+      # committed, so it only exists in whichever run built the site.
+      # Non-blocking: if Wikipedia hiccups, the games fall back to resolving
+      # the puzzle live, which is slower but fine, and the nightly run retries.
+      - run: node scripts/build-daily-puzzle.mjs
+        continue-on-error: true
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
