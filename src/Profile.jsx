@@ -203,6 +203,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
               onSaved={(next) => {
                 setCard(next);
                 setEditing(false);
+                auth.setCard({ cardColor: next.cardColor, poster: next.favoriteMovie?.poster || null });
               }}
             />
           ) : (

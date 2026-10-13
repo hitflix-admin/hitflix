@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User } from "lucide-react";
+import { User, ChevronDown } from "lucide-react";
 import { supabase, googleAuthEnabled } from "./supabase.js";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
@@ -11,9 +11,12 @@ import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
 // session: undefined while loading, null when signed out.
 // profile: null until loaded; profile.username is null until picked.
+// card: { cardColor, poster } from the profile card, for the account button's
+// avatar — null until loaded (or when the user hasn't made a card).
 export function useAuth() {
   const [session, setSession] = useState(supabase ? undefined : null);
   const [profile, setProfile] = useState(null);
+  const [card, setCard] = useState(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -43,6 +46,22 @@ export function useAuth() {
     };
   }, [userId]);
 
+  useEffect(() => {
+    setCard(null);
+    if (!userId) return;
+    let cancelled = false;
+    supabase
+      .from("profile_cards")
+      .select("card_color, movie:movies(poster_url)")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setCard({ cardColor: data.card_color, poster: data.movie?.poster_url || null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   return {
     enabled: Boolean(supabase),
     loading: session === undefined,
@@ -50,34 +69,107 @@ export function useAuth() {
     user: session?.user ?? null,
     profile,
     setProfile,
+    card,
+    setCard,
     signOut: () => supabase.auth.signOut(),
   };
 }
 
+// Small round avatar: the profile card's favorite-movie poster, or the
+// username's initial on the card color when there's no poster yet.
+function Avatar({ auth, size = 30 }) {
+  const [failed, setFailed] = useState(false);
+  const accent = COLORS[auth.card?.cardColor] || COLORS.cobalt;
+  const poster = auth.card?.poster;
+  const base = {
+    width: size,
+    height: size,
+    borderRadius: "50%",
+    flexShrink: 0,
+    boxSizing: "border-box",
+    border: `2px solid ${accent}`,
+  };
+  if (poster && !failed) {
+    return (
+      <img
+        src={poster}
+        alt=""
+        onError={() => setFailed(true)}
+        style={{ ...base, objectFit: "cover", objectPosition: "center 20%" }}
+      />
+    );
+  }
+  const initial = auth.profile?.username?.[0]?.toUpperCase();
+  return (
+    <span
+      style={{
+        ...base,
+        background: `${accent}2e`,
+        color: accent,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 800,
+        fontSize: size * 0.45,
+      }}
+    >
+      {initial || <User size={size * 0.5} />}
+    </span>
+  );
+}
+
+const pillStyle = {
+  background: "#1E1E1E",
+  color: "#E7E9EC",
+  border: "1px solid rgba(231,233,236,0.14)",
+  borderRadius: 999,
+  fontFamily: "'Montserrat', sans-serif",
+  display: "flex",
+  alignItems: "center",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+  flexShrink: 0,
+  maxWidth: "50%",
+  boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+};
+
 export function AccountButton({ auth, onClick }) {
   if (!auth.enabled || auth.loading) return null;
-  const label = auth.user ? (auth.profile?.username || "Account") : "Sign in";
+  if (!auth.user) {
+    return (
+      <button
+        onClick={onClick}
+        style={{ ...pillStyle, gap: 8, padding: "5px 14px 5px 5px", fontSize: 13, fontWeight: 600 }}
+      >
+        <span
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: "50%",
+            background: `${COLORS.cobalt}2e`,
+            color: COLORS.cobalt,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <User size={14} strokeWidth={2.4} />
+        </span>
+        Sign in
+      </button>
+    );
+  }
   return (
     <button
       onClick={onClick}
-      style={{
-        background: "transparent",
-        color: "#E7E9EC",
-        border: "1px solid rgba(231,233,236,0.2)",
-        borderRadius: 3,
-        padding: "8px 12px",
-        fontSize: 13,
-        fontFamily: "'Montserrat', sans-serif",
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        flexShrink: 0,
-      }}
+      aria-label="Open your profile"
+      style={{ ...pillStyle, gap: 8, padding: "4px 10px 4px 4px", fontSize: 13.5, fontWeight: 700 }}
     >
-      <User size={15} />
-      {label}
+      <Avatar auth={auth} />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
+        {auth.profile?.username || "Account"}
+      </span>
+      <ChevronDown size={14} color="#8D96A3" style={{ flexShrink: 0 }} />
     </button>
   );
 }
