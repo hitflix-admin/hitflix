@@ -7,6 +7,7 @@ import { Search, X } from "lucide-react";
 import { COLORS, inputStyle } from "./theme.js";
 import { PosterArt } from "./movieUI.jsx";
 import { headerIconButtonStyle } from "./Friends.jsx";
+import { useScrollLock } from "./scrollLock.js";
 
 export function MovieSearchButton({ onClick }) {
   return (
@@ -17,6 +18,7 @@ export function MovieSearchButton({ onClick }) {
 }
 
 export function MovieSearchModal({ query, setQuery, results, searching, searchError, onSelect, onClose }) {
+  useScrollLock();
   const inputRef = useRef(null);
   useEffect(() => {
     inputRef.current?.focus();
@@ -46,6 +48,7 @@ export function MovieSearchModal({ query, setQuery, results, searching, searchEr
           width: "100%",
           maxHeight: "80vh",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           padding: 20,
           boxSizing: "border-box",
         }}

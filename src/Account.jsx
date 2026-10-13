@@ -5,6 +5,7 @@ import { streaks } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { supabase, googleAuthEnabled } from "./supabase.js";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
+import { useScrollLock } from "./scrollLock.js";
 
 /* ---------------------------------------------------------
    Accounts. Signed in, lists and reviews are stored on the
@@ -173,6 +174,7 @@ export function AccountButton({ auth, onClick }) {
 }
 
 function ModalShell({ onClose, title, children }) {
+  useScrollLock();
   return (
     <div
       onClick={onClose}

@@ -9,6 +9,7 @@ import { supabase } from "./supabase.js";
 import { COLORS, inputStyle } from "./theme.js";
 import { memberNumberLabel } from "./Account.jsx";
 import { FriendActions } from "./Profile.jsx";
+import { useScrollLock } from "./scrollLock.js";
 
 const MUTE = "#8D96A3";
 const labelStyle = {
@@ -148,6 +149,7 @@ function PersonRow({ person, onOpen, onRelationChange }) {
 }
 
 export function FriendsModal({ friends, onClose, onOpenProfile }) {
+  useScrollLock();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null); // null = not searching
   const [searching, setSearching] = useState(false);
@@ -232,6 +234,7 @@ export function FriendsModal({ friends, onClose, onOpenProfile }) {
           width: "100%",
           height: "min(620px, 85vh)",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           padding: 20,
           boxSizing: "border-box",
         }}

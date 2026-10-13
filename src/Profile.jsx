@@ -35,6 +35,7 @@ import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
 import StreakBadge from "./StreakBadge.jsx";
 import { memberNumberLabel, saveUsername, USERNAME_HINT } from "./Account.jsx";
+import { useScrollLock } from "./scrollLock.js";
 
 const CARD_COLORS = ["cobalt", "orchid", "caramel", "fern", "scarlet"];
 
@@ -91,6 +92,7 @@ function fromMovieRow(r) {
 // 'received', or 'none'. onRelationChange lets the Friends list refresh after
 // a request is sent/accepted/removed from in here.
 export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, viewUser, onRelationChange }) {
+  useScrollLock();
   const isSelf = !viewUser || viewUser.id === auth.user?.id;
   const targetId = isSelf ? auth.user?.id : viewUser.id;
   const [relation, setRelation] = useState(isSelf ? "self" : viewUser.relation);
@@ -187,6 +189,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, 
           width: "100%",
           maxHeight: "85vh",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           padding: 20,
           position: "relative",
           boxSizing: "border-box",
@@ -872,6 +875,7 @@ function AccountSection({ auth, onClose }) {
 
 // Permanent, so it asks the user to type their username first.
 function DeleteAccountConfirm({ username, onCancel, onDeleted }) {
+  useScrollLock();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

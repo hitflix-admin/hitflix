@@ -8,6 +8,7 @@ import { X, ExternalLink } from "lucide-react";
 import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
+import { useScrollLock } from "./scrollLock.js";
 
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
 const SUBCATEGORIES = [
@@ -19,6 +20,7 @@ const SUBCATEGORIES = [
 const DESCRIPTION_TRUNCATE_LENGTH = 275;
 
 export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
+  useScrollLock();
   const [expanded, setExpanded] = useState(false);
   const hasExistingRating = !!movie.rating;
   const savedRating = movie.rating || DEFAULT_RATING;
@@ -68,6 +70,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
           width: "100%",
           maxHeight: "85vh",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           padding: 20,
           position: "relative",
         }}

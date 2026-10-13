@@ -27,6 +27,7 @@ import {
   countImportable,
   importDoneKey,
 } from "./cloudStore.js";
+import { useScrollLock } from "./scrollLock.js";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -1328,6 +1329,7 @@ function HomeView({
 /* ---------------- Create modal ---------------- */
 
 function CreateModal({ name, setName, length, setLength, ranked, setRanked, addOrder, setAddOrder, onCancel, onCreate }) {
+  useScrollLock();
   return (
     <div
       onClick={onCancel}
@@ -1350,6 +1352,7 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, addO
           maxWidth: 480,
           maxHeight: "calc(100vh - 40px)",
           overflowY: "auto",
+          overscrollBehavior: "contain",
           borderRadius: 10,
           padding: "22px 20px 26px",
           border: "1px solid rgba(231,233,236,0.1)",
@@ -1445,6 +1448,7 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, addO
 /* ---------------- Delete confirmation modal ---------------- */
 
 function ConfirmDeleteModal({ name, onCancel, onConfirm }) {
+  useScrollLock();
   return (
     <div
       onClick={onCancel}
