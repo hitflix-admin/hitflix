@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check } from "lucide-react";
+import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check, Users, UserPlus } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
@@ -20,7 +20,12 @@ import { MovieSearchButton, MovieSearchModal } from "./MovieSearch.jsx";
 import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 import {
   loadCloud,
-  syncLists,
+  loadLists,
+  loadReviews,
+  applyOp,
+  queueOp,
+  sendOp,
+  isNetworkError,
   syncRatings,
   writeDetailsCache,
   importLocal,
@@ -28,6 +33,16 @@ import {
   importDoneKey,
 } from "./cloudStore.js";
 import { useScrollLock } from "./scrollLock.js";
+import { supabase } from "./supabase.js";
+import {
+  useListInvites,
+  ListInvitesBanner,
+  ShareListModal,
+  JoinListModal,
+  takeJoinTokenFromUrl,
+  readPendingJoinToken,
+  clearPendingJoinToken,
+} from "./SharedLists.jsx";
 
 /* ---------------------------------------------------------
    HITFLIX — a personal film ledger
@@ -183,6 +198,9 @@ export default function App() {
   const [status, setStatus] = useState(""); // saved indicator
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  // a join link this browser opened (?join=…), kept until it's been answered
+  const [joinToken, setJoinToken] = useState(() => takeJoinTokenFromUrl() || readPendingJoinToken());
   const [newName, setNewName] = useState("");
   const [newLength, setNewLength] = useState("");
   const [newRanked, setNewRanked] = useState(true);
@@ -233,12 +251,21 @@ export default function App() {
   refreshFriendsRef.current = friends.refresh;
   const userIdRef = useRef(null);
   userIdRef.current = userId;
-  // what the database is known to hold — each save pushes the diff from here
-  const syncedListsRef = useRef([]);
+  // list changes not yet saved (oldest first), and the one being saved now —
+  // replayed over every reload so they never flicker away
+  const pendingOpsRef = useRef([]);
+  const inFlightOpRef = useRef(null);
+  const listsReloadQueued = useRef(false);
+  const reloadAfterDragRef = useRef(false);
+  // ratings are only ever edited by their owner, so they still save as a diff
+  // from what the database is known to hold
   const syncedReviewsRef = useRef({});
   const syncQueue = useRef(Promise.resolve());
   const [loadError, setLoadError] = useState("");
   const [importOffer, setImportOffer] = useState(null); // { counts, localLists, localReviews, busy, error }
+  const listInvites = useListInvites(auth.profile?.username ? userId : null);
+  const refreshInvitesRef = useRef(listInvites.refresh);
+  refreshInvitesRef.current = listInvites.refresh;
 
   useEffect(() => {
     if (auth.loading) return;
@@ -249,6 +276,8 @@ export default function App() {
     setView("home");
     setCurrentId(null);
     setModalRef(null);
+    pendingOpsRef.current = [];
+    inFlightOpRef.current = null;
     (async () => {
       const localLists = loadLocalLists();
       const localReviews = loadLocalReviews(localLists);
@@ -260,7 +289,6 @@ export default function App() {
       try {
         const cloud = await loadCloud(localReviews);
         if (cancelled) return;
-        syncedListsRef.current = cloud.lists;
         syncedReviewsRef.current = cloud.reviews;
         setLists(cloud.lists);
         setReviews(cloud.reviews);
@@ -319,23 +347,15 @@ export default function App() {
     return syncQueue.current;
   }
 
+  // Signed out: the whole lists array is saved to localStorage (debounced).
   const persist = useCallback((next) => {
     setLists(next);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setStatus("Saving…");
-    const owner = userIdRef.current;
     saveTimer.current = setTimeout(() => {
       saveTimer.current = null;
-      // signed in or out since this edit — it belongs to the other storage
-      if (userIdRef.current !== owner) return;
-      if (owner) {
-        enqueueSync(async () => {
-          await syncLists(syncedListsRef.current, next, owner);
-          syncedListsRef.current = next;
-          announceSaved(owner);
-        });
-        return;
-      }
+      // signed in since this edit — it belongs to the signed-out storage only
+      if (userIdRef.current) return;
       try {
         localStorage.setItem("lists", JSON.stringify(next));
         setStatus("Saved");
@@ -344,6 +364,101 @@ export default function App() {
       }
     }, 500);
   }, []);
+
+  // Makes one change to the lists (see applyOp in cloudStore.js). Signed in,
+  // the change is queued and saved on its own, so other members' edits to the
+  // same list are left alone.
+  function change(op) {
+    const owner = userIdRef.current;
+    const next = applyOp(listsRef.current || [], op, owner);
+    listsRef.current = next;
+    if (!owner) {
+      persist(next);
+      return;
+    }
+    setLists(next);
+    pendingOpsRef.current = queueOp(pendingOpsRef.current, op);
+    scheduleFlush();
+  }
+
+  function scheduleFlush(delay = 400) {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setStatus("Saving…");
+    const owner = userIdRef.current;
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      if (userIdRef.current === owner) flushOps(owner);
+    }, delay);
+  }
+
+  function flushOps(owner) {
+    enqueueSync(async () => {
+      let refused = false;
+      let stale = false;
+      while (pendingOpsRef.current.length && userIdRef.current === owner) {
+        const op = pendingOpsRef.current[0];
+        pendingOpsRef.current = pendingOpsRef.current.slice(1);
+        inFlightOpRef.current = op;
+        try {
+          if (!(await sendOp(op, owner))) stale = true;
+        } catch (e) {
+          inFlightOpRef.current = null;
+          if (isNetworkError(e)) {
+            // never reached the database: keep it, and retry on the next
+            // edit or when this tab comes back into focus
+            pendingOpsRef.current = [op, ...pendingOpsRef.current];
+            throw e;
+          }
+          // refused (e.g. the list filled up meanwhile): drop it, and reload
+          // below so the screen shows what was actually saved
+          console.error(e);
+          refused = true;
+        }
+        inFlightOpRef.current = null;
+      }
+      announceSaved(owner);
+      if (refused || stale) reloadLists();
+      if (refused) throw new Error("a change was refused");
+    });
+  }
+
+  // Reloads the lists from the account, with any unsaved changes replayed
+  // on top. Queued behind in-flight saves so it sees their results.
+  function reloadLists() {
+    const owner = userIdRef.current;
+    if (!owner) return;
+    if (dragState.current) {
+      reloadAfterDragRef.current = true;
+      return;
+    }
+    if (listsReloadQueued.current) return;
+    listsReloadQueued.current = true;
+    syncQueue.current = syncQueue.current.then(async () => {
+      listsReloadQueued.current = false;
+      try {
+        const fresh = await loadLists();
+        if (userIdRef.current !== owner) return;
+        if (dragState.current) {
+          reloadAfterDragRef.current = true;
+          return;
+        }
+        const unsaved = [inFlightOpRef.current, ...pendingOpsRef.current].filter(Boolean);
+        const next = unsaved.reduce((ls, op) => applyOp(ls, op, owner), fresh);
+        listsRef.current = next;
+        setLists(next);
+        // the open list may have been left or deleted elsewhere
+        if (currentIdRef.current && !next.some((l) => l.id === currentIdRef.current)) {
+          setView("home");
+          setCurrentId(null);
+          setShareOpen(false);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  }
+  const reloadListsRef = useRef(reloadLists);
+  reloadListsRef.current = reloadLists;
 
   const persistReviews = useCallback((next) => {
     setReviews(next);
@@ -371,52 +486,92 @@ export default function App() {
     }, 500);
   }, []);
 
-  // Another tab or device may have changed the account since this tab loaded,
-  // and saving from a stale copy would undo those changes. So this tab reloads
-  // from the account when another tab here announces a save, and when you
-  // switch or click back into it. Skipped whenever this tab has its own edits
-  // waiting to save, so those are never dropped.
+  // Another tab or device — or another member of a shared list — may have
+  // changed things since this tab loaded. Lists reload whenever Realtime says
+  // something changed (below), when another tab here announces a save, and
+  // when you switch or click back into this tab; unsaved edits are replayed
+  // on top, so they're never dropped. Ratings reload on the same cues unless
+  // this tab has a rating waiting to save.
   useEffect(() => {
     if (!userId) return;
-    const hasPendingEdits = () => saveTimer.current || saveReviewsTimer.current || dragState.current;
-    let refreshQueued = false;
+    let reviewsReloadQueued = false;
+    function reloadReviews() {
+      if (saveReviewsTimer.current || reviewsReloadQueued) return;
+      reviewsReloadQueued = true;
+      syncQueue.current = syncQueue.current.then(async () => {
+        reviewsReloadQueued = false;
+        try {
+          const fresh = await loadReviews(reviewsRef.current);
+          if (userIdRef.current !== userId || saveReviewsTimer.current) return;
+          syncedReviewsRef.current = fresh;
+          setReviews(fresh);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
     function refresh() {
       if (document.visibilityState !== "visible") return;
       // a tab left open past midnight starts the new day's streak when you return
       markActiveToday().then((added) => added && auth.refreshStreak());
       refreshFriendsRef.current();
-      if (hasPendingEdits() || refreshQueued) return;
-      refreshQueued = true;
-      // queued behind any in-flight save so the reload sees its result
-      syncQueue.current = syncQueue.current.then(async () => {
-        refreshQueued = false;
-        try {
-          const cloud = await loadCloud(reviewsRef.current);
-          if (userIdRef.current !== userId || hasPendingEdits()) return;
-          syncedListsRef.current = cloud.lists;
-          syncedReviewsRef.current = cloud.reviews;
-          setLists(cloud.lists);
-          setReviews(cloud.reviews);
-          // the open list may have been deleted elsewhere
-          if (currentIdRef.current && !cloud.lists.some((l) => l.id === currentIdRef.current)) {
-            setView("home");
-            setCurrentId(null);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      });
+      refreshInvitesRef.current();
+      // retry changes that couldn't reach the database earlier
+      if (pendingOpsRef.current.length && !saveTimer.current) flushOps(userId);
+      reloadListsRef.current();
+      reloadReviews();
     }
     function onAnnounce(e) {
       if (e.data?.userId === userId) refresh();
     }
     document.addEventListener("visibilitychange", refresh);
     window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
     syncChannel?.addEventListener("message", onAnnounce);
     return () => {
       document.removeEventListener("visibilitychange", refresh);
       window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
       syncChannel?.removeEventListener("message", onAnnounce);
+    };
+  }, [userId]);
+
+  // Live updates: the database sends a "changed" message on this user's
+  // private topic whenever one of their lists changes (any member's edit, a
+  // join or leave) or they get a list invite (0011_collaborative_lists.sql).
+  useEffect(() => {
+    if (!userId || !supabase) return;
+    let reloadTimer = null;
+    let subscribedBefore = false;
+    let removed = false;
+    const channel = supabase
+      .channel(`user:${userId}`, { config: { private: true } })
+      .on("broadcast", { event: "changed" }, ({ payload }) => {
+        if (payload?.kind === "invites") {
+          refreshInvitesRef.current();
+          return;
+        }
+        // one burst of edits → one reload
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => reloadListsRef.current(), 300);
+      });
+    supabase.realtime.setAuth().finally(() => {
+      if (removed) return;
+      channel.subscribe((state) => {
+        // after a dropped connection comes back, catch up on what was missed
+        if (state === "SUBSCRIBED") {
+          if (subscribedBefore) {
+            reloadListsRef.current();
+            refreshInvitesRef.current();
+          }
+          subscribedBefore = true;
+        }
+      });
+    });
+    return () => {
+      removed = true;
+      clearTimeout(reloadTimer);
+      supabase.removeChannel(channel);
     };
   }, [userId]);
 
@@ -431,7 +586,6 @@ export default function App() {
       } catch (e) {}
       const cloud = await loadCloud(offer.localReviews);
       if (userIdRef.current !== owner) return;
-      syncedListsRef.current = cloud.lists;
       syncedReviewsRef.current = cloud.reviews;
       setLists(cloud.lists);
       setReviews(cloud.reviews);
@@ -469,17 +623,6 @@ export default function App() {
     ? { ...modalBase, rating: reviews[modalBase.id]?.rating, details: reviews[modalBase.id]?.details }
     : null;
 
-  function updateCurrent(mutator) {
-    // read from refs, not the closed-over `lists`/`currentId` state: this function
-    // gets called from the pointermove/pointerup drag listeners, which are registered
-    // once per drag gesture and would otherwise keep acting on a stale snapshot
-    const latestLists = listsRef.current;
-    const id = currentIdRef.current;
-    if (!latestLists || !id) return;
-    const next = latestLists.map((l) => (l.id === id ? mutator(l) : l));
-    persist(next);
-  }
-
   function createList() {
     const name = newName.trim() || "Untitled list";
     const cap = parseInt(newLength, 10);
@@ -492,9 +635,9 @@ export default function App() {
       entries: [],
       honorableMentions: [],
       updatedAt: Date.now(),
+      ...(userId ? { members: [{ id: userId, username: auth.profile?.username || "" }] } : {}),
     };
-    const next = [list, ...(lists || [])];
-    persist(next);
+    change({ type: "create", list });
     setCurrentId(list.id);
     setView("editor");
     setCreating(false);
@@ -514,14 +657,25 @@ export default function App() {
 
   function requestDeleteList(id, name, e) {
     e.stopPropagation();
-    setDeleteTarget({ id, name });
+    const others = ((lists || []).find((l) => l.id === id)?.members || []).filter((m) => m.id !== userId);
+    setDeleteTarget({ id, name, others: others.map((m) => m.username) });
   }
 
+  // signed in this leaves the list; the database deletes it once nobody's left
   function confirmDeleteList() {
     if (!deleteTarget) return;
-    const next = (lists || []).filter((l) => l.id !== deleteTarget.id);
-    persist(next);
+    change({ type: "leave", listId: deleteTarget.id });
     setDeleteTarget(null);
+  }
+
+  // after accepting an invite or opening a join link: load it, then open it
+  function onJoinedList(listId) {
+    // joining by link also clears any invite to the same list
+    listInvites.refresh();
+    reloadLists();
+    syncQueue.current = syncQueue.current.then(() => {
+      if ((listsRef.current || []).some((l) => l.id === listId)) openList(listId);
+    });
   }
 
   function goHome() {
@@ -583,20 +737,18 @@ export default function App() {
   function addMovie(movie) {
     if (!currentList) return;
     if (currentList.targetLength > 0 && currentList.entries.length >= currentList.targetLength) return;
-    updateCurrent((l) => {
-      const entry = { ...movie, uid: uid() };
-      const entries = l.addOrder === "bottomUp" ? [entry, ...l.entries] : [...l.entries, entry];
-      return { ...l, entries, updatedAt: Date.now() };
+    change({
+      type: "add",
+      listId: currentList.id,
+      entry: { ...movie, uid: uid() },
+      section: "main",
+      atTop: currentList.addOrder === "bottomUp",
     });
   }
 
   function addHonorableMention(movie) {
     if (!currentList) return;
-    updateCurrent((l) => ({
-      ...l,
-      honorableMentions: [...(l.honorableMentions || []), { ...movie, uid: uid() }],
-      updatedAt: Date.now(),
-    }));
+    change({ type: "add", listId: currentList.id, entry: { ...movie, uid: uid() }, section: "honorable", atTop: false });
   }
 
   function saveRating(rating) {
@@ -609,19 +761,12 @@ export default function App() {
   }
 
   function removeEntry(uidToRemove) {
-    updateCurrent((l) => ({
-      ...l,
-      entries: l.entries.filter((e) => e.uid !== uidToRemove),
-      updatedAt: Date.now(),
-    }));
+    if (currentList) change({ type: "remove", listId: currentList.id, uid: uidToRemove });
   }
 
-  function removeHonorableMention(uidToRemove) {
-    updateCurrent((l) => ({
-      ...l,
-      honorableMentions: (l.honorableMentions || []).filter((e) => e.uid !== uidToRemove),
-      updatedAt: Date.now(),
-    }));
+  function setListFields(fields) {
+    if (!currentList || Object.entries(fields).every(([k, v]) => currentList[k] === v)) return;
+    change({ type: "fields", listId: currentList.id, fields });
   }
 
   function setMovieDetails(details) {
@@ -639,6 +784,8 @@ export default function App() {
     const row = rowRefs.current[index];
     if (!row || !currentList) return;
     dragState.current = {
+      uid: currentList.entries[index].uid,
+      startIndex: index,
       index,
       startY: e.clientY,
       rowHeight: row.getBoundingClientRect().height,
@@ -681,16 +828,35 @@ export default function App() {
       didMove = true;
     }
 
-    dragState.current = { index, startY: e.clientY - delta, rowHeight, entries };
+    dragState.current = { ...state, index, startY: e.clientY - delta, rowHeight, entries };
     setDragY(delta);
     if (didMove) {
       setDragIndex(index);
-      updateCurrent((l) => ({ ...l, entries }));
+      // shown live, saved once on drop as a single move
+      const listId = currentIdRef.current;
+      const next = (listsRef.current || []).map((l) => (l.id === listId ? { ...l, entries } : l));
+      listsRef.current = next;
+      setLists(next);
     }
   }
 
   function onPointerUp() {
+    const state = dragState.current;
     dragState.current = null;
+    if (state && state.index !== state.startIndex) {
+      const { entries, index } = state;
+      change({
+        type: "move",
+        listId: currentIdRef.current,
+        uid: state.uid,
+        afterUid: entries[index - 1]?.uid ?? null,
+        beforeUid: entries[index + 1]?.uid ?? null,
+      });
+    }
+    if (reloadAfterDragRef.current) {
+      reloadAfterDragRef.current = false;
+      reloadLists();
+    }
     dragOriginalOrderRef.current = null;
     setDragIndex(null);
     setDragY(0);
@@ -748,8 +914,11 @@ export default function App() {
           onOpenStandaloneMovie={openMovieDirect}
           auth={auth}
           onOpenAccount={() => setAccountOpen(true)}
-          friendRequestCount={friends.incomingCount}
+          friendRequestCount={friends.incomingCount + listInvites.invites.length}
           onOpenFriends={() => setFriendsOpen(true)}
+          userId={userId}
+          listInvites={listInvites}
+          onJoinedList={onJoinedList}
         />
       )}
 
@@ -759,8 +928,9 @@ export default function App() {
           reviews={reviews}
           status={status}
           onBack={goHome}
-          onRename={(name) => updateCurrent((l) => ({ ...l, name }))}
-          onRecap={(cap) => updateCurrent((l) => ({ ...l, targetLength: cap }))}
+          onRename={(name) => setListFields({ name })}
+          userId={userId}
+          onShare={userId ? () => setShareOpen(true) : null}
           query={query}
           setQuery={setQuery}
           results={results.filter(
@@ -773,7 +943,7 @@ export default function App() {
           onAdd={addMovie}
           onAddMention={addHonorableMention}
           onRemove={removeEntry}
-          onRemoveMention={removeHonorableMention}
+          onRemoveMention={removeEntry}
           onOpenMovie={(entry) => setModalRef({ listId: currentList.id, uid: entry.uid })}
           rowRefs={rowRefs}
           dragIndex={dragIndex}
@@ -840,7 +1010,16 @@ export default function App() {
       )}
 
       {friendsOpen && auth.user && (
-        <FriendsModal friends={friends} onClose={() => setFriendsOpen(false)} onOpenProfile={setViewUser} />
+        <FriendsModal
+          friends={friends}
+          listInvites={listInvites}
+          onJoinedList={(id) => {
+            setFriendsOpen(false);
+            onJoinedList(id);
+          }}
+          onClose={() => setFriendsOpen(false)}
+          onOpenProfile={setViewUser}
+        />
       )}
 
       {viewUser && auth.user && (
@@ -859,9 +1038,31 @@ export default function App() {
         <ImportModal offer={importOffer} onImport={runImport} onSkip={skipImport} />
       )}
 
+      {shareOpen && currentList && userId && (
+        <ShareListModal list={currentList} userId={userId} friends={friends} onClose={() => setShareOpen(false)} />
+      )}
+
+      {joinToken && !auth.loading && !accountOpen && (!userId || auth.profile?.username) && !importOffer && (
+        <JoinListModal
+          token={joinToken}
+          signedIn={!!userId}
+          onSignIn={() => setAccountOpen(true)}
+          onJoined={(id) => {
+            clearPendingJoinToken();
+            setJoinToken(null);
+            onJoinedList(id);
+          }}
+          onClose={() => {
+            clearPendingJoinToken();
+            setJoinToken(null);
+          }}
+        />
+      )}
+
       {deleteTarget && (
         <ConfirmDeleteModal
           name={deleteTarget.name}
+          others={deleteTarget.others}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDeleteList}
         />
@@ -1141,6 +1342,9 @@ function HomeView({
   onOpenAccount,
   friendRequestCount,
   onOpenFriends,
+  userId,
+  listInvites,
+  onJoinedList,
 }) {
   const dailyQuote = getDailyQuote();
   return (
@@ -1186,6 +1390,10 @@ function HomeView({
           {dailyQuote}
         </div>
       </div>
+
+      {listInvites && listInvites.invites.length > 0 && (
+        <ListInvitesBanner listInvites={listInvites} onJoined={onJoinedList} />
+      )}
 
       <div
         style={{
@@ -1289,9 +1497,16 @@ function HomeView({
                   <div style={{ fontSize: 15.5, fontWeight: 600, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {l.name}
                   </div>
-                  <div style={{ color: "#8D96A3", fontSize: 12.5 }}>
-                    {l.entries.length}
-                    {l.targetLength ? ` / ${l.targetLength}` : ""} titles
+                  <div style={{ color: "#8D96A3", fontSize: 12.5, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+                    <span>
+                      {l.entries.length}
+                      {l.targetLength ? ` / ${l.targetLength}` : ""} titles
+                    </span>
+                    {(l.members || []).length > 1 && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                        · <Users size={12} strokeWidth={2} /> {l.members.length}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button
@@ -1303,7 +1518,7 @@ function HomeView({
                     cursor: "pointer",
                     padding: 6,
                   }}
-                  aria-label="Delete list"
+                  aria-label={(l.members || []).length > 1 ? "Leave list" : "Delete list"}
                 >
                   <Trash2 size={17} strokeWidth={1.6} />
                 </button>
@@ -1448,7 +1663,10 @@ function CreateModal({ name, setName, length, setLength, ranked, setRanked, addO
 
 /* ---------------- Delete confirmation modal ---------------- */
 
-function ConfirmDeleteModal({ name, onCancel, onConfirm }) {
+function ConfirmDeleteModal({ name, others = [], onCancel, onConfirm }) {
+  const shared = others.length > 0;
+  const othersText =
+    others.length === 1 ? others[0] : others.length === 2 ? `${others[0]} and ${others[1]}` : `${others.length} others`;
   useScrollLock();
   return (
     <div
@@ -1485,18 +1703,27 @@ function ConfirmDeleteModal({ name, onCancel, onConfirm }) {
             marginBottom: 10,
           }}
         >
-          Delete list?
+          {shared ? "Leave list?" : "Delete list?"}
         </div>
         <div style={{ color: "#8D96A3", fontSize: 13.5, lineHeight: 1.5, marginBottom: 22 }}>
-          Are you sure you want to delete <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{name}</span>? This
-          can't be undone.
+          {shared ? (
+            <>
+              <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{name}</span> will come off your lists. {othersText}{" "}
+              {others.length === 1 ? "keeps" : "keep"} it, and you'd need a new invite or link to rejoin.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete <span style={{ color: "#E7E9EC", fontWeight: 600 }}>{name}</span>? This
+              can't be undone.
+            </>
+          )}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onCancel} style={secondaryBtn}>
-            Don't Delete
+            {shared ? "Stay" : "Don't Delete"}
           </button>
           <button onClick={onConfirm} style={dangerBtn}>
-            Delete
+            {shared ? "Leave" : "Delete"}
           </button>
         </div>
       </div>
@@ -1512,7 +1739,8 @@ function EditorView({
   status,
   onBack,
   onRename,
-  onRecap,
+  userId,
+  onShare,
   query,
   setQuery,
   results,
@@ -1531,6 +1759,18 @@ function EditorView({
 }) {
   const honorableMentions = list.honorableMentions || [];
   const full = list.targetLength > 0 && list.entries.length >= list.targetLength;
+  const members = list.members || [];
+  // "added by" only means something once someone else has been on the list
+  const showAddedBy =
+    members.length > 1 || [...list.entries, ...honorableMentions].some((e) => e.addedBy && e.addedBy !== userId);
+  const addedByLabel = (entry) =>
+    !showAddedBy || !entry.addedBy
+      ? null
+      : entry.addedBy === userId
+      ? "added by you"
+      : entry.addedByName
+      ? `added by ${entry.addedByName}`
+      : null;
   const [editingName, setEditingName] = useState(false);
 
   return (
@@ -1594,6 +1834,49 @@ function EditorView({
           {list.entries.length}
           {list.targetLength ? ` / ${list.targetLength}` : ""} titles · {list.ranked ? "ranked" : "unranked"} · drag the handle to reorder
         </div>
+        {onShare && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                color: "#8D96A3",
+                fontSize: 12.5,
+              }}
+            >
+              <Users size={14} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {members.length <= 1
+                  ? "Just you"
+                  : members.map((m) => (m.id === userId ? "You" : m.username)).join(", ")}
+              </span>
+            </div>
+            <button
+              onClick={onShare}
+              style={{
+                flexShrink: 0,
+                background: "transparent",
+                border: `1px solid ${COLORS.cobalt}`,
+                color: COLORS.cobalt,
+                borderRadius: 20,
+                padding: "5px 12px",
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                fontFamily: "'Montserrat', sans-serif",
+              }}
+            >
+              <UserPlus size={13} strokeWidth={2.2} />
+              Share
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "14px 1cm 0" }}>
@@ -1624,6 +1907,7 @@ function EditorView({
                 borderRadius: 4,
                 padding: "10px 10px 10px 6px",
                 display: "flex",
+                flexWrap: "wrap",
                 alignItems: "center",
                 gap: 10,
                 transform: dragIndex === i ? `translateY(${dragY}px)` : "none",
@@ -1737,6 +2021,24 @@ function EditorView({
               >
                 <X size={17} strokeWidth={1.7} />
               </button>
+              {addedByLabel(entry) && (
+                // its own line under the row, lined up with the poster — the
+                // title column is too narrow on phones to fit it
+                <div
+                  style={{
+                    flexBasis: "100%",
+                    marginTop: -4,
+                    paddingLeft: list.ranked ? 68 : 36,
+                    fontSize: 11,
+                    color: "#6B7280",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {addedByLabel(entry)}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -1837,6 +2139,22 @@ function EditorView({
                     >
                       {entry.title}
                     </div>
+                    {addedByLabel(entry) && (
+                      <div
+                        style={{
+                          fontSize: 10.5,
+                          color: "#6B7280",
+                          marginTop: -4,
+                          textAlign: "center",
+                          width: "100%",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {addedByLabel(entry)}
+                      </div>
+                    )}
                     <div style={{ marginTop: "auto" }}>
                       {calcScore(reviews[entry.id]?.rating) !== null ? (
                         <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>

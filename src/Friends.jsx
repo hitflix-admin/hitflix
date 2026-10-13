@@ -10,6 +10,7 @@ import { COLORS, inputStyle } from "./theme.js";
 import { memberNumberLabel } from "./Account.jsx";
 import { FriendActions } from "./Profile.jsx";
 import { useScrollLock } from "./scrollLock.js";
+import { ListInvitesSection } from "./SharedLists.jsx";
 
 const MUTE = "#8D96A3";
 const labelStyle = {
@@ -66,7 +67,7 @@ export function FriendsButton({ count, onClick }) {
   return (
     <button
       onClick={onClick}
-      aria-label={count ? `Friends, ${count} new request${count === 1 ? "" : "s"}` : "Friends"}
+      aria-label={count ? `Friends, ${count} new request${count === 1 ? "" : "s"} or invite${count === 1 ? "" : "s"}` : "Friends"}
       style={headerIconButtonStyle}
     >
       <Users size={18} />
@@ -148,7 +149,7 @@ function PersonRow({ person, onOpen, onRelationChange }) {
   );
 }
 
-export function FriendsModal({ friends, onClose, onOpenProfile }) {
+export function FriendsModal({ friends, listInvites, onJoinedList, onClose, onOpenProfile }) {
   useScrollLock();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null); // null = not searching
@@ -156,6 +157,7 @@ export function FriendsModal({ friends, onClose, onOpenProfile }) {
 
   useEffect(() => {
     friends.refresh();
+    listInvites?.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -305,10 +307,11 @@ export function FriendsModal({ friends, onClose, onOpenProfile }) {
           </div>
         ) : (
           <>
+            {listInvites && <ListInvitesSection listInvites={listInvites} onJoined={onJoinedList} />}
             {section("Requests", incoming)}
             {section("Friends", accepted)}
             {section("Sent", sent)}
-            {friends.people.length === 0 && (
+            {friends.people.length === 0 && !listInvites?.invites.length && (
               <div style={{ color: MUTE, fontSize: 13.5, lineHeight: 1.5, textAlign: "center", padding: "34px 10px" }}>
                 No friends yet. Search for someone's username above to send a friend request. Friends can see each
                 other's card, stats, and awards. Ratings always stay private.
