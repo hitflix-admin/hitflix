@@ -847,14 +847,35 @@ function StatsPanel({ stats }) {
   const noGames = stats.totalGames === 0;
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+      {/* headline: overall win rate, with the games it's based on beside it
+          for context; the streaks sit underneath */}
+      <div
+        style={{
+          background: "#141414",
+          borderRadius: 4,
+          padding: "14px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 38, lineHeight: 1 }}>{fmtPct(stats.overallWinRate)}</div>
+          <div style={{ ...labelStyle, fontSize: 10.5, marginTop: 6 }}>Win rate</div>
+        </div>
+        <div style={{ color: MUTE, fontSize: 12, lineHeight: 1.4, textAlign: "right" }}>
+          <span style={{ color: "#E7E9EC", fontWeight: 700 }}>{stats.guessGamesPlayed}</span>{" "}
+          {stats.guessGamesPlayed === 1 ? "game" : "games"} played
+          <div style={{ fontSize: 11 }}>Daily Movie games</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 8 }}>
         <StatTile label="Current streak" value={stats.streak.current} />
         <StatTile label="Best streak" value={stats.streak.best} />
-        <StatTile label="Win rate" value={fmtPct(stats.overallWinRate)} />
-        <StatTile label="Games played" value={stats.totalGames} />
       </div>
       <div style={{ color: MUTE, fontSize: 11.5, marginTop: 8, lineHeight: 1.4 }}>
-        Your streak counts every day you visit Hitflix while signed in. Win rate covers both Daily Movie games.
+        Win rate covers both Daily Movie games. Your streak counts every day you visit Hitflix while signed in.
       </div>
 
       {noGames && (
