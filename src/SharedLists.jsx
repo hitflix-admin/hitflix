@@ -1,13 +1,16 @@
-// Collaborative lists (0011_collaborative_lists.sql): list invites from
-// friends (a home-screen banner and a section in the Friends popup), the
-// Share popup (invite friends, the list's join link), and the "Join this
-// list?" prompt a join link opens.
+// Collaborative lists (0011_collaborative_lists.sql, 0012_view_shared_lists.sql):
+// list invites from friends (a home-screen banner and a section in the
+// Friends popup), the Share popup (invite friends, the list's join link), and
+// the read-only page a join link opens — viewable by anyone, joinable when
+// signed in.
 
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Users, Link2, Check } from "lucide-react";
+import { X, Users, Link2, Check, ArrowLeft } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { COLORS, primaryBtn, secondaryBtn } from "./theme.js";
 import { useScrollLock } from "./scrollLock.js";
+import { PosterArt, Gauge, calcScore } from "./movieUI.jsx";
+import { fromMovieRow } from "./cloudStore.js";
 
 const MUTE = "#8D96A3";
 const labelStyle = {
@@ -411,7 +414,7 @@ export function ShareListModal({ list, userId, friends, onClose }) {
       <div style={{ marginTop: 20 }}>
         <div style={{ ...labelStyle, marginBottom: 6 }}>Join link</div>
         <div style={{ color: MUTE, fontSize: 12.5, lineHeight: 1.5, marginBottom: 10 }}>
-          Anyone signed in who opens this link can join and edit the list.
+          Anyone with this link can view the list — no account needed. Signed-in people can also join and edit it.
         </div>
         {link === undefined ? (
           <div style={{ color: MUTE, fontSize: 13 }}>Loading…</div>
@@ -454,7 +457,8 @@ export function ShareListModal({ list, userId, friends, onClose }) {
               </button>
             </div>
             <div style={{ color: "#6B7280", fontSize: 11.5, marginTop: 6, lineHeight: 1.45 }}>
-              Resetting or turning off stops the current link from working. People already on the list stay on it.
+              Resetting or turning off stops the current link from working for viewing and joining. People already on
+              the list stay on it.
             </div>
           </>
         )}
@@ -465,23 +469,41 @@ export function ShareListModal({ list, userId, friends, onClose }) {
   );
 }
 
-// "Join this list?" for a join link.
-export function JoinListModal({ token, signedIn, onSignIn, onJoined, onClose }) {
-  const [info, setInfo] = useState(undefined); // undefined = loading, null = link dead
+// What a join link opens: the list, read-only, for anyone — signed out
+// included. Signed in, you can also join it to edit.
+export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie, onJoined, onClose }) {
+  const [list, setList] = useState(undefined); // undefined = loading, null = link dead
+  const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!signedIn) return;
+    window.scrollTo(0, 0);
+  }, []);
+
+  // reloaded on sign-in, since "already on this list" depends on who's asking
+  useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error: e } = await supabase.rpc("join_link_info", { link_token: token });
+      const { data, error: e } = await supabase.rpc("view_shared_list", { link_token: token });
       if (cancelled) return;
       if (e) {
         console.error(e);
-        setError("Couldn't load this link. Check your connection and try again.");
-        setInfo(null);
-      } else setInfo(data[0] || null);
+        setLoadError("Couldn't load this list. Check your connection and try again.");
+        setList(null);
+        return;
+      }
+      setLoadError("");
+      if (!data) {
+        setList(null);
+        return;
+      }
+      const toMovie = (en) => fromMovieRow(en.movie);
+      setList({
+        ...data,
+        entries: data.entries.filter((en) => en.section === "main").map(toMovie),
+        honorableMentions: data.entries.filter((en) => en.section === "honorable").map(toMovie),
+      });
     })();
     return () => {
       cancelled = true;
@@ -495,65 +517,241 @@ export function JoinListModal({ token, signedIn, onSignIn, onJoined, onClose }) 
     setBusy(false);
     if (e) {
       console.error(e);
-      setError(/20 members/.test(e.message) ? "This list is full — it already has 20 members." : "Couldn't join. Try again.");
+      setError(
+        /20 members/.test(e.message)
+          ? "This list is full — it already has 20 members."
+          : /no longer works/.test(e.message)
+          ? "This link was just turned off or reset, so it can't be used to join."
+          : "Couldn't join. Try again."
+      );
     } else onJoined(data);
   }
 
-  if (!signedIn) {
+  const header = (
+    <div
+      style={{
+        position: "sticky",
+        top: 0,
+        background: "#141414",
+        borderBottom: "1px solid rgba(231,233,236,0.08)",
+        padding: "14px 1cm 12px",
+        zIndex: 10,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={onClose}
+          aria-label="Go to Hitflix"
+          style={{ background: "none", border: "none", color: "#E7E9EC", cursor: "pointer", padding: 4, display: "flex" }}
+        >
+          <ArrowLeft size={19} strokeWidth={1.8} />
+        </button>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            fontFamily: "'Montserrat', sans-serif",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 21,
+            letterSpacing: 0.4,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {list ? list.name : "Shared list"}
+        </div>
+      </div>
+      {list && (
+        <div style={{ color: MUTE, fontSize: 12.5, marginTop: 6 }}>
+          {list.shared_by ? `Shared by ${list.shared_by} · ` : ""}
+          {plural(list.entries.length, "title")} · {plural(Number(list.member_count), "member")}
+        </div>
+      )}
+    </div>
+  );
+
+  if (list === undefined || list === null) {
     return (
-      <Popup title="Join a list" onClose={onClose} maxWidth={400}>
-        <div style={{ color: MUTE, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>
-          Someone shared a Hitflix list with you. Sign in (or make a free account) to see it and join.
+      <div style={{ paddingBottom: 60 }}>
+        {header}
+        <div style={{ padding: "26px 1cm 0", color: MUTE, fontSize: 14, lineHeight: 1.5 }}>
+          {list === undefined
+            ? "Loading…"
+            : loadError ||
+              "This link doesn't work anymore — it may have been reset or turned off. Ask someone on the list for a new one."}
+          {list === null && (
+            <div style={{ marginTop: 18 }}>
+              <button onClick={onClose} style={{ ...secondaryBtn, flex: "none", padding: "10px 16px" }}>
+                Go to Hitflix
+              </button>
+            </div>
+          )}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={secondaryBtn}>
-            Not now
-          </button>
-          <button onClick={onSignIn} style={primaryBtn}>
-            Sign in
-          </button>
-        </div>
-      </Popup>
+      </div>
     );
   }
 
+  const scoreOf = (movie) => calcScore(reviews?.[movie.id]?.rating);
+
   return (
-    <Popup title={info ? "Join list?" : "Join a list"} onClose={onClose} maxWidth={400}>
-      {info === undefined ? (
-        <div style={{ color: MUTE, fontSize: 13.5 }}>Loading…</div>
-      ) : info === null ? (
-        <>
-          <div style={{ color: MUTE, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>
-            {error || "This link doesn't work anymore — it may have been reset or turned off. Ask someone on the list for a new one."}
+    <div style={{ paddingBottom: 130 }}>
+      {header}
+      <div style={{ padding: "14px 1cm 0" }}>
+        {list.entries.length === 0 && (
+          <div
+            style={{
+              border: "1px dashed rgba(231,233,236,0.18)",
+              borderRadius: 4,
+              padding: "26px 18px",
+              textAlign: "center",
+              color: MUTE,
+              fontSize: 13.5,
+              marginBottom: 18,
+            }}
+          >
+            Nothing on this list yet.
           </div>
-          <button onClick={onClose} style={{ ...secondaryBtn, width: "100%" }}>
-            OK
-          </button>
-        </>
-      ) : (
-        <>
-          <div style={{ background: "#141414", borderRadius: 4, padding: "12px 14px", marginBottom: 14 }}>
-            <div style={{ fontSize: 15.5, fontWeight: 700, overflowWrap: "anywhere" }}>{info.list_name}</div>
-            <div style={{ color: MUTE, fontSize: 12.5, marginTop: 3 }}>
-              {plural(Number(info.entry_count), "title")} · {plural(Number(info.member_count), "member")}
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 22 }}>
+          {list.entries.map((movie, i) => (
+            <div
+              key={movie.id}
+              onClick={() => onOpenMovie(movie)}
+              style={{
+                background: "#1E1E1E",
+                border: "1px solid rgba(231,233,236,0.08)",
+                borderRadius: 4,
+                padding: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+              }}
+            >
+              {list.ranked && (
+                <div
+                  style={{
+                    width: 22,
+                    flexShrink: 0,
+                    textAlign: "center",
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    fontSize: 15,
+                    color: COLORS.cobalt,
+                  }}
+                >
+                  {i + 1}
+                </div>
+              )}
+              <PosterArt poster={movie.poster} title={movie.title} size="thumb" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {movie.title}
+                </div>
+                <div style={{ fontSize: 12, color: MUTE }}>{movie.year || "Year unknown"}</div>
+              </div>
+              {/* the viewer's own rating, if they have one — never anyone else's */}
+              {scoreOf(movie) !== null && <Gauge score={scoreOf(movie)} size={44} />}
+            </div>
+          ))}
+        </div>
+
+        {list.honorableMentions.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <div
+              style={{
+                fontFamily: "'Montserrat', sans-serif",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                fontSize: 15,
+                letterSpacing: 0.5,
+                marginBottom: 10,
+              }}
+            >
+              Honorable mentions
+            </div>
+            <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 6 }}>
+              {list.honorableMentions.map((movie) => (
+                <div
+                  key={movie.id}
+                  onClick={() => onOpenMovie(movie)}
+                  style={{
+                    background: "#1E1E1E",
+                    border: "1px solid rgba(231,233,236,0.08)",
+                    borderRadius: 4,
+                    padding: 10,
+                    width: 116,
+                    flexShrink: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <PosterArt poster={movie.poster} title={movie.title} size="thumb" />
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      textAlign: "center",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      lineHeight: 1.25,
+                      width: "100%",
+                    }}
+                  >
+                    {movie.title}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{ color: MUTE, fontSize: 13, lineHeight: 1.5, marginBottom: 18 }}>
-            {info.already_member
-              ? "You're already on this list."
-              : "Everyone on the list can add, remove, reorder, and rename. Your ratings stay private."}
-          </div>
-          {error && <div style={{ color: COLORS.scarlet, fontSize: 13, marginBottom: 12 }}>{error}</div>}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={onClose} style={secondaryBtn}>
-              {info.already_member ? "Close" : "Not now"}
+        )}
+      </div>
+
+      {/* pinned to the bottom of the screen */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "#141414",
+          borderTop: "1px solid rgba(231,233,236,0.1)",
+          padding: "12px 18px calc(12px + env(safe-area-inset-bottom))",
+          zIndex: 20,
+        }}
+      >
+        <div style={{ maxWidth: 520, margin: "0 auto" }}>
+          {error && <div style={{ color: COLORS.scarlet, fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {!signedIn ? (
+            <button onClick={onSignIn} style={{ ...primaryBtn, width: "100%" }}>
+              Sign in to join and edit
             </button>
-            <button disabled={busy} onClick={info.already_member ? () => onJoined(info.list_id) : join} style={primaryBtn}>
-              {info.already_member ? "Open list" : busy ? "Joining…" : "Join list"}
+          ) : list.already_member ? (
+            <button onClick={() => onJoined(list.list_id)} style={{ ...primaryBtn, width: "100%" }}>
+              You're on this list — open it
             </button>
+          ) : (
+            <button disabled={busy} onClick={join} style={{ ...primaryBtn, width: "100%" }}>
+              {busy ? "Joining…" : "Join to edit"}
+            </button>
+          )}
+          <div style={{ color: "#6B7280", fontSize: 11.5, textAlign: "center", marginTop: 7 }}>
+            {!signedIn
+              ? "Anyone can view this list. Members can add, remove, reorder, and rename."
+              : list.already_member
+              ? "Your ratings stay private on shared lists."
+              : "Members can add, remove, reorder, and rename. Your ratings stay private."}
           </div>
-        </>
-      )}
-    </Popup>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -38,7 +38,7 @@ import {
   useListInvites,
   ListInvitesBanner,
   ShareListModal,
-  JoinListModal,
+  SharedListView,
   takeJoinTokenFromUrl,
   readPendingJoinToken,
   clearPendingJoinToken,
@@ -199,7 +199,8 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
-  // a join link this browser opened (?join=…), kept until it's been answered
+  // a join link this browser opened (?join=…): its list is shown read-only
+  // until it's joined or closed
   const [joinToken, setJoinToken] = useState(() => takeJoinTokenFromUrl() || readPendingJoinToken());
   const [newName, setNewName] = useState("");
   const [newLength, setNewLength] = useState("");
@@ -901,7 +902,27 @@ export default function App() {
 
   return (
     <main style={wrap}>
-      {view === "home" && (
+      {joinToken && (
+        <SharedListView
+          token={joinToken}
+          signedIn={!!(userId && auth.profile?.username)}
+          reviews={reviews}
+          onSignIn={() => setAccountOpen(true)}
+          onOpenMovie={openMovieDirect}
+          onJoined={(id) => {
+            clearPendingJoinToken();
+            setJoinToken(null);
+            onJoinedList(id);
+          }}
+          onClose={() => {
+            clearPendingJoinToken();
+            setJoinToken(null);
+            window.scrollTo(0, 0);
+          }}
+        />
+      )}
+
+      {!joinToken && view === "home" && (
         <HomeView
           lists={lists}
           reviews={reviews}
@@ -922,7 +943,7 @@ export default function App() {
         />
       )}
 
-      {view === "editor" && currentList && (
+      {!joinToken && view === "editor" && currentList && (
         <EditorView
           list={currentList}
           reviews={reviews}
@@ -1040,23 +1061,6 @@ export default function App() {
 
       {shareOpen && currentList && userId && (
         <ShareListModal list={currentList} userId={userId} friends={friends} onClose={() => setShareOpen(false)} />
-      )}
-
-      {joinToken && !auth.loading && !accountOpen && (!userId || auth.profile?.username) && !importOffer && (
-        <JoinListModal
-          token={joinToken}
-          signedIn={!!userId}
-          onSignIn={() => setAccountOpen(true)}
-          onJoined={(id) => {
-            clearPendingJoinToken();
-            setJoinToken(null);
-            onJoinedList(id);
-          }}
-          onClose={() => {
-            clearPendingJoinToken();
-            setJoinToken(null);
-          }}
-        />
       )}
 
       {deleteTarget && (

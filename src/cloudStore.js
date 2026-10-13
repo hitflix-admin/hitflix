@@ -45,7 +45,7 @@ export function toMoviePayload(m) {
   };
 }
 
-function fromMovieRow(r) {
+export function fromMovieRow(r) {
   return {
     id: r.id,
     title: r.title,
