@@ -319,6 +319,28 @@ export function SignInModal({ onClose }) {
   );
 }
 
+// Shared by the first-time username prompt and "Change username" in the
+// profile. Usernames keep their capitalization as typed; the database compares
+// lower(username) for uniqueness (so "Allfather" also claims "allfather") and
+// rejects blocked words (private.username_blocklist).
+export const USERNAME_HINT = "3–16 characters: letters, numbers, or underscores.";
+
+// Saves the username; resolves to an error message for the user, or null.
+export async function saveUsername(userId, raw) {
+  const value = raw.trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(value)) return USERNAME_HINT;
+  const { error } = await supabase.from("profiles").update({ username: value }).eq("id", userId);
+  if (!error) return null;
+  if (error.code === "23505") return "That username is taken.";
+  if (error.message === "username_not_allowed") {
+    return error.details === "reserved"
+      ? "That username is reserved. Please choose another."
+      : "That username isn't allowed. Please choose another.";
+  }
+  console.error(error);
+  return "Couldn't save your username. Try again.";
+}
+
 // Shown once, right after first sign-in (the profile row exists from the
 // signup trigger, but username starts out null).
 export function UsernameModal({ auth }) {
@@ -328,30 +350,15 @@ export function UsernameModal({ auth }) {
 
   async function save(e) {
     e.preventDefault();
-    // saved with its capitalization as typed; the database compares
-    // lower(username) for uniqueness, so "Allfather" also claims "allfather"
-    const value = username.trim();
-    if (!/^[A-Za-z0-9_]{3,16}$/.test(value)) {
-      setError("3–16 characters: letters, numbers, or underscores.");
-      return;
-    }
     setBusy(true);
     setError("");
-    const { error } = await supabase.from("profiles").update({ username: value }).eq("id", auth.user.id);
+    const problem = await saveUsername(auth.user.id, username);
     setBusy(false);
-    if (error) {
-      setError(
-        error.code === "23505"
-          ? "That username is taken."
-          : error.message === "username_not_allowed"
-          ? error.details === "reserved"
-            ? "That username is reserved. Please choose another."
-            : "That username isn't allowed. Please choose another."
-          : error.message
-      );
+    if (problem) {
+      setError(problem);
       return;
     }
-    auth.setProfile((p) => ({ ...p, username: value }));
+    auth.setProfile((p) => ({ ...p, username: username.trim() }));
   }
 
   return (

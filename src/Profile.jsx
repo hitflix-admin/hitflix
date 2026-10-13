@@ -21,7 +21,7 @@ import {
   Lock,
 } from "lucide-react";
 import { supabase } from "./supabase.js";
-import { COLORS, inputStyle, primaryBtn, secondaryBtn, segmentBtn, segmentBtnActive } from "./theme.js";
+import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive } from "./theme.js";
 import { PosterArt } from "./movieUI.jsx";
 import { searchWikipediaFilms } from "./movieData.js";
 import { toMoviePayload } from "./cloudStore.js";
@@ -30,7 +30,7 @@ import { computeStats, achievementProgress } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
 import StreakBadge from "./StreakBadge.jsx";
-import { memberNumberLabel } from "./Account.jsx";
+import { memberNumberLabel, saveUsername, USERNAME_HINT } from "./Account.jsx";
 
 const CARD_COLORS = ["cobalt", "orchid", "caramel", "fern", "scarlet"];
 
@@ -242,30 +242,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
                 <Pencil size={15} />
                 Edit card
               </button>
-              <div
-                style={{
-                  marginTop: 18,
-                  paddingTop: 14,
-                  borderTop: "1px solid rgba(231,233,236,0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                }}
-              >
-                <div style={{ color: MUTE, fontSize: 12.5, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {auth.user?.email}
-                </div>
-                <button
-                  onClick={async () => {
-                    await auth.signOut();
-                    onClose();
-                  }}
-                  style={{ ...secondaryBtn, flex: "none", padding: "8px 14px", fontSize: 13 }}
-                >
-                  Sign out
-                </button>
-              </div>
+              <AccountSection auth={auth} onClose={onClose} />
             </>
           )
         ) : tab === "stats" ? (
@@ -573,6 +550,227 @@ function CardEditor({ card, onCancel, onSaved }) {
         <button onClick={save} disabled={saving} style={{ ...primaryBtn, opacity: saving ? 0.6 : 1 }}>
           {saving ? "Saving…" : "Save card"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Account settings ---------------- */
+
+// Under the card: username (changeable), email, sign out, delete account.
+function AccountSection({ auth, onClose }) {
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const username = auth.profile?.username || "";
+
+  async function saveName(e) {
+    e.preventDefault();
+    if (name.trim() === username) {
+      setEditingName(false);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const problem = await saveUsername(auth.user.id, name);
+    setBusy(false);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    auth.setProfile((p) => ({ ...p, username: name.trim() }));
+    setEditingName(false);
+  }
+
+  const row = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 };
+  const smallBtn = { ...secondaryBtn, flex: "none", padding: "7px 12px", fontSize: 12.5 };
+
+  return (
+    <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid rgba(231,233,236,0.1)" }}>
+      <div style={{ ...labelStyle, marginBottom: 10 }}>Account</div>
+
+      {editingName ? (
+        <form onSubmit={saveName}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={16}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoFocus
+            style={inputStyle}
+          />
+          <div style={{ color: error ? COLORS.scarlet : MUTE, fontSize: 12, marginTop: 6 }}>{error || USERNAME_HINT}</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingName(false);
+                setError("");
+              }}
+              style={{ ...secondaryBtn, padding: "9px 12px", fontSize: 13 }}
+            >
+              Cancel
+            </button>
+            <button type="submit" disabled={busy} style={{ ...primaryBtn, padding: "9px 12px", fontSize: 13, opacity: busy ? 0.6 : 1 }}>
+              {busy ? "Saving…" : "Save username"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div style={row}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700 }}>
+              {username}
+              {auth.profile?.member_number && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: MUTE, marginLeft: 6 }}>
+                  {memberNumberLabel(auth.profile.member_number)}
+                </span>
+              )}
+            </div>
+            <div style={{ color: MUTE, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>{auth.user?.email}</div>
+          </div>
+          <button
+            onClick={() => {
+              setName(username);
+              setError("");
+              setEditingName(true);
+            }}
+            style={smallBtn}
+          >
+            Change username
+          </button>
+        </div>
+      )}
+
+      <div style={{ ...row, marginTop: 16 }}>
+        <button
+          onClick={() => setConfirmingDelete(true)}
+          style={{
+            background: "none",
+            border: "none",
+            color: COLORS.scarlet,
+            fontSize: 12.5,
+            fontWeight: 600,
+            padding: 0,
+            cursor: "pointer",
+            fontFamily: "'Montserrat', sans-serif",
+          }}
+        >
+          Delete account
+        </button>
+        <button
+          onClick={async () => {
+            await auth.signOut();
+            onClose();
+          }}
+          style={smallBtn}
+        >
+          Sign out
+        </button>
+      </div>
+
+      {confirmingDelete && (
+        <DeleteAccountConfirm username={username} onCancel={() => setConfirmingDelete(false)} onDeleted={onClose} />
+      )}
+    </div>
+  );
+}
+
+// Permanent, so it asks the user to type their username first.
+function DeleteAccountConfirm({ username, onCancel, onDeleted }) {
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const matches = typed.trim().toLowerCase() === username.toLowerCase();
+
+  async function deleteAccount() {
+    setBusy(true);
+    setError("");
+    const { error } = await supabase.rpc("delete_my_account");
+    if (error) {
+      console.error(error);
+      setBusy(false);
+      setError("Couldn't delete your account. Try again.");
+      return;
+    }
+    // the account (and its sessions) no longer exist server-side, so only
+    // this browser's copy of the session needs clearing
+    await supabase.auth.signOut({ scope: "local" });
+    onDeleted();
+  }
+
+  return (
+    <div
+      onClick={busy ? undefined : onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(20,20,20,0.8)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 70,
+        padding: 18,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#1E1E1E",
+          width: "100%",
+          maxWidth: 400,
+          borderRadius: 10,
+          padding: "22px 20px 20px",
+          border: "1px solid rgba(231,233,236,0.1)",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Montserrat', sans-serif",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 19,
+            letterSpacing: 0.4,
+            marginBottom: 10,
+          }}
+        >
+          Delete your account?
+        </div>
+        <div style={{ color: MUTE, fontSize: 13, lineHeight: 1.5 }}>
+          This permanently deletes your profile card, ratings, game stats, streak, and awards. Lists only you are in
+          are deleted; lists you share with others stay with them. Your member number is retired for good.
+          <div style={{ marginTop: 8 }}>
+            Lists saved in this browser from before you signed in aren't affected.{" "}
+            <span style={{ color: "#E7E9EC", fontWeight: 600 }}>This can't be undone.</span>
+          </div>
+        </div>
+        <label style={{ ...labelStyle, display: "block", marginTop: 16, marginBottom: 6 }}>
+          Type {username} to confirm
+        </label>
+        <input
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          style={inputStyle}
+        />
+        {error && <div style={{ color: COLORS.scarlet, fontSize: 13, marginTop: 10 }}>{error}</div>}
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <button onClick={onCancel} disabled={busy} style={secondaryBtn}>
+            Keep account
+          </button>
+          <button
+            onClick={deleteAccount}
+            disabled={!matches || busy}
+            style={{ ...dangerBtn, opacity: !matches || busy ? 0.45 : 1, cursor: matches && !busy ? "pointer" : "default" }}
+          >
+            {busy ? "Deleting…" : "Delete forever"}
+          </button>
+        </div>
       </div>
     </div>
   );
