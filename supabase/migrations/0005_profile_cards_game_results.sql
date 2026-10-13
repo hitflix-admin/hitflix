@@ -1,8 +1,10 @@
--- Profile cards (the "baseball card" in the profile popup) and per-day game
--- results (the source for stats, streaks, and achievements).
+-- Profile cards (the "baseball card" in the profile popup), per-day game
+-- results (the source for game stats and achievements), and active days (the
+-- source for the account's daily streak — any signed-in visit counts, not
+-- just playing games).
 --
--- Both are private to their owner for now. Once friendships exist, friends
--- get read access to cards and game stats (never to reviews).
+-- All private to their owner for now. Once friendships exist, friends get
+-- read access to cards, streaks, and game stats (never to reviews).
 
 -- ---------------------------------------------------------------- profile cards
 -- Kept apart from profiles (which everyone can read, for usernames) so card
@@ -138,3 +140,32 @@ create policy "Users can record today's game results"
 -- no update/delete: a finished day's result is final
 
 grant select, insert on public.game_results to authenticated;
+
+-- ---------------------------------------------------------------- active days
+-- One row per account per day it was on the site while signed in. The daily
+-- streak is consecutive days here. day uses the same America/New_York day as
+-- the daily games.
+create table public.activity_days (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  day date not null,
+  primary key (user_id, day)
+);
+
+alter table public.activity_days enable row level security;
+
+create policy "Users can read their own active days"
+  on public.activity_days for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- same window as game results, so a streak can't be backfilled
+create policy "Users can record today as active"
+  on public.activity_days for insert
+  to authenticated
+  with check (
+    auth.uid() = user_id
+    and day between (now() at time zone 'America/New_York')::date - 1
+                and (now() at time zone 'America/New_York')::date + 1
+  );
+
+grant select, insert on public.activity_days to authenticated;

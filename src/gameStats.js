@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------
    Profile stats and achievements, computed from the account's
-   game_results rows. Nothing here is stored — everything is
+   game_results rows and active days (the streak). Nothing here is stored — everything is
    derived fresh, so adding or retuning an achievement applies
    to past games too.
 --------------------------------------------------------- */
@@ -45,8 +45,9 @@ function faceoffStats(rows) {
   };
 }
 
-// Current streak counts back from today, or from yesterday when today's games
-// haven't been played yet (the streak isn't broken until a whole day passes).
+// Consecutive active days. Current streak counts back from today, or from
+// yesterday when there's no activity yet today (the streak isn't broken until
+// a whole day passes).
 export function streaks(dates, today) {
   const days = [...new Set(dates.map(dayNumber))].sort((a, b) => a - b);
   let best = 0;
@@ -63,10 +64,11 @@ export function streaks(dates, today) {
     current++;
     cursor--;
   }
-  return { current, best, playedToday: played.has(t) };
+  return { current, best, activeToday: played.has(t) };
 }
 
-export function computeStats(rows, today) {
+// activeDays: "YYYY-MM-DD" days the account was on the site (activity_days)
+export function computeStats(rows, today, activeDays = []) {
   const byGame = (game) => rows.filter((r) => r.game === game);
   const guessRows = rows.filter((r) => GUESS_GAMES.includes(r.game));
   const guessWins = guessRows.filter((r) => r.won).length;
@@ -81,7 +83,7 @@ export function computeStats(rows, today) {
     // win rate only applies to the guessing games; Faceoff tracks accuracy
     overallWinRate: pct(guessWins, guessRows.length),
     guessGamesPlayed: guessRows.length,
-    streak: streaks(rows.map((r) => r.puzzle_date), today),
+    streak: streaks(activeDays, today),
     games,
     allFourDays: Object.values(gamesPerDay).filter((n) => n >= 4).length,
     holeInOnes: guessRows.filter((r) => r.won && r.guesses === 1).length,
@@ -103,9 +105,9 @@ export const ACHIEVEMENTS = [
   { id: "sharpshooter", icon: "Crosshair", title: "Top Gun", description: "Get 10 perfect Faceoffs", value: (s) => s.perfectFaceoffs, goal: 10 },
   { id: "quadruple-feature", icon: "LayoutGrid", title: "Quadruple Feature", description: "Play all 4 games in one day", value: (s) => s.allFourDays, goal: 1 },
   { id: "oscar-buff", icon: "Trophy", title: "And the Oscar Goes To…", description: "Win 25 Daily Movie (Oscar Edition) games", value: (s) => s.games.dailyWinner.wins, goal: 25 },
-  { id: "week-run", icon: "Flame", title: "Opening Week", description: "Reach a 7-day streak", value: (s) => s.streak.best, goal: 7 },
-  { id: "month-run", icon: "Flame", title: "Held Over", description: "Reach a 30-day streak", value: (s) => s.streak.best, goal: 30 },
-  { id: "century-run", icon: "Flame", title: "Cult Classic", description: "Reach a 100-day streak", value: (s) => s.streak.best, goal: 100 },
+  { id: "week-run", icon: "Flame", title: "Opening Week", description: "Visit Hitflix 7 days in a row", value: (s) => s.streak.best, goal: 7 },
+  { id: "month-run", icon: "Flame", title: "Held Over", description: "Visit Hitflix 30 days in a row", value: (s) => s.streak.best, goal: 30 },
+  { id: "century-run", icon: "Flame", title: "Cult Classic", description: "Visit Hitflix 100 days in a row", value: (s) => s.streak.best, goal: 100 },
   { id: "box-office-smash", icon: "Ticket", title: "Box Office Smash", description: "Play 100 games", value: (s) => s.totalGames, goal: 100 },
 ];
 

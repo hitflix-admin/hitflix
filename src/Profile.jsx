@@ -25,7 +25,7 @@ import { COLORS, inputStyle, primaryBtn, secondaryBtn, segmentBtn, segmentBtnAct
 import { PosterArt } from "./movieUI.jsx";
 import { searchWikipediaFilms } from "./movieData.js";
 import { toMoviePayload } from "./cloudStore.js";
-import { recordFinishedGames } from "./gameResults.js";
+import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 import { computeStats, achievementProgress } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
@@ -91,18 +91,20 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // make sure anything finished on this browser is counted before reading
-      await recordFinishedGames();
-      const [cardRes, resultsRes] = await Promise.all([
+      // make sure today and anything finished on this browser are counted
+      // before reading
+      await Promise.all([markActiveToday(), recordFinishedGames()]);
+      const [cardRes, resultsRes, daysRes] = await Promise.all([
         supabase
           .from("profile_cards")
           .select("tagline, favorite_genre, favorite_director, card_color, movie:movies(*)")
           .maybeSingle(),
         supabase.from("game_results").select("*"),
+        supabase.from("activity_days").select("day"),
       ]);
       if (cancelled) return;
-      if (cardRes.error || resultsRes.error) {
-        console.error(cardRes.error || resultsRes.error);
+      if (cardRes.error || resultsRes.error || daysRes.error) {
+        console.error(cardRes.error || resultsRes.error || daysRes.error);
         setLoadError("Couldn't load your profile. Check your connection and try again.");
         return;
       }
@@ -114,7 +116,11 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
         cardColor: c?.card_color || "cobalt",
         favoriteMovie: fromMovieRow(c?.movie),
       });
-      const computed = computeStats(resultsRes.data, todayGameDateString());
+      const computed = computeStats(
+        resultsRes.data,
+        todayGameDateString(),
+        daysRes.data.map((r) => r.day)
+      );
       setStats(computed);
       // the account button's streak badge reads this too
       auth.setStreak(computed.streak);
@@ -364,7 +370,7 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 14 }}>
         {[
-          ["Streak", stats.streak.current, <Flame key="f" size={13} color={stats.streak.playedToday ? COLORS.caramel : MUTE} />],
+          ["Streak", stats.streak.current, <Flame key="f" size={13} color={stats.streak.activeToday ? COLORS.caramel : MUTE} />],
           ["Games", stats.totalGames],
           ["Rated", ratingsCount],
           ["Lists", listsCount],
@@ -617,28 +623,28 @@ function GuessDistribution({ distribution, losses, accent }) {
 }
 
 function StatsPanel({ stats }) {
-  if (stats.totalGames === 0) {
-    return (
-      <div style={{ color: MUTE, fontSize: 13.5, lineHeight: 1.5, textAlign: "center", padding: "24px 6px" }}>
-        No games tracked yet. Finish any of today's games while signed in and your stats will start here.
-      </div>
-    );
-  }
   const guessGames = [GAME_INFO.daily, GAME_INFO.oscarWinner];
   const faceoffGames = [GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff];
+  const noGames = stats.totalGames === 0;
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
-        <StatTile label="Win rate" value={fmtPct(stats.overallWinRate)} />
-        <StatTile label="Games played" value={stats.totalGames} />
         <StatTile label="Current streak" value={stats.streak.current} />
         <StatTile label="Best streak" value={stats.streak.best} />
+        <StatTile label="Win rate" value={fmtPct(stats.overallWinRate)} />
+        <StatTile label="Games played" value={stats.totalGames} />
       </div>
       <div style={{ color: MUTE, fontSize: 11.5, marginTop: 8, lineHeight: 1.4 }}>
-        Win rate covers both Daily Movie games. A streak counts every day you finish at least one game.
+        Your streak counts every day you visit Hitflix while signed in. Win rate covers both Daily Movie games.
       </div>
 
-      {guessGames.map((info) => {
+      {noGames && (
+        <div style={{ color: MUTE, fontSize: 13.5, lineHeight: 1.5, textAlign: "center", padding: "24px 6px 6px" }}>
+          No games tracked yet. Finish any of today's games while signed in and your game stats will start here.
+        </div>
+      )}
+
+      {!noGames && guessGames.map((info) => {
         const g = stats.games[info.storageId];
         return (
           <div key={info.storageId}>
@@ -662,7 +668,7 @@ function StatsPanel({ stats }) {
         );
       })}
 
-      {faceoffGames.map((info) => {
+      {!noGames && faceoffGames.map((info) => {
         const g = stats.games[info.storageId];
         return (
           <div key={info.storageId}>

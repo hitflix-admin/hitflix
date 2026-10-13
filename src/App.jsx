@@ -15,7 +15,7 @@ import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
 import ProfileModal from "./Profile.jsx";
-import { recordFinishedGames } from "./gameResults.js";
+import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 import {
   loadCloud,
   syncLists,
@@ -254,9 +254,9 @@ export default function App() {
         syncedReviewsRef.current = cloud.reviews;
         setLists(cloud.lists);
         setReviews(cloud.reviews);
-        // games finished on this browser before signing in still count today;
-        // then refresh the account button's streak to include them
-        recordFinishedGames().then(auth.refreshStreak);
+        // today counts toward the streak, and games finished on this browser
+        // before signing in still count; then refresh the button's streak
+        Promise.all([markActiveToday(), recordFinishedGames()]).then(auth.refreshStreak);
         const counts = countImportable(localLists, localReviews);
         let alreadyAsked = false;
         try {
@@ -371,7 +371,10 @@ export default function App() {
     const hasPendingEdits = () => saveTimer.current || saveReviewsTimer.current || dragState.current;
     let refreshQueued = false;
     function refresh() {
-      if (document.visibilityState !== "visible" || hasPendingEdits() || refreshQueued) return;
+      if (document.visibilityState !== "visible") return;
+      // a tab left open past midnight starts the new day's streak when you return
+      markActiveToday().then((added) => added && auth.refreshStreak());
+      if (hasPendingEdits() || refreshQueued) return;
       refreshQueued = true;
       // queued behind any in-flight save so the reload sees its result
       syncQueue.current = syncQueue.current.then(async () => {

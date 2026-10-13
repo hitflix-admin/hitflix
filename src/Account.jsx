@@ -14,8 +14,8 @@ import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
 // session: undefined while loading, null when signed out.
 // profile: null until loaded; profile.username is null until picked.
-// streak: { current, best, playedToday } across all games, for the button's
-// streak badge; refreshStreak() re-reads it after new results are recorded.
+// streak: { current, best, activeToday } — consecutive days active on the
+// site — for the button's streak badge; refreshStreak() re-reads it.
 export function useAuth() {
   const [session, setSession] = useState(supabase ? undefined : null);
   const [profile, setProfile] = useState(null);
@@ -57,11 +57,11 @@ export function useAuth() {
     }
     let cancelled = false;
     supabase
-      .from("game_results")
-      .select("puzzle_date")
+      .from("activity_days")
+      .select("day")
       .then(({ data, error }) => {
         if (cancelled || error) return;
-        setStreak(streaks(data.map((r) => r.puzzle_date), todayGameDateString()));
+        setStreak(streaks(data.map((r) => r.day), todayGameDateString()));
       });
     return () => {
       cancelled = true;

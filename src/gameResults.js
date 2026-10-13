@@ -1,9 +1,12 @@
 import { todayGameDateString } from "./dailyMovie.js";
 
 /* ---------------------------------------------------------
-   Records finished daily games to the signed-in account
-   (game_results, see supabase/migrations/0005) for profile
-   stats, streaks, and achievements.
+   Records account activity from any page, signed in only
+   (see supabase/migrations/0005):
+   - markActiveToday: today counts toward the daily streak
+     (any visit counts — the streak isn't about games)
+   - recordFinishedGames: finished daily games, for profile
+     game stats and achievements
 
    Each game already keeps its day's progress in localStorage
    (`<game>:progress:<date>`), so results are read from there
@@ -79,6 +82,44 @@ function mightBeSignedIn() {
   return false;
 }
 
+// The signed-in user's id plus the client, or null — loading supabase-js only
+// when a session might exist.
+async function signedInClient() {
+  if (!mightBeSignedIn()) return null;
+  const { supabase } = await import("./supabase.js");
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user?.id;
+  return userId ? { supabase, userId } : null;
+}
+
+const ACTIVE_DAY_KEY = "activeDayRecorded";
+
+// Marks today (the games' America/New_York day) as an active day for the
+// signed-in account. Remembered locally so it's one insert per day per
+// browser; safe to call on every page load and tab focus. Resolves true only
+// when today was newly recorded (so callers know the streak changed).
+export async function markActiveToday() {
+  try {
+    const today = todayGameDateString();
+    if (!mightBeSignedIn()) return false;
+    const client = await signedInClient();
+    if (!client) return false;
+    const key = `${client.userId}:${today}`;
+    if (readJSON(ACTIVE_DAY_KEY) === key) return false;
+    const { error } = await client.supabase.from("activity_days").insert({ day: today });
+    // 23505: another tab or device already recorded today
+    if (!error || error.code === "23505") {
+      localStorage.setItem(ACTIVE_DAY_KEY, JSON.stringify(key));
+      return true;
+    }
+    console.error(error);
+  } catch (e) {
+    console.error(e);
+  }
+  return false;
+}
+
 let inFlight = null;
 
 // Records every finished, not-yet-recorded recent game for the signed-in
@@ -87,11 +128,9 @@ export function recordFinishedGames() {
   if (!mightBeSignedIn()) return Promise.resolve();
   if (inFlight) return inFlight;
   inFlight = (async () => {
-    const { supabase } = await import("./supabase.js");
-    if (!supabase) return;
-    const { data } = await supabase.auth.getSession();
-    const userId = data.session?.user?.id;
-    if (!userId) return;
+    const client = await signedInClient();
+    if (!client) return;
+    const { supabase, userId } = client;
 
     const dates = recentDates();
     // remembered per account so a second account on this browser still records

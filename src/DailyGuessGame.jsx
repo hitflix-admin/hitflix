@@ -8,7 +8,7 @@ import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 import MovieModal from "./MovieModal.jsx";
-import { recordFinishedGames } from "./gameResults.js";
+import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 
 // Same "movieReviews" localStorage shape the list-builder (App.jsx) and
 // Faceoff (FaceoffGame.jsx) read and write, keyed by each movie's Wikipedia
@@ -364,8 +364,10 @@ export default function DailyGuessGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, progress.status]);
 
-  // records finished games to the signed-in account (no-op when signed out)
+  // counts today toward the account's streak and records finished games
+  // (both no-ops when signed out)
   useEffect(() => {
+    markActiveToday();
     recordFinishedGames();
   }, []);
 
