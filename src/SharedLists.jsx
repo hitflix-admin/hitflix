@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Users, Link2, Check, ArrowLeft } from "lucide-react";
 import { supabase } from "./supabase.js";
-import { COLORS, primaryBtn, secondaryBtn } from "./theme.js";
+import { COLORS, primaryBtn, secondaryBtn, inputStyle } from "./theme.js";
 import { useScrollLock } from "./scrollLock.js";
 import { PosterArt, Gauge, calcScore } from "./movieUI.jsx";
 import { fromMovieRow } from "./cloudStore.js";
@@ -475,9 +475,43 @@ export function ShareListModal({ list, userId, friends, onLinkChange, onClose })
   );
 }
 
+// Name a copy before it's made; starts as "<original name> - copy".
+export function SaveCopyModal({ defaultName, onCancel, onSave }) {
+  const [name, setName] = useState(defaultName.slice(0, 100));
+  const save = () => onSave(name.trim() || defaultName.slice(0, 100));
+  return (
+    <Popup title="Save a copy" onClose={onCancel} maxWidth={400}>
+      <div style={{ color: MUTE, fontSize: 13, lineHeight: 1.5, marginBottom: 14 }}>
+        Makes a new list of your own with the same movies, in the same order. Changes to the copy and the original
+        don't affect each other.
+      </div>
+      <label style={{ ...labelStyle, display: "block", marginBottom: 6 }} htmlFor="copy-name">
+        List name
+      </label>
+      <input
+        id="copy-name"
+        autoFocus
+        value={name}
+        maxLength={100}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && save()}
+        style={{ ...inputStyle, marginBottom: 18 }}
+      />
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onCancel} style={secondaryBtn}>
+          Cancel
+        </button>
+        <button onClick={save} style={primaryBtn}>
+          Save copy
+        </button>
+      </div>
+    </Popup>
+  );
+}
+
 // What a join link opens: the list, read-only, for anyone — signed out
 // included. Signed in, you can also join it to edit.
-export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie, onJoined, onClose }) {
+export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie, onSaveCopy, onJoined, onClose }) {
   const [list, setList] = useState(undefined); // undefined = loading, null = link dead
   const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -736,25 +770,45 @@ export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie
       >
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
           {error && <div style={{ color: COLORS.scarlet, fontSize: 13, marginBottom: 8 }}>{error}</div>}
-          {!signedIn ? (
-            <button onClick={onSignIn} style={{ ...primaryBtn, width: "100%" }}>
-              Sign in to join and edit
+          <div style={{ display: "flex", gap: 8 }}>
+            {/* signed out, both buttons go to sign-in first */}
+            <button
+              onClick={
+                signedIn
+                  ? () =>
+                      onSaveCopy({
+                        name: list.name,
+                        ranked: list.ranked,
+                        targetLength: list.target_length,
+                        entries: list.entries,
+                        honorableMentions: list.honorableMentions,
+                      })
+                  : onSignIn
+              }
+              style={{ ...secondaryBtn, padding: "12px 8px", whiteSpace: "nowrap" }}
+            >
+              Save a copy
             </button>
-          ) : list.already_member ? (
-            <button onClick={() => onJoined(list.list_id)} style={{ ...primaryBtn, width: "100%" }}>
-              You're on this list — open it
-            </button>
-          ) : (
-            <button disabled={busy} onClick={join} style={{ ...primaryBtn, width: "100%" }}>
-              {busy ? "Joining…" : "Join to edit"}
-            </button>
-          )}
-          <div style={{ color: "#6B7280", fontSize: 11.5, textAlign: "center", marginTop: 7 }}>
+            {!signedIn ? (
+              <button onClick={onSignIn} style={{ ...primaryBtn, padding: "12px 8px", whiteSpace: "nowrap" }}>
+                Join to edit
+              </button>
+            ) : list.already_member ? (
+              <button onClick={() => onJoined(list.list_id)} style={{ ...primaryBtn, padding: "12px 8px", whiteSpace: "nowrap" }}>
+                Open list
+              </button>
+            ) : (
+              <button disabled={busy} onClick={join} style={{ ...primaryBtn, padding: "12px 8px", whiteSpace: "nowrap" }}>
+                {busy ? "Joining…" : "Join to edit"}
+              </button>
+            )}
+          </div>
+          <div style={{ color: "#6B7280", fontSize: 11.5, textAlign: "center", marginTop: 7, lineHeight: 1.4 }}>
             {!signedIn
-              ? "Anyone can view this list. Members can add, remove, reorder, and rename."
+              ? "Anyone can view this list. Sign in to join it or save your own copy."
               : list.already_member
-              ? "Your ratings stay private on shared lists."
-              : "Members can add, remove, reorder, and rename. Your ratings stay private."}
+              ? "You're on this list. A copy is yours alone — changes to one don't affect the other."
+              : "Join to edit it with everyone, or save a copy that's yours alone."}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check, Users, UserPlus, Lock, Link2 } from "lucide-react";
+import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, Check, Users, UserPlus, Lock, Link2, Copy } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
@@ -39,6 +39,7 @@ import {
   ListInvitesBanner,
   ShareListModal,
   SharedListView,
+  SaveCopyModal,
   takeJoinTokenFromUrl,
   readPendingJoinToken,
   clearPendingJoinToken,
@@ -199,6 +200,7 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [copySource, setCopySource] = useState(null); // a list to save a copy of, while its name is being chosen
   // a join link this browser opened (?join=…): its list is shown read-only
   // until it's joined or closed
   const [joinToken, setJoinToken] = useState(() => takeJoinTokenFromUrl() || readPendingJoinToken());
@@ -669,6 +671,30 @@ export default function App() {
     setDeleteTarget(null);
   }
 
+  // Saves an independent copy of a list — its movies in order and its
+  // settings, under a new name — as a brand-new list of yours, then opens it.
+  function saveCopy(source, name) {
+    const fresh = (entries) =>
+      (entries || []).map((e) => ({ ...e, uid: uid(), addedBy: userId, addedByName: null }));
+    const list = {
+      id: uid(),
+      name,
+      targetLength: source.targetLength || 0,
+      ranked: source.ranked !== false,
+      addOrder: source.addOrder === "topDown" ? "topDown" : "bottomUp",
+      entries: fresh(source.entries),
+      honorableMentions: fresh(source.honorableMentions),
+      updatedAt: Date.now(),
+      ...(userId ? { members: [{ id: userId, username: auth.profile?.username || "" }], linkOn: false } : {}),
+    };
+    change({ type: "create", list });
+    setCopySource(null);
+    clearPendingJoinToken();
+    setJoinToken(null);
+    openList(list.id);
+    window.scrollTo(0, 0);
+  }
+
   // turning a list's join link on/off isn't a list edit (no op to save), so
   // the home-page privacy icon is just updated here; other devices pick it up
   // on their next reload
@@ -918,6 +944,7 @@ export default function App() {
           reviews={reviews}
           onSignIn={() => setAccountOpen(true)}
           onOpenMovie={openMovieDirect}
+          onSaveCopy={setCopySource}
           onJoined={(id) => {
             clearPendingJoinToken();
             setJoinToken(null);
@@ -961,6 +988,7 @@ export default function App() {
           onRename={(name) => setListFields({ name })}
           userId={userId}
           onShare={userId ? () => setShareOpen(true) : null}
+          onDuplicate={() => setCopySource(currentList)}
           query={query}
           setQuery={setQuery}
           results={results.filter(
@@ -1075,6 +1103,14 @@ export default function App() {
           friends={friends}
           onLinkChange={(on) => setLinkOn(currentList.id, on)}
           onClose={() => setShareOpen(false)}
+        />
+      )}
+
+      {copySource && (
+        <SaveCopyModal
+          defaultName={`${copySource.name} - copy`}
+          onCancel={() => setCopySource(null)}
+          onSave={(name) => saveCopy(copySource, name)}
         />
       )}
 
@@ -1768,6 +1804,22 @@ function ConfirmDeleteModal({ name, others = [], onCancel, onConfirm }) {
 
 /* ---------------- Editor ---------------- */
 
+const pillBtn = {
+  flexShrink: 0,
+  background: "transparent",
+  border: `1px solid ${COLORS.cobalt}`,
+  color: COLORS.cobalt,
+  borderRadius: 20,
+  padding: "5px 11px",
+  fontSize: 11.5,
+  fontWeight: 700,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: 5,
+  fontFamily: "'Montserrat', sans-serif",
+};
+
 function EditorView({
   list,
   reviews,
@@ -1776,6 +1828,7 @@ function EditorView({
   onRename,
   userId,
   onShare,
+  onDuplicate,
   query,
   setQuery,
   results,
@@ -1869,49 +1922,41 @@ function EditorView({
           {list.entries.length}
           {list.targetLength ? ` / ${list.targetLength}` : ""} titles · {list.ranked ? "ranked" : "unranked"} · drag the handle to reorder
         </div>
-        {onShare && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                color: "#8D96A3",
-                fontSize: 12.5,
-              }}
-            >
-              <Users size={14} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {members.length <= 1
-                  ? "Just you"
-                  : members.map((m) => (m.id === userId ? "You" : m.username)).join(", ")}
-              </span>
-            </div>
-            <button
-              onClick={onShare}
-              style={{
-                flexShrink: 0,
-                background: "transparent",
-                border: `1px solid ${COLORS.cobalt}`,
-                color: COLORS.cobalt,
-                borderRadius: 20,
-                padding: "5px 12px",
-                fontSize: 11.5,
-                fontWeight: 700,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 5,
-                fontFamily: "'Montserrat', sans-serif",
-              }}
-            >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              color: "#8D96A3",
+              fontSize: 12.5,
+            }}
+          >
+            {/* signed out, lists can't be shared, so there's no one to list */}
+            {onShare && (
+              <>
+                <Users size={14} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+                <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {members.length <= 1
+                    ? "Just you"
+                    : members.map((m) => (m.id === userId ? "You" : m.username)).join(", ")}
+                </span>
+              </>
+            )}
+          </div>
+          <button onClick={onDuplicate} style={pillBtn} aria-label="Save a copy of this list">
+            <Copy size={13} strokeWidth={2.2} />
+            Copy
+          </button>
+          {onShare && (
+            <button onClick={onShare} style={pillBtn}>
               <UserPlus size={13} strokeWidth={2.2} />
               Share
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div style={{ padding: "14px 1cm 0" }}>
@@ -1941,10 +1986,6 @@ function EditorView({
                 border: "1px solid rgba(231,233,236,0.08)",
                 borderRadius: 4,
                 padding: "10px 10px 10px 6px",
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                gap: 10,
                 transform: dragIndex === i ? `translateY(${dragY}px)` : "none",
                 boxShadow: dragIndex === i ? "0 8px 20px rgba(0,0,0,0.45)" : "none",
                 zIndex: dragIndex === i ? 5 : 1,
@@ -1952,117 +1993,120 @@ function EditorView({
                 touchAction: "none",
               }}
             >
-              <div
-                onPointerDown={(e) => onHandlePointerDown(e, i)}
-                style={{
-                  color: "#8D96A3",
-                  cursor: "grab",
-                  padding: "10px 4px",
-                  touchAction: "none",
-                }}
-                aria-label="Drag to reorder"
-              >
-                <GripVertical size={18} strokeWidth={1.6} />
-              </div>
-              {list.ranked && (
+              {/* never wraps, so the remove button stays on the row even on
+                  narrow phones; "added by" gets its own line underneath */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div
+                  onPointerDown={(e) => onHandlePointerDown(e, i)}
                   style={{
-                    width: 22,
-                    flexShrink: 0,
-                    textAlign: "center",
-                    fontFamily: "'Montserrat', sans-serif",
-                    fontWeight: 800,
-                    fontVariantNumeric: "tabular-nums",
-                    fontSize: 15,
-                    color: COLORS.cobalt,
-                  }}
-                >
-                  {dragOriginalOrder?.get(entry.uid) ?? i + 1}
-                </div>
-              )}
-              <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
-              </div>
-              <div onClick={() => onOpenMovie(entry)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
-                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {entry.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 12,
                     color: "#8D96A3",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                    cursor: "grab",
+                    padding: "10px 4px",
+                    touchAction: "none",
                   }}
+                  aria-label="Drag to reorder"
                 >
-                  {entry.year || "Year unknown"}
-                  {reviews[entry.id]?.details?.director ? ` · Dir. ${reviews[entry.id].details.director}` : ""}
+                  <GripVertical size={18} strokeWidth={1.6} />
                 </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: 8,
-                  flexShrink: 0,
-                }}
-              >
-                {calcScore(reviews[entry.id]?.rating) !== null ? (
-                  <>
-                    <div
-                      className="your-score-label"
-                      style={{
-                        fontSize: 9,
-                        textTransform: "uppercase",
-                        letterSpacing: 0.4,
-                        fontWeight: 700,
-                        color: "#8D96A3",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Your score
-                    </div>
-                    <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                      <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} />
-                    </div>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => onOpenMovie(entry)}
+                {list.ranked && (
+                  <div
                     style={{
-                      background: "transparent",
-                      border: `1px solid ${COLORS.cobalt}`,
-                      color: COLORS.cobalt,
-                      borderRadius: 20,
-                      padding: "6px 10px",
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
+                      width: 22,
+                      flexShrink: 0,
+                      textAlign: "center",
                       fontFamily: "'Montserrat', sans-serif",
+                      fontWeight: 800,
+                      fontVariantNumeric: "tabular-nums",
+                      fontSize: 15,
+                      color: COLORS.cobalt,
                     }}
                   >
-                    Add score
-                  </button>
+                    {dragOriginalOrder?.get(entry.uid) ?? i + 1}
+                  </div>
                 )}
+                <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                  <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
+                </div>
+                <div onClick={() => onOpenMovie(entry)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {entry.title}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#8D96A3",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {entry.year || "Year unknown"}
+                    {reviews[entry.id]?.details?.director ? ` · Dir. ${reviews[entry.id].details.director}` : ""}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: 8,
+                    flexShrink: 0,
+                  }}
+                >
+                  {calcScore(reviews[entry.id]?.rating) !== null ? (
+                    <>
+                      <div
+                        className="your-score-label"
+                        style={{
+                          fontSize: 9,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.4,
+                          fontWeight: 700,
+                          color: "#8D96A3",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Your score
+                      </div>
+                      <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                        <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} />
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => onOpenMovie(entry)}
+                      style={{
+                        background: "transparent",
+                        border: `1px solid ${COLORS.cobalt}`,
+                        color: COLORS.cobalt,
+                        borderRadius: 20,
+                        padding: "6px 10px",
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        fontFamily: "'Montserrat', sans-serif",
+                      }}
+                    >
+                      Add score
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={() => onRemove(entry.uid)}
+                  style={{ background: "none", border: "none", color: "#8D96A3", cursor: "pointer", padding: 6 }}
+                  aria-label={`Remove ${entry.title}`}
+                >
+                  <X size={17} strokeWidth={1.7} />
+                </button>
               </div>
-              <button
-                onClick={() => onRemove(entry.uid)}
-                style={{ background: "none", border: "none", color: "#8D96A3", cursor: "pointer", padding: 6 }}
-                aria-label={`Remove ${entry.title}`}
-              >
-                <X size={17} strokeWidth={1.7} />
-              </button>
               {addedByLabel(entry) && (
                 // its own line under the row, lined up with the poster — the
                 // title column is too narrow on phones to fit it
                 <div
                   style={{
-                    flexBasis: "100%",
-                    marginTop: -4,
+                    marginTop: 4,
                     paddingLeft: list.ranked ? 68 : 36,
                     fontSize: 11,
                     color: "#6B7280",

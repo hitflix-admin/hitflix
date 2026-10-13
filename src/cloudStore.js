@@ -197,7 +197,7 @@ async function check(promise) {
 
 // ---- list changes ----
 // Every edit to a list is one of these ops:
-//   { type: "create", list }                      a new, empty list
+//   { type: "create", list }                      a new list (empty, or a copy)
 //   { type: "fields", listId, fields }            rename / settings (app keys)
 //   { type: "add", listId, entry, section, atTop } entry = movie + uid
 //   { type: "remove", listId, uid }
@@ -279,6 +279,10 @@ export async function sendOp(op, userId) {
           list_add_order: f.add_order,
         })
       );
+      // a copy starts out with entries; filling a list that only has its
+      // creator on it in one go is safe
+      const entries = entriesPayload(op.list);
+      if (entries.length) await check(supabase.rpc("sync_list_entries", { target_list: op.list.id, entries }));
       return true;
     }
     case "fields": {
@@ -376,8 +380,6 @@ export async function importLocal(localLists, localReviews, cloudReviews) {
       honorableMentions: (l.honorableMentions || []).map((e) => ({ ...e, uid: crypto.randomUUID() })),
     };
     await sendOp({ type: "create", list: fresh });
-    const entries = entriesPayload(fresh);
-    if (entries.length) await check(supabase.rpc("sync_list_entries", { target_list: fresh.id, entries }));
   }
   for (const [id, r] of Object.entries(localReviews)) {
     if (!r?.rating || cloudReviews[id]?.rating) continue;
