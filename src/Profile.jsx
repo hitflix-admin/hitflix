@@ -327,7 +327,7 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
               wordBreak: "break-word",
             }}
           >
-            @{username}
+            {username}
           </div>
           {card.tagline && (
             <div style={{ fontStyle: "italic", color: "#E7E9EC", fontSize: 13, lineHeight: 1.4, marginTop: 6 }}>

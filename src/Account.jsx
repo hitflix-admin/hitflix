@@ -56,7 +56,7 @@ export function useAuth() {
 
 export function AccountButton({ auth, onClick }) {
   if (!auth.enabled || auth.loading) return null;
-  const label = auth.user ? (auth.profile?.username ? `@${auth.profile.username}` : "Account") : "Sign in";
+  const label = auth.user ? (auth.profile?.username || "Account") : "Sign in";
   return (
     <button
       onClick={onClick}
