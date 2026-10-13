@@ -39,11 +39,11 @@ export function useAuth() {
     let cancelled = false;
     supabase
       .from("profiles")
-      .select("username, display_name")
+      .select("username, display_name, member_number")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) setProfile(data ?? { username: null, display_name: null });
+        if (!cancelled) setProfile(data ?? { username: null, display_name: null, member_number: null });
       });
     return () => {
       cancelled = true;
@@ -82,6 +82,12 @@ export function useAuth() {
   };
 }
 
+// "#1", "#10,000" — the account's signup position, shown beside (never as
+// part of) the username
+export function memberNumberLabel(n) {
+  return n ? `#${Number(n).toLocaleString("en-US")}` : "";
+}
+
 const pillStyle = {
   background: "#1E1E1E",
   color: "#E7E9EC",
@@ -93,7 +99,7 @@ const pillStyle = {
   cursor: "pointer",
   whiteSpace: "nowrap",
   flexShrink: 0,
-  maxWidth: "50%",
+  maxWidth: "60%",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
 };
 
@@ -134,7 +140,20 @@ export function AccountButton({ auth, onClick }) {
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
           {auth.profile?.username || "Account"}
         </span>
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#8D96A3", marginTop: 1 }}>
+        {/* small line under the name: member number, then the streak — kept
+            off the name's line so a long number never squeezes the name */}
+        <span
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: "#8D96A3",
+            marginTop: 1,
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {auth.profile?.member_number && `${memberNumberLabel(auth.profile.member_number)} · `}
           {streakText(auth.streak?.current)}
         </span>
       </span>

@@ -30,6 +30,7 @@ import { computeStats, achievementProgress } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
 import StreakBadge from "./StreakBadge.jsx";
+import { memberNumberLabel } from "./Account.jsx";
 
 const CARD_COLORS = ["cobalt", "orchid", "caramel", "fern", "scarlet"];
 
@@ -220,6 +221,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
               <BaseballCard
                 card={card}
                 username={auth.profile?.username}
+                memberNumber={auth.profile?.member_number}
                 memberSince={auth.user?.created_at}
                 stats={stats}
                 listsCount={listsCount}
@@ -278,7 +280,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
 
 /* ---------------- Card ---------------- */
 
-function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsCount }) {
+function BaseballCard({ card, username, memberNumber, memberSince, stats, listsCount, ratingsCount }) {
   const accent = COLORS[card.cardColor] || COLORS.cobalt;
   const since = memberSince
     ? new Date(memberSince).toLocaleDateString("en-US", { month: "short", year: "numeric" })
@@ -346,6 +348,11 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
             }}
           >
             {username}
+            {memberNumber && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: MUTE, marginLeft: 6, whiteSpace: "nowrap" }}>
+                {memberNumberLabel(memberNumber)}
+              </span>
+            )}
           </div>
           {card.tagline && (
             <div style={{ fontStyle: "italic", color: "#E7E9EC", fontSize: 13, lineHeight: 1.4, marginTop: 6 }}>
