@@ -95,17 +95,17 @@ export function computeStats(rows, today) {
 // value/goal drive both the unlocked state and the progress bar.
 export const ACHIEVEMENTS = [
   { id: "opening-night", icon: "Clapperboard", title: "Opening Night", description: "Finish your first game", value: (s) => s.totalGames, goal: 1 },
-  { id: "hole-in-one", icon: "Target", title: "Hole in One", description: "Solve a Daily Movie on your first guess", value: (s) => s.holeInOnes, goal: 1 },
-  { id: "clutch", icon: "Zap", title: "Clutch", description: "Win on your fifth and final guess", value: (s) => s.clutchWins, goal: 1 },
-  { id: "no-hints", icon: "EyeOff", title: "No Hints Needed", description: "Win 10 Daily Movie games without the plot hint", value: (s) => s.noHintWins, goal: 10 },
-  { id: "speed-run", icon: "Timer", title: "Speed Run", description: "Solve a Daily Movie in under 60 seconds", value: (s) => s.speedRuns, goal: 1 },
-  { id: "clean-sweep", icon: "Swords", title: "Clean Sweep", description: "Get all 5 rounds right in a Faceoff", value: (s) => s.perfectFaceoffs, goal: 1 },
-  { id: "sharpshooter", icon: "Crosshair", title: "Sharpshooter", description: "Get 10 perfect Faceoffs", value: (s) => s.perfectFaceoffs, goal: 10 },
+  { id: "hole-in-one", icon: "Target", title: "One-Take Wonder", description: "Solve a Daily Movie on your first guess", value: (s) => s.holeInOnes, goal: 1 },
+  { id: "clutch", icon: "Zap", title: "Final Cut", description: "Win on your fifth and final guess", value: (s) => s.clutchWins, goal: 1 },
+  { id: "no-hints", icon: "EyeOff", title: "No Spoilers Needed", description: "Win 10 Daily Movie games without the plot hint", value: (s) => s.noHintWins, goal: 10 },
+  { id: "speed-run", icon: "Timer", title: "Gone in 60 Seconds", description: "Solve a Daily Movie in under 60 seconds", value: (s) => s.speedRuns, goal: 1 },
+  { id: "clean-sweep", icon: "Swords", title: "Picture Perfect", description: "Get all 5 rounds right in a Faceoff", value: (s) => s.perfectFaceoffs, goal: 1 },
+  { id: "sharpshooter", icon: "Crosshair", title: "Top Gun", description: "Get 10 perfect Faceoffs", value: (s) => s.perfectFaceoffs, goal: 10 },
   { id: "quadruple-feature", icon: "LayoutGrid", title: "Quadruple Feature", description: "Play all 4 games in one day", value: (s) => s.allFourDays, goal: 1 },
-  { id: "oscar-buff", icon: "Trophy", title: "Oscar Buff", description: "Win 25 Daily Movie (Oscar Edition) games", value: (s) => s.games.dailyWinner.wins, goal: 25 },
-  { id: "week-run", icon: "Flame", title: "Week-Long Run", description: "Reach a 7-day streak", value: (s) => s.streak.best, goal: 7 },
-  { id: "month-run", icon: "Flame", title: "Monthly Regular", description: "Reach a 30-day streak", value: (s) => s.streak.best, goal: 30 },
-  { id: "century-run", icon: "Flame", title: "Century Club", description: "Reach a 100-day streak", value: (s) => s.streak.best, goal: 100 },
+  { id: "oscar-buff", icon: "Trophy", title: "And the Oscar Goes To…", description: "Win 25 Daily Movie (Oscar Edition) games", value: (s) => s.games.dailyWinner.wins, goal: 25 },
+  { id: "week-run", icon: "Flame", title: "Opening Week", description: "Reach a 7-day streak", value: (s) => s.streak.best, goal: 7 },
+  { id: "month-run", icon: "Flame", title: "Held Over", description: "Reach a 30-day streak", value: (s) => s.streak.best, goal: 30 },
+  { id: "century-run", icon: "Flame", title: "Cult Classic", description: "Reach a 100-day streak", value: (s) => s.streak.best, goal: 100 },
   { id: "box-office-smash", icon: "Ticket", title: "Box Office Smash", description: "Play 100 games", value: (s) => s.totalGames, goal: 100 },
 ];
 
