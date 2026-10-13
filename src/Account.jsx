@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { User, ChevronDown } from "lucide-react";
+import StreakBadge, { streakText } from "./StreakBadge.jsx";
+import { streaks } from "./gameStats.js";
+import { todayGameDateString } from "./dailyMovie.js";
 import { supabase, googleAuthEnabled } from "./supabase.js";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
@@ -11,12 +14,16 @@ import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
 // session: undefined while loading, null when signed out.
 // profile: null until loaded; profile.username is null until picked.
-// card: { cardColor, poster } from the profile card, for the account button's
-// avatar — null until loaded (or when the user hasn't made a card).
+// card: { cardColor } from the profile card, for the account button — null
+// until loaded (or when the user hasn't made a card).
+// streak: { current, best, playedToday } across all games, for the button's
+// streak badge; refreshStreak() re-reads it after new results are recorded.
 export function useAuth() {
   const [session, setSession] = useState(supabase ? undefined : null);
   const [profile, setProfile] = useState(null);
   const [card, setCard] = useState(null);
+  const [streak, setStreak] = useState(null);
+  const [streakVersion, setStreakVersion] = useState(0);
 
   useEffect(() => {
     if (!supabase) return;
@@ -52,15 +59,33 @@ export function useAuth() {
     let cancelled = false;
     supabase
       .from("profile_cards")
-      .select("card_color, movie:movies(poster_url)")
+      .select("card_color")
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled && data) setCard({ cardColor: data.card_color, poster: data.movie?.poster_url || null });
+        if (!cancelled && data) setCard({ cardColor: data.card_color });
       });
     return () => {
       cancelled = true;
     };
   }, [userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setStreak(null);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("game_results")
+      .select("puzzle_date")
+      .then(({ data, error }) => {
+        if (cancelled || error) return;
+        setStreak(streaks(data.map((r) => r.puzzle_date), todayGameDateString()));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, streakVersion]);
 
   return {
     enabled: Boolean(supabase),
@@ -71,51 +96,11 @@ export function useAuth() {
     setProfile,
     card,
     setCard,
+    streak,
+    setStreak,
+    refreshStreak: () => setStreakVersion((n) => n + 1),
     signOut: () => supabase.auth.signOut(),
   };
-}
-
-// Small round avatar: the profile card's favorite-movie poster, or the
-// username's initial on the card color when there's no poster yet.
-function Avatar({ auth, size = 30 }) {
-  const [failed, setFailed] = useState(false);
-  const accent = COLORS[auth.card?.cardColor] || COLORS.cobalt;
-  const poster = auth.card?.poster;
-  const base = {
-    width: size,
-    height: size,
-    borderRadius: "50%",
-    flexShrink: 0,
-    boxSizing: "border-box",
-    border: `2px solid ${accent}`,
-  };
-  if (poster && !failed) {
-    return (
-      <img
-        src={poster}
-        alt=""
-        onError={() => setFailed(true)}
-        style={{ ...base, objectFit: "cover", objectPosition: "center 20%" }}
-      />
-    );
-  }
-  const initial = auth.profile?.username?.[0]?.toUpperCase();
-  return (
-    <span
-      style={{
-        ...base,
-        background: `${accent}2e`,
-        color: accent,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 800,
-        fontSize: size * 0.45,
-      }}
-    >
-      {initial || <User size={size * 0.5} />}
-    </span>
-  );
 }
 
 const pillStyle = {
@@ -163,11 +148,16 @@ export function AccountButton({ auth, onClick }) {
     <button
       onClick={onClick}
       aria-label="Open your profile"
-      style={{ ...pillStyle, gap: 8, padding: "4px 10px 4px 4px", fontSize: 13.5, fontWeight: 700 }}
+      style={{ ...pillStyle, gap: 8, padding: "4px 12px 4px 4px", fontSize: 13.5, fontWeight: 700 }}
     >
-      <Avatar auth={auth} />
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>
-        {auth.profile?.username || "Account"}
+      <StreakBadge days={auth.streak?.current} size={32} accent={COLORS[auth.card?.cardColor] || COLORS.cobalt} />
+      <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, lineHeight: 1.15 }}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+          {auth.profile?.username || "Account"}
+        </span>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#8D96A3", marginTop: 1 }}>
+          {streakText(auth.streak?.current)}
+        </span>
       </span>
       <ChevronDown size={14} color="#8D96A3" style={{ flexShrink: 0 }} />
     </button>

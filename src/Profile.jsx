@@ -29,6 +29,7 @@ import { recordFinishedGames } from "./gameResults.js";
 import { computeStats, achievementProgress } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
+import StreakBadge from "./StreakBadge.jsx";
 
 const CARD_COLORS = ["cobalt", "orchid", "caramel", "fern", "scarlet"];
 
@@ -113,7 +114,10 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
         cardColor: c?.card_color || "cobalt",
         favoriteMovie: fromMovieRow(c?.movie),
       });
-      setStats(computeStats(resultsRes.data, todayGameDateString()));
+      const computed = computeStats(resultsRes.data, todayGameDateString());
+      setStats(computed);
+      // the account button's streak badge reads this too
+      auth.setStreak(computed.streak);
     })();
     return () => {
       cancelled = true;
@@ -203,7 +207,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
               onSaved={(next) => {
                 setCard(next);
                 setEditing(false);
-                auth.setCard({ cardColor: next.cardColor, poster: next.favoriteMovie?.poster || null });
+                auth.setCard({ cardColor: next.cardColor });
               }}
             />
           ) : (
@@ -291,31 +295,39 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
 
       <div style={{ display: "flex", gap: 14 }}>
         {movie ? (
-          <div style={{ width: 120, flexShrink: 0 }}>
+          <div style={{ width: 120, flexShrink: 0, position: "relative" }}>
             <PosterArt poster={movie.poster} title={movie.title} size="fill" />
+            <div style={{ position: "absolute", right: -8, bottom: -8 }}>
+              <StreakBadge days={stats.streak.current} size={40} accent={accent} />
+            </div>
           </div>
         ) : (
-          <div
-            style={{
-              width: 120,
-              aspectRatio: "52 / 76",
-              flexShrink: 0,
-              borderRadius: 3,
-              border: "1px dashed rgba(231,233,236,0.25)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              color: MUTE,
-              fontSize: 11,
-              textAlign: "center",
-              padding: 8,
-              boxSizing: "border-box",
-            }}
-          >
-            <Film size={22} />
-            Pick a favorite movie
+          <div style={{ width: 120, flexShrink: 0, position: "relative" }}>
+            <div
+              style={{
+                width: 120,
+                aspectRatio: "52 / 76",
+                flexShrink: 0,
+                borderRadius: 3,
+                border: "1px dashed rgba(231,233,236,0.25)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                color: MUTE,
+                fontSize: 11,
+                textAlign: "center",
+                padding: 8,
+                boxSizing: "border-box",
+              }}
+            >
+              <Film size={22} />
+              Pick a favorite movie
+            </div>
+            <div style={{ position: "absolute", right: -8, bottom: -8 }}>
+              <StreakBadge days={stats.streak.current} size={40} accent={accent} />
+            </div>
           </div>
         )}
         <div style={{ minWidth: 0, flex: 1 }}>

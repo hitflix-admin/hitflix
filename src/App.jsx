@@ -254,8 +254,9 @@ export default function App() {
         syncedReviewsRef.current = cloud.reviews;
         setLists(cloud.lists);
         setReviews(cloud.reviews);
-        // games finished on this browser before signing in still count today
-        recordFinishedGames();
+        // games finished on this browser before signing in still count today;
+        // then refresh the account button's streak to include them
+        recordFinishedGames().then(auth.refreshStreak);
         const counts = countImportable(localLists, localReviews);
         let alreadyAsked = false;
         try {

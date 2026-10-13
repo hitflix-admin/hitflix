@@ -32,3 +32,25 @@ body {
     gap: 10px;
   }
 }
+
+/* Streak badge (StreakBadge.jsx): a slow glow pulse in the tier's color,
+   passed in as --glow. Holds steady for anyone who prefers reduced motion. */
+@keyframes streak-glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 0 var(--glow);
+  }
+  50% {
+    box-shadow: 0 0 14px 2px var(--glow);
+  }
+}
+
+.streak-glow {
+  animation: streak-glow-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-glow {
+    animation: none;
+  }
+}
