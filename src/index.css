@@ -54,3 +54,22 @@ body {
     animation: none;
   }
 }
+
+/* Homepage header: Friends button beside the account button, or — on
+   phone-width screens — under it, so the account button can always sit in
+   line with the logo. DOM order is Friends, Account; column-reverse puts the
+   account button on top. */
+.header-account-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 520px) {
+  .header-account-group {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+  }
+}

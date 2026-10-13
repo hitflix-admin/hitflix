@@ -1139,32 +1139,35 @@ function HomeView({
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
-        {/* wrap-reverse: when the account button doesn't fit beside the logo
-            (long name on a phone), it wraps onto its own line *above* the logo,
-            still right-aligned, instead of squeezing either one */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap-reverse",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            columnGap: 12,
-            rowGap: 10,
-          }}
-        >
+        {/* The logo and the account button always share the top row. On
+            phone-width screens the Friends button sits under the account
+            button (.header-account-group in index.css). The button group never
+            takes more than the room beside a 96px logo — a long username
+            truncates with "…" instead — and the logo scales down only as far
+            as it has to. */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
           <img
             src={logo}
             alt="Hitflix Movie Club"
             fetchpriority="high"
-            style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
+            style={{
+              display: "block",
+              flex: "0 1 auto",
+              width: "auto",
+              height: "auto",
+              maxHeight: 84,
+              minWidth: 96,
+              objectFit: "contain",
+            }}
           />
-          {/* flexShrink 0: wrap to the next line rather than squeeze the button */}
-          <div style={{ marginLeft: "auto", maxWidth: "100%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            className="header-account-group"
+            style={{ flex: "0 0 auto", marginLeft: "auto", minWidth: 0, maxWidth: "calc(100% - 108px)" }}
+          >
             {auth.user && auth.profile?.username && (
               <FriendsButton count={friendRequestCount} onClick={onOpenFriends} />
             )}
-            {/* minWidth 0 lets an extreme name wrap instead of overflowing */}
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, maxWidth: "100%" }}>
               <AccountButton auth={auth} onClick={onOpenAccount} />
             </div>
           </div>

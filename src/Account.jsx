@@ -100,8 +100,7 @@ const pillStyle = {
   alignItems: "center",
   cursor: "pointer",
   whiteSpace: "nowrap",
-  // sized to its content and never squeezed — the homepage header moves it
-  // onto its own line instead when it doesn't fit beside the logo
+  // sized to its content, up to the room the homepage header gives it
   flexShrink: 0,
   maxWidth: "100%",
   boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
@@ -141,21 +140,30 @@ export function AccountButton({ auth, onClick }) {
     >
       <StreakBadge days={auth.streak?.current} size={32} />
       <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, lineHeight: 1.15 }}>
-        {/* name and member number share a line; only an extreme name (all
-            wide letters at the 16-character cap) would wrap the number below */}
-        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 5, minWidth: 0 }}>
-          {/* last resort on a very narrow phone: break the name onto a second
-              line rather than run off-screen (real names never get here) */}
-          <span style={{ whiteSpace: "normal", overflowWrap: "anywhere", minWidth: 0 }}>
+        {/* always one line: a name too long for the space ends in "…", while
+            the member number beside it stays fully visible */}
+        <span style={{ display: "flex", alignItems: "baseline", gap: 5, minWidth: 0, maxWidth: "100%" }}>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
             {auth.profile?.username || "Account"}
           </span>
           {auth.profile?.member_number && (
-            <span style={{ fontSize: 10.5, fontWeight: 600, color: "#8D96A3" }}>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: "#8D96A3", flexShrink: 0 }}>
               {memberNumberLabel(auth.profile.member_number)}
             </span>
           )}
         </span>
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#8D96A3", marginTop: 1 }}>
+        <span
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            color: "#8D96A3",
+            marginTop: 1,
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {streakText(auth.streak?.current)}
         </span>
       </span>
