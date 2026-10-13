@@ -239,33 +239,6 @@ export function SignInModal({ onClose }) {
   );
 }
 
-export function AccountModal({ auth, onClose }) {
-  return (
-    <ModalShell onClose={onClose} title="Account">
-      <div style={hintStyle}>
-        {auth.profile?.username && (
-          <div style={{ color: "#E7E9EC", fontWeight: 600 }}>@{auth.profile.username}</div>
-        )}
-        <div>{auth.user.email}</div>
-      </div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={onClose} style={secondaryBtn}>
-          Close
-        </button>
-        <button
-          onClick={async () => {
-            await auth.signOut();
-            onClose();
-          }}
-          style={primaryBtn}
-        >
-          Sign out
-        </button>
-      </div>
-    </ModalShell>
-  );
-}
-
 // Shown once, right after first sign-in (the profile row exists from the
 // signup trigger, but username starts out null).
 export function UsernameModal({ auth }) {

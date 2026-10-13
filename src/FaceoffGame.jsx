@@ -7,6 +7,7 @@ import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 import MovieModal from "./MovieModal.jsx";
+import { recordFinishedGames } from "./gameResults.js";
 
 // Same "movieReviews" localStorage shape the list-builder (App.jsx) reads and
 // writes, keyed by each movie's Wikipedia pageid — so a rating left here on a
@@ -273,7 +274,13 @@ export default function FaceoffGame({
     setProgress(next);
     saveProgress(storageId, date, next);
     setJustAnswered({ pairIndex, choice: side, correct });
+    if (next.answers.length >= ROUNDS) recordFinishedGames();
   }
+
+  // records finished games to the signed-in account (no-op when signed out)
+  useEffect(() => {
+    recordFinishedGames();
+  }, []);
 
   function saveRating(movie, rating) {
     setReviews((prev) => {

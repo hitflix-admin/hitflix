@@ -13,7 +13,9 @@ import {
 } from "./movieData.js";
 import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
-import { useAuth, AccountButton, SignInModal, AccountModal, UsernameModal, ImportModal } from "./Account.jsx";
+import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
+import ProfileModal from "./Profile.jsx";
+import { recordFinishedGames } from "./gameResults.js";
 import {
   loadCloud,
   syncLists,
@@ -252,6 +254,8 @@ export default function App() {
         syncedReviewsRef.current = cloud.reviews;
         setLists(cloud.lists);
         setReviews(cloud.reviews);
+        // games finished on this browser before signing in still count today
+        recordFinishedGames();
         const counts = countImportable(localLists, localReviews);
         let alreadyAsked = false;
         try {
@@ -799,7 +803,12 @@ export default function App() {
 
       {accountOpen &&
         (auth.user ? (
-          <AccountModal auth={auth} onClose={() => setAccountOpen(false)} />
+          <ProfileModal
+            auth={auth}
+            onClose={() => setAccountOpen(false)}
+            listsCount={lists.length}
+            ratingsCount={Object.values(reviews).filter((r) => r?.rating).length}
+          />
         ) : (
           <SignInModal onClose={() => setAccountOpen(false)} />
         ))}

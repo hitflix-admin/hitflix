@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, Film, Share2, Tag, Lightbulb, Users, Info } from "lucide-react";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
@@ -8,6 +8,7 @@ import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 import MovieModal from "./MovieModal.jsx";
+import { recordFinishedGames } from "./gameResults.js";
 
 // Same "movieReviews" localStorage shape the list-builder (App.jsx) and
 // Faceoff (FaceoffGame.jsx) read and write, keyed by each movie's Wikipedia
@@ -320,6 +321,54 @@ export default function DailyGuessGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, storageId]);
 
+  // ---- on-screen play time (for profile stats) ----
+  // Accumulates into progress.activeMs only while the puzzle is loaded,
+  // unfinished, and the tab is visible — so leaving the tab open in the
+  // background (or closing it and coming back later) doesn't count.
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
+  const activeSinceRef = useRef(null);
+
+  // ms on screen since the last call, restarting the clock if it was running
+  function takeActiveMs() {
+    if (activeSinceRef.current === null) return 0;
+    const now = Date.now();
+    const elapsed = now - activeSinceRef.current;
+    activeSinceRef.current = now;
+    return elapsed;
+  }
+
+  useEffect(() => {
+    if (!target || progress.status !== "playing") return;
+    function start() {
+      if (document.visibilityState === "visible" && activeSinceRef.current === null) activeSinceRef.current = Date.now();
+    }
+    function pause() {
+      const elapsed = takeActiveMs();
+      activeSinceRef.current = null;
+      if (!elapsed) return;
+      const next = { ...progressRef.current, activeMs: (progressRef.current.activeMs || 0) + elapsed };
+      progressRef.current = next;
+      setProgress(next);
+      saveProgress(storageId, date, next);
+    }
+    const onVisibility = () => (document.visibilityState === "visible" ? start() : pause());
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", pause);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", pause);
+      activeSinceRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, progress.status]);
+
+  // records finished games to the signed-in account (no-op when signed out)
+  useEffect(() => {
+    recordFinishedGames();
+  }, []);
+
   // ---- countdown ticks once the puzzle is over ----
   useEffect(() => {
     if (progress.status === "playing") return;
@@ -386,9 +435,17 @@ export default function DailyGuessGame({
           : nextGuesses.length >= MAX_GUESSES
           ? "lost"
           : "playing";
-        const next = { guesses: nextGuesses, status: nextStatus };
+        // spread progress so hintUsed survives the final guess — the hint only
+        // unlocks right before it, and rebuilding this object used to drop it
+        const next = {
+          ...progress,
+          guesses: nextGuesses,
+          status: nextStatus,
+          activeMs: (progress.activeMs || 0) + takeActiveMs(),
+        };
         setProgress(next);
         saveProgress(storageId, date, next);
+        if (nextStatus !== "playing") recordFinishedGames();
       } finally {
         setSubmitting(false);
       }
