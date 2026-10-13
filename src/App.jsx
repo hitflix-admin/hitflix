@@ -1113,14 +1113,29 @@ function HomeView({
   return (
     <div style={{ padding: "28px 18px 40px", maxWidth: 640, margin: "0 auto" }}>
       <div style={{ marginBottom: 26 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        {/* wrap-reverse: when the account button doesn't fit beside the logo
+            (long name on a phone), it wraps onto its own line *above* the logo,
+            still right-aligned, instead of squeezing either one */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap-reverse",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            columnGap: 12,
+            rowGap: 10,
+          }}
+        >
           <img
             src={logo}
             alt="Hitflix Movie Club"
             fetchpriority="high"
-            style={{ height: 84, width: "auto", maxWidth: "100%", minWidth: 0, display: "block" }}
+            style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
           />
-          <AccountButton auth={auth} onClick={onOpenAccount} />
+          {/* flexShrink 0: wrap to the next line rather than squeeze the button */}
+          <div style={{ marginLeft: "auto", maxWidth: "100%", flexShrink: 0 }}>
+            <AccountButton auth={auth} onClick={onOpenAccount} />
+          </div>
         </div>
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           {dailyQuote}
