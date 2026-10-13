@@ -59,6 +59,8 @@ export function useAuth() {
     supabase
       .from("activity_days")
       .select("day")
+      // friends' active days are readable too, so only take this user's
+      .eq("user_id", userId)
       .then(({ data, error }) => {
         if (cancelled || error) return;
         setStreak(streaks(data.map((r) => r.day), todayGameDateString()));

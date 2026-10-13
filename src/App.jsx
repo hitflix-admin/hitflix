@@ -15,6 +15,7 @@ import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
 import ProfileModal from "./Profile.jsx";
+import { useFriends, FriendsButton, FriendsModal } from "./Friends.jsx";
 import { recordFinishedGames, markActiveToday } from "./gameResults.js";
 import {
   loadCloud,
@@ -201,6 +202,8 @@ export default function App() {
 
   const auth = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [viewUser, setViewUser] = useState(null); // someone else's profile, opened from Friends
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   const dragState = useRef(null);
@@ -221,6 +224,10 @@ export default function App() {
   // always have. Signed in, they live in the account (cloudStore.js), and
   // localStorage is left alone as the signed-out copy.
   const userId = auth.user?.id ?? null;
+  const friends = useFriends(auth.profile?.username ? userId : null);
+  // read at call time by the tab-focus refresh, which is set up once per user
+  const refreshFriendsRef = useRef(friends.refresh);
+  refreshFriendsRef.current = friends.refresh;
   const userIdRef = useRef(null);
   userIdRef.current = userId;
   // what the database is known to hold — each save pushes the diff from here
@@ -374,6 +381,7 @@ export default function App() {
       if (document.visibilityState !== "visible") return;
       // a tab left open past midnight starts the new day's streak when you return
       markActiveToday().then((added) => added && auth.refreshStreak());
+      refreshFriendsRef.current();
       if (hasPendingEdits() || refreshQueued) return;
       refreshQueued = true;
       // queued behind any in-flight save so the reload sees its result
@@ -742,6 +750,8 @@ export default function App() {
           onOpenStandaloneMovie={openMovieDirect}
           auth={auth}
           onOpenAccount={() => setAccountOpen(true)}
+          friendRequestCount={friends.incomingCount}
+          onOpenFriends={() => setFriendsOpen(true)}
         />
       )}
 
@@ -816,6 +826,20 @@ export default function App() {
         ) : (
           <SignInModal onClose={() => setAccountOpen(false)} />
         ))}
+
+      {friendsOpen && auth.user && (
+        <FriendsModal friends={friends} onClose={() => setFriendsOpen(false)} onOpenProfile={setViewUser} />
+      )}
+
+      {viewUser && auth.user && (
+        <ProfileModal
+          key={viewUser.id}
+          auth={auth}
+          viewUser={viewUser}
+          onClose={() => setViewUser(null)}
+          onRelationChange={friends.refresh}
+        />
+      )}
 
       {auth.user && auth.profile && !auth.profile.username && <UsernameModal auth={auth} />}
 
@@ -1108,6 +1132,8 @@ function HomeView({
   onOpenStandaloneMovie,
   auth,
   onOpenAccount,
+  friendRequestCount,
+  onOpenFriends,
 }) {
   const dailyQuote = getDailyQuote();
   return (
@@ -1133,8 +1159,14 @@ function HomeView({
             style={{ height: 84, width: "auto", maxWidth: "100%", display: "block" }}
           />
           {/* flexShrink 0: wrap to the next line rather than squeeze the button */}
-          <div style={{ marginLeft: "auto", maxWidth: "100%", flexShrink: 0 }}>
-            <AccountButton auth={auth} onClick={onOpenAccount} />
+          <div style={{ marginLeft: "auto", maxWidth: "100%", flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            {auth.user && auth.profile?.username && (
+              <FriendsButton count={friendRequestCount} onClick={onOpenFriends} />
+            )}
+            {/* minWidth 0 lets an extreme name wrap instead of overflowing */}
+            <div style={{ minWidth: 0 }}>
+              <AccountButton auth={auth} onClick={onOpenAccount} />
+            </div>
           </div>
         </div>
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>

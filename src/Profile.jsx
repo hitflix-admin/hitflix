@@ -1,6 +1,10 @@
-// The profile popup (opened from the @username button): a baseball-card style
-// profile, all-time game stats, and achievements. Same popup frame as
-// MovieModal. Everything here is private to the signed-in user for now.
+// The profile popup: a baseball-card style profile, all-time game stats, and
+// achievements. Same popup frame as MovieModal.
+//
+// Opened for yourself (from the account button) or for someone else (from
+// Friends). Friends see each other's card, stats, and awards, read-only;
+// anyone else only sees the name, member number, and member-since date, with
+// the friend request actions. Ratings are never shown to anyone else.
 
 import React, { useState, useEffect } from "react";
 import {
@@ -82,7 +86,19 @@ function fromMovieRow(r) {
   return r ? { id: r.id, title: r.title, pageTitle: r.page_title, year: r.year ? String(r.year) : "", poster: r.poster_url } : null;
 }
 
-export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }) {
+// viewUser: { id, username, member_number, created_at, relation } to view
+// someone else; omitted for your own profile. relation is 'friends', 'sent',
+// 'received', or 'none'. onRelationChange lets the Friends list refresh after
+// a request is sent/accepted/removed from in here.
+export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, viewUser, onRelationChange }) {
+  const isSelf = !viewUser || viewUser.id === auth.user?.id;
+  const targetId = isSelf ? auth.user?.id : viewUser.id;
+  const [relation, setRelation] = useState(isSelf ? "self" : viewUser.relation);
+  const canSeeDetails = isSelf || relation === "friends";
+  const person = isSelf
+    ? { username: auth.profile?.username, memberNumber: auth.profile?.member_number, since: auth.user?.created_at }
+    : { username: viewUser.username, memberNumber: viewUser.member_number, since: viewUser.created_at };
+
   const [tab, setTab] = useState("card");
   const [card, setCard] = useState(null); // null = loading
   const [stats, setStats] = useState(null);
@@ -90,23 +106,26 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
+    if (!canSeeDetails) return;
     let cancelled = false;
     (async () => {
-      // make sure today and anything finished on this browser are counted
-      // before reading
-      await Promise.all([markActiveToday(), recordFinishedGames()]);
+      // your own: make sure today and anything finished on this browser are
+      // counted before reading
+      if (isSelf) await Promise.all([markActiveToday(), recordFinishedGames()]);
+      // filtered to targetId: with friends, these tables also return friends' rows
       const [cardRes, resultsRes, daysRes] = await Promise.all([
         supabase
           .from("profile_cards")
           .select("tagline, favorite_genre, favorite_director, card_color, movie:movies(*)")
+          .eq("user_id", targetId)
           .maybeSingle(),
-        supabase.from("game_results").select("*"),
-        supabase.from("activity_days").select("day"),
+        supabase.from("game_results").select("*").eq("user_id", targetId),
+        supabase.from("activity_days").select("day").eq("user_id", targetId),
       ]);
       if (cancelled) return;
       if (cardRes.error || resultsRes.error || daysRes.error) {
         console.error(cardRes.error || resultsRes.error || daysRes.error);
-        setLoadError("Couldn't load your profile. Check your connection and try again.");
+        setLoadError("Couldn't load this profile. Check your connection and try again.");
         return;
       }
       const c = cardRes.data;
@@ -124,12 +143,25 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
       );
       setStats(computed);
       // the account button's streak badge reads this too
-      auth.setStreak(computed.streak);
+      if (isSelf) auth.setStreak(computed.streak);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSeeDetails, targetId]);
+
+  function relationChanged(next) {
+    setRelation(next);
+    onRelationChange?.();
+  }
+
+  const tabs = [
+    ["card", "Card"],
+    ["stats", "Stats"],
+    ["achievements", "Awards"],
+    ...(isSelf ? [["account", "Account"]] : []),
+  ];
 
   return (
     <div
@@ -160,33 +192,31 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
           boxSizing: "border-box",
         }}
       >
-
         {/* tabs size to their labels and share the row with the close button,
             so all four fit even on a 320px-wide phone */}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 18 }}>
-          {[
-            ["card", "Card"],
-            ["stats", "Stats"],
-            ["achievements", "Awards"],
-            ["account", "Account"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => {
-                setTab(key);
-                setEditing(false);
-              }}
-              style={{
-                ...(tab === key ? segmentBtnActive : segmentBtn),
-                flex: "1 1 auto",
-                padding: "8px 4px",
-                fontSize: 12.5,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {label}
-            </button>
-          ))}
+          {canSeeDetails ? (
+            tabs.map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setTab(key);
+                  setEditing(false);
+                }}
+                style={{
+                  ...(tab === key ? segmentBtnActive : segmentBtn),
+                  flex: "1 1 auto",
+                  padding: "8px 4px",
+                  fontSize: 12.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {label}
+              </button>
+            ))
+          ) : (
+            <div style={{ ...labelStyle, flex: 1 }}>Profile</div>
+          )}
           <button
             onClick={onClose}
             style={{
@@ -209,7 +239,9 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
           </button>
         </div>
 
-        {loadError ? (
+        {!canSeeDetails ? (
+          <LockedProfile person={person} userId={viewUser.id} relation={relation} onRelationChange={relationChanged} />
+        ) : loadError ? (
           <div style={{ color: MUTE, fontSize: 13.5, padding: "30px 0", textAlign: "center" }}>{loadError}</div>
         ) : !card || !stats ? (
           <div style={{ color: MUTE, fontSize: 13.5, padding: "30px 0", textAlign: "center" }}>Loading profile…</div>
@@ -227,34 +259,31 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
             <>
               <BaseballCard
                 card={card}
-                username={auth.profile?.username}
-                memberNumber={auth.profile?.member_number}
-                memberSince={auth.user?.created_at}
+                username={person.username}
+                memberNumber={person.memberNumber}
+                memberSince={person.since}
                 stats={stats}
-                listsCount={listsCount}
-                ratingsCount={ratingsCount}
+                // ratings and lists are private, so a friend's card shows
+                // awards and win rate in those spots instead
+                strip={
+                  isSelf
+                    ? [["Rated", ratingsCount], ["Lists", listsCount]]
+                    : [
+                        ["Awards", achievementProgress(stats).filter((a) => a.unlocked).length],
+                        ["Win rate", fmtPct(stats.overallWinRate)],
+                      ]
+                }
               />
               {/* kept small so the card itself is the focus */}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-                <button
-                  onClick={() => setEditing(true)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: MUTE,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    fontFamily: "'Montserrat', sans-serif",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                    padding: "4px 2px",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Pencil size={12} />
-                  Edit card
-                </button>
+                {isSelf ? (
+                  <button onClick={() => setEditing(true)} style={subtleLinkStyle}>
+                    <Pencil size={12} />
+                    Edit card
+                  </button>
+                ) : (
+                  <RemoveFriendLink userId={viewUser.id} username={person.username} onRemoved={() => relationChanged("none")} />
+                )}
               </div>
             </>
           )
@@ -270,9 +299,143 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
   );
 }
 
+const subtleLinkStyle = {
+  background: "none",
+  border: "none",
+  color: MUTE,
+  fontSize: 12,
+  fontWeight: 600,
+  fontFamily: "'Montserrat', sans-serif",
+  display: "flex",
+  alignItems: "center",
+  gap: 5,
+  padding: "4px 2px",
+  cursor: "pointer",
+};
+
+/* ---------------- Someone else's profile ---------------- */
+
+// Shown to non-friends: who they are, and the friend request actions.
+function LockedProfile({ person, userId, relation, onRelationChange }) {
+  const since = person.since
+    ? new Date(person.since).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : null;
+  return (
+    <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
+      <div style={{ fontWeight: 800, fontSize: 22, wordBreak: "break-word" }}>
+        {person.username}
+        {person.memberNumber && (
+          <span style={{ fontSize: 13, fontWeight: 600, color: MUTE, marginLeft: 7 }}>
+            {memberNumberLabel(person.memberNumber)}
+          </span>
+        )}
+      </div>
+      {since && <div style={{ color: MUTE, fontSize: 12.5, marginTop: 4 }}>Member since {since}</div>}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          color: MUTE,
+          fontSize: 12.5,
+          margin: "22px 0 16px",
+        }}
+      >
+        <Lock size={14} />
+        Friends can see {person.username}'s card, stats, and awards.
+      </div>
+      <FriendActions userId={userId} relation={relation} onChange={onRelationChange} />
+    </div>
+  );
+}
+
+// The friend-request buttons for a person, by relation. Also used in the
+// Friends list.
+export function FriendActions({ userId, relation, onChange, compact = false }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function run(fn, args, next) {
+    setBusy(true);
+    setError("");
+    const { data, error } = await supabase.rpc(fn, args);
+    setBusy(false);
+    if (error) {
+      console.error(error);
+      setError("Something went wrong. Try again.");
+      return;
+    }
+    onChange(typeof data === "string" ? data : next);
+  }
+  const size = compact ? { padding: "6px 10px", fontSize: 12 } : { padding: "10px 14px", fontSize: 13.5 };
+  const btn = (style, label, onClick) => (
+    <button onClick={onClick} disabled={busy} style={{ ...style, ...size, flex: compact ? "none" : 1, opacity: busy ? 0.6 : 1 }}>
+      {label}
+    </button>
+  );
+  let buttons;
+  if (relation === "none") {
+    buttons = btn(primaryBtn, "Add friend", () => run("send_friend_request", { target: userId }));
+  } else if (relation === "sent") {
+    buttons = btn(secondaryBtn, "Cancel request", () => run("remove_friend", { other: userId }, "none"));
+  } else if (relation === "received") {
+    buttons = (
+      <>
+        {btn(secondaryBtn, "Decline", () => run("respond_friend_request", { requester_id: userId, accept: false }, "none"))}
+        {btn(primaryBtn, "Accept", () => run("respond_friend_request", { requester_id: userId, accept: true }, "friends"))}
+      </>
+    );
+  } else {
+    return null;
+  }
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, justifyContent: compact ? "flex-end" : "center" }}>{buttons}</div>
+      {relation === "sent" && !compact && (
+        <div style={{ color: MUTE, fontSize: 12, marginTop: 8 }}>Friend request sent</div>
+      )}
+      {error && <div style={{ color: COLORS.scarlet, fontSize: 12, marginTop: 8 }}>{error}</div>}
+    </div>
+  );
+}
+
+function RemoveFriendLink({ userId, username, onRemoved }) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!confirming) {
+    return (
+      <button onClick={() => setConfirming(true)} style={subtleLinkStyle}>
+        Remove friend
+      </button>
+    );
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: MUTE }}>
+      Remove {username}?
+      <button onClick={() => setConfirming(false)} style={{ ...subtleLinkStyle, color: "#E7E9EC" }}>
+        Keep
+      </button>
+      <button
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          const { error } = await supabase.rpc("remove_friend", { other: userId });
+          setBusy(false);
+          if (error) console.error(error);
+          else onRemoved();
+        }}
+        style={{ ...subtleLinkStyle, color: COLORS.scarlet }}
+      >
+        Remove
+      </button>
+    </div>
+  );
+}
+
 /* ---------------- Card ---------------- */
 
-function BaseballCard({ card, username, memberNumber, memberSince, stats, listsCount, ratingsCount }) {
+// strip: the last two [label, value] tiles after Streak and Games
+function BaseballCard({ card, username, memberNumber, memberSince, stats, strip }) {
   const accent = COLORS[card.cardColor] || COLORS.cobalt;
   const since = memberSince
     ? new Date(memberSince).toLocaleDateString("en-US", { month: "short", year: "numeric" })
@@ -386,8 +549,7 @@ function BaseballCard({ card, username, memberNumber, memberSince, stats, listsC
         {[
           ["Streak", stats.streak.current, <Flame key="f" size={13} color={stats.streak.activeToday ? COLORS.caramel : MUTE} />],
           ["Games", stats.totalGames],
-          ["Rated", ratingsCount],
-          ["Lists", listsCount],
+          ...strip,
         ].map(([label, value, icon]) => (
           <div
             key={label}
