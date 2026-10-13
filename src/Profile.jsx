@@ -287,9 +287,24 @@ function BaseballCard({ card, username, memberNumber, memberSince, stats, listsC
         background: `linear-gradient(160deg, ${accent}33 0%, #1E1E1E 55%)`,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ ...labelStyle, color: accent, fontSize: 11, letterSpacing: 1.5 }}>Hitflix Movie Club</div>
-        {since && <div style={{ color: MUTE, fontSize: 11 }}>Since {since}</div>}
+      {/* wraps on narrow phones, with the date staying right-aligned */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          columnGap: 10,
+          rowGap: 2,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ ...labelStyle, color: accent, fontSize: 11, letterSpacing: 1.5, whiteSpace: "nowrap" }}>
+          Hitflix Movie Club
+        </div>
+        {since && (
+          <div style={{ color: MUTE, fontSize: 11, whiteSpace: "nowrap", marginLeft: "auto" }}>Member since {since}</div>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 14 }}>
