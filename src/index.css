@@ -73,3 +73,52 @@ body {
     align-items: flex-end;
   }
 }
+
+/* List editor on phones: smaller side margins, tighter rows, a smaller
+   poster and gauge, so the movie title still has room to show (without
+   this it shrinks to nothing at 375px and below). On the narrowest phones
+   "Add score" also becomes "Rate". Inline styles set the normal sizes,
+   hence !important. */
+.label-narrow {
+  display: none;
+}
+
+@media (max-width: 430px) {
+  .editor-pad {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  .entry-row-main {
+    gap: 6px !important;
+  }
+  .entry-poster > * {
+    width: 40px !important;
+    height: 58px !important;
+    font-size: 13px !important;
+  }
+  .entry-gauge {
+    zoom: 0.75;
+  }
+  .entry-add-score {
+    padding: 5px 8px !important;
+  }
+  .entry-remove {
+    padding: 4px 2px !important;
+  }
+  /* lined up with the (now smaller, closer) poster */
+  .entry-added-by {
+    padding-left: 32px !important;
+  }
+  .entry-added-by.ranked {
+    padding-left: 60px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .entry-add-score .label-wide {
+    display: none;
+  }
+  .entry-add-score .label-narrow {
+    display: inline;
+  }
+}

@@ -1864,6 +1864,7 @@ function EditorView({
   return (
     <div style={{ paddingBottom: 60 }}>
       <div
+        className="editor-pad"
         style={{
           position: "sticky",
           top: 0,
@@ -1959,7 +1960,7 @@ function EditorView({
         </div>
       </div>
 
-      <div style={{ padding: "14px 1cm 0" }}>
+      <div className="editor-pad" style={{ padding: "14px 1cm 0" }}>
         {list.entries.length === 0 && (
           <div
             style={{
@@ -1995,7 +1996,7 @@ function EditorView({
             >
               {/* never wraps, so the remove button stays on the row even on
                   narrow phones; "added by" gets its own line underneath */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div className="entry-row-main" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div
                   onPointerDown={(e) => onHandlePointerDown(e, i)}
                   style={{
@@ -2024,7 +2025,7 @@ function EditorView({
                     {dragOriginalOrder?.get(entry.uid) ?? i + 1}
                   </div>
                 )}
-                <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                <div className="entry-poster" onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
                   <PosterArt poster={entry.poster} title={entry.title} size="thumb" />
                 </div>
                 <div onClick={() => onOpenMovie(entry)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
@@ -2069,13 +2070,15 @@ function EditorView({
                       >
                         Your score
                       </div>
-                      <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                      <div className="entry-gauge" onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
                         <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} />
                       </div>
                     </>
                   ) : (
                     <button
+                      className="entry-add-score"
                       onClick={() => onOpenMovie(entry)}
+                      aria-label={`Add score for ${entry.title}`}
                       style={{
                         background: "transparent",
                         border: `1px solid ${COLORS.cobalt}`,
@@ -2089,11 +2092,13 @@ function EditorView({
                         fontFamily: "'Montserrat', sans-serif",
                       }}
                     >
-                      Add score
+                      <span className="label-wide">Add score</span>
+                      <span className="label-narrow">Rate</span>
                     </button>
                   )}
                 </div>
                 <button
+                  className="entry-remove"
                   onClick={() => onRemove(entry.uid)}
                   style={{ background: "none", border: "none", color: "#8D96A3", cursor: "pointer", padding: 6 }}
                   aria-label={`Remove ${entry.title}`}
@@ -2105,6 +2110,7 @@ function EditorView({
                 // its own line under the row, lined up with the poster — the
                 // title column is too narrow on phones to fit it
                 <div
+                  className={list.ranked ? "entry-added-by ranked" : "entry-added-by"}
                   style={{
                     marginTop: 4,
                     paddingLeft: list.ranked ? 68 : 36,
