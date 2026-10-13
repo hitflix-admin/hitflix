@@ -207,7 +207,6 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount }
               onSaved={(next) => {
                 setCard(next);
                 setEditing(false);
-                auth.setCard({ cardColor: next.cardColor });
               }}
             />
           ) : (
@@ -298,7 +297,7 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
           <div style={{ width: 120, flexShrink: 0, position: "relative" }}>
             <PosterArt poster={movie.poster} title={movie.title} size="fill" />
             <div style={{ position: "absolute", right: -8, bottom: -8 }}>
-              <StreakBadge days={stats.streak.current} size={40} accent={accent} />
+              <StreakBadge days={stats.streak.current} size={40} />
             </div>
           </div>
         ) : (
@@ -326,7 +325,7 @@ function BaseballCard({ card, username, memberSince, stats, listsCount, ratingsC
               Pick a favorite movie
             </div>
             <div style={{ position: "absolute", right: -8, bottom: -8 }}>
-              <StreakBadge days={stats.streak.current} size={40} accent={accent} />
+              <StreakBadge days={stats.streak.current} size={40} />
             </div>
           </div>
         )}

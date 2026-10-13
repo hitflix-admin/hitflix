@@ -14,14 +14,11 @@ import { COLORS, inputStyle, primaryBtn, secondaryBtn } from "./theme.js";
 
 // session: undefined while loading, null when signed out.
 // profile: null until loaded; profile.username is null until picked.
-// card: { cardColor } from the profile card, for the account button — null
-// until loaded (or when the user hasn't made a card).
 // streak: { current, best, playedToday } across all games, for the button's
 // streak badge; refreshStreak() re-reads it after new results are recorded.
 export function useAuth() {
   const [session, setSession] = useState(supabase ? undefined : null);
   const [profile, setProfile] = useState(null);
-  const [card, setCard] = useState(null);
   const [streak, setStreak] = useState(null);
   const [streakVersion, setStreakVersion] = useState(0);
 
@@ -54,22 +51,6 @@ export function useAuth() {
   }, [userId]);
 
   useEffect(() => {
-    setCard(null);
-    if (!userId) return;
-    let cancelled = false;
-    supabase
-      .from("profile_cards")
-      .select("card_color")
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled && data) setCard({ cardColor: data.card_color });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  useEffect(() => {
     if (!userId) {
       setStreak(null);
       return;
@@ -94,8 +75,6 @@ export function useAuth() {
     user: session?.user ?? null,
     profile,
     setProfile,
-    card,
-    setCard,
     streak,
     setStreak,
     refreshStreak: () => setStreakVersion((n) => n + 1),
@@ -150,7 +129,7 @@ export function AccountButton({ auth, onClick }) {
       aria-label="Open your profile"
       style={{ ...pillStyle, gap: 8, padding: "4px 12px 4px 4px", fontSize: 13.5, fontWeight: 700 }}
     >
-      <StreakBadge days={auth.streak?.current} size={32} accent={COLORS[auth.card?.cardColor] || COLORS.cobalt} />
+      <StreakBadge days={auth.streak?.current} size={32} />
       <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, lineHeight: 1.15 }}>
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
           {auth.profile?.username || "Account"}
