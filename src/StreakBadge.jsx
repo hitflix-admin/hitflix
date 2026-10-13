@@ -1,15 +1,15 @@
 // The round streak badge shown in the account button and on the corner of the
 // profile card's poster. It starts as a plain, uncolored film strip; color and
-// a glow are earned with the account's daily game streak: flame (3+ days,
-// yellow) → star (7+, red) → crown (30+, purple).
+// a glow are earned with the account's daily game streak: star (3+ days,
+// yellow) → flame (7+, red) → crown (30+, purple).
 
 import React from "react";
 import { Film, Flame, Star, Crown } from "lucide-react";
 
 const TIERS = [
   { min: 30, Icon: Crown, glow: "#B76CF5", label: "30+ day streak" },
-  { min: 7, Icon: Star, glow: "#F0564F", label: "7+ day streak" },
-  { min: 3, Icon: Flame, glow: "#F5C842", label: "3+ day streak" },
+  { min: 7, Icon: Flame, glow: "#F0564F", label: "7+ day streak" },
+  { min: 3, Icon: Star, glow: "#F5C842", label: "3+ day streak" },
   { min: 0, Icon: Film, glow: null, label: null },
 ];
 
