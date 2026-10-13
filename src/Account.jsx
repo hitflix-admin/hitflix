@@ -340,7 +340,15 @@ export function UsernameModal({ auth }) {
     const { error } = await supabase.from("profiles").update({ username: value }).eq("id", auth.user.id);
     setBusy(false);
     if (error) {
-      setError(error.code === "23505" ? "That username is taken." : error.message);
+      setError(
+        error.code === "23505"
+          ? "That username is taken."
+          : error.message === "username_not_allowed"
+          ? error.details === "reserved"
+            ? "That username is reserved. Please choose another."
+            : "That username isn't allowed. Please choose another."
+          : error.message
+      );
       return;
     }
     auth.setProfile((p) => ({ ...p, username: value }));
