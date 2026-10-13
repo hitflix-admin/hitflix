@@ -68,11 +68,12 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
           border: "1px solid rgba(231,233,236,0.1)",
           maxWidth: 420,
           width: "100%",
-          maxHeight: "85vh",
+          maxHeight: "min(85vh, 100%)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           padding: 20,
           position: "relative",
+          boxSizing: "border-box",
         }}
       >
         <button
@@ -99,7 +100,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
 
         <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
           <PosterArt poster={movie.poster} title={movie.title} size="large" />
-          <div style={{ paddingTop: 4 }}>
+          <div style={{ paddingTop: 26, minWidth: 0 }}>
             <div style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, textTransform: "uppercase", fontSize: 19, letterSpacing: 0.3, lineHeight: 1.15, marginBottom: 6 }}>
               {movie.title}
             </div>

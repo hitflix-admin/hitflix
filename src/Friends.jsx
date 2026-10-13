@@ -232,7 +232,7 @@ export function FriendsModal({ friends, onClose, onOpenProfile }) {
           border: "1px solid rgba(231,233,236,0.1)",
           maxWidth: 420,
           width: "100%",
-          height: "min(620px, 85vh)",
+          height: "min(620px, 85vh, 100%)",
           overflowY: "auto",
           overscrollBehavior: "contain",
           padding: 20,
