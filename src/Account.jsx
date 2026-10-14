@@ -40,7 +40,7 @@ export function useAuth() {
     let cancelled = false;
     supabase
       .from("profiles")
-      .select("username, display_name, member_number")
+      .select("username, display_name, member_number, username_changed_at")
       .eq("id", userId)
       .maybeSingle()
       .then(({ data }) => {
@@ -344,6 +344,10 @@ export async function saveUsername(userId, raw) {
   const { error } = await supabase.from("profiles").update({ username: value }).eq("id", userId);
   if (!error) return null;
   if (error.code === "23505") return "That username is taken.";
+  // once every 7 days (0014); details is when the next change is allowed
+  if (error.message === "username_cooldown") {
+    return `You can change your username once every 7 days. Next change: ${formatNextChange(Date.parse(error.details))}.`;
+  }
   if (error.message === "username_not_allowed") {
     return error.details === "reserved"
       ? "That username is reserved. Please choose another."
@@ -351,6 +355,22 @@ export async function saveUsername(userId, raw) {
   }
   console.error(error);
   return "Couldn't save your username. Try again.";
+}
+
+export const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+
+// When this profile may next change its username, or null if it can now.
+// A first-time pick doesn't start the clock, so a null timestamp means no wait.
+export function nextUsernameChange(profile) {
+  const changed = Date.parse(profile?.username_changed_at || "");
+  if (!Number.isFinite(changed)) return null;
+  const next = changed + USERNAME_COOLDOWN_MS;
+  return next > Date.now() ? next : null;
+}
+
+export function formatNextChange(ms) {
+  if (!Number.isFinite(ms)) return "in a few days";
+  return new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 // Shown once, right after first sign-in (the profile row exists from the

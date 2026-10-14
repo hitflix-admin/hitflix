@@ -25,7 +25,7 @@ import { computeStats, achievementProgress } from "./gameStats.js";
 import { todayGameDateString } from "./dailyMovie.js";
 import { GAME_INFO } from "./GameCard.jsx";
 import StreakBadge from "./StreakBadge.jsx";
-import { memberNumberLabel, saveUsername, USERNAME_HINT } from "./Account.jsx";
+import { memberNumberLabel, saveUsername, USERNAME_HINT, nextUsernameChange, formatNextChange } from "./Account.jsx";
 import { useScrollLock } from "./scrollLock.js";
 import { ACHIEVEMENT_ICONS } from "./AwardsPopup.jsx";
 
@@ -750,6 +750,7 @@ function AccountSection({ auth, onClose }) {
   const [error, setError] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const username = auth.profile?.username || "";
+  const nextChange = nextUsernameChange(auth.profile);
 
   async function saveName(e) {
     e.preventDefault();
@@ -765,7 +766,8 @@ function AccountSection({ auth, onClose }) {
       setError(problem);
       return;
     }
-    auth.setProfile((p) => ({ ...p, username: name.trim() }));
+    // the database stamps the change; mirror it so the cooldown shows right away
+    auth.setProfile((p) => ({ ...p, username: name.trim(), username_changed_at: new Date().toISOString() }));
     setEditingName(false);
   }
 
@@ -786,7 +788,9 @@ function AccountSection({ auth, onClose }) {
             autoFocus
             style={inputStyle}
           />
-          <div style={{ color: error ? COLORS.scarlet : MUTE, fontSize: 12, marginTop: 6 }}>{error || USERNAME_HINT}</div>
+          <div style={{ color: error ? COLORS.scarlet : MUTE, fontSize: 12, marginTop: 6 }}>
+            {error || `${USERNAME_HINT} You can change it once every 7 days.`}
+          </div>
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
             <button
               type="button"
@@ -822,10 +826,16 @@ function AccountSection({ auth, onClose }) {
               setError("");
               setEditingName(true);
             }}
-            style={smallBtn}
+            disabled={!!nextChange}
+            style={{ ...smallBtn, opacity: nextChange ? 0.45 : 1, cursor: nextChange ? "default" : "pointer" }}
           >
             Change username
           </button>
+        </div>
+      )}
+      {!editingName && nextChange && (
+        <div style={{ color: MUTE, fontSize: 12, marginTop: 8 }}>
+          You can change it again on {formatNextChange(nextChange)}.
         </div>
       )}
 
