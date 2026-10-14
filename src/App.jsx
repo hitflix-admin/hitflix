@@ -34,6 +34,7 @@ import {
 } from "./cloudStore.js";
 import { useScrollLock } from "./scrollLock.js";
 import { supabase } from "./supabase.js";
+import { useNewAwards, AwardsUnlockedModal } from "./AwardsPopup.jsx";
 import {
   useListInvites,
   ListInvitesBanner,
@@ -225,6 +226,20 @@ export default function App() {
 
   const auth = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
+  // which profile tab opens; a game page's "See all awards" lands on
+  // /?profile=awards to open the Awards tab here
+  const [profileTab, setProfileTab] = useState(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("profile") !== "awards") return "card";
+      url.searchParams.delete("profile");
+      window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+      return "achievements";
+    } catch (e) {
+      return "card";
+    }
+  });
+  const newAwards = useNewAwards();
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [movieSearchOpen, setMovieSearchOpen] = useState(false);
   const [viewUser, setViewUser] = useState(null); // someone else's profile, opened from Friends
@@ -297,7 +312,11 @@ export default function App() {
         setReviews(cloud.reviews);
         // today counts toward the streak, and games finished on this browser
         // before signing in still count; then refresh the button's streak
-        Promise.all([markActiveToday(), recordFinishedGames()]).then(auth.refreshStreak);
+        Promise.all([markActiveToday(), recordFinishedGames()]).then(() => {
+          auth.refreshStreak();
+          newAwards.check();
+          if (profileTab === "achievements") setAccountOpen(true);
+        });
         const counts = countImportable(localLists, localReviews);
         let alreadyAsked = false;
         try {
@@ -516,7 +535,11 @@ export default function App() {
     function refresh() {
       if (document.visibilityState !== "visible") return;
       // a tab left open past midnight starts the new day's streak when you return
-      markActiveToday().then((added) => added && auth.refreshStreak());
+      markActiveToday().then((added) => {
+        if (!added) return;
+        auth.refreshStreak();
+        newAwards.check(); // a new visit day can complete a streak award
+      });
       refreshFriendsRef.current();
       refreshInvitesRef.current();
       // retry changes that couldn't reach the database earlier
@@ -1045,7 +1068,11 @@ export default function App() {
         (auth.user ? (
           <ProfileModal
             auth={auth}
-            onClose={() => setAccountOpen(false)}
+            initialTab={profileTab}
+            onClose={() => {
+              setAccountOpen(false);
+              setProfileTab("card");
+            }}
             listsCount={lists.length}
             ratingsCount={Object.values(reviews).filter((r) => r?.rating).length}
           />
@@ -1111,6 +1138,19 @@ export default function App() {
           defaultName={`${copySource.name} - copy`}
           onCancel={() => setCopySource(null)}
           onSave={(name) => saveCopy(copySource, name)}
+        />
+      )}
+
+      {newAwards.awards.length > 0 && auth.user && (
+        <AwardsUnlockedModal
+          awards={newAwards.awards}
+          onClose={newAwards.dismiss}
+          onSeeAll={() => {
+            newAwards.dismiss();
+            setViewUser(null);
+            setProfileTab("achievements");
+            setAccountOpen(true);
+          }}
         />
       )}
 

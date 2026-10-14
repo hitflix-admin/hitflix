@@ -12,16 +12,7 @@ import {
   Film,
   Pencil,
   Flame,
-  Clapperboard,
-  Target,
-  Zap,
-  EyeOff,
-  Timer,
-  Swords,
-  Crosshair,
-  LayoutGrid,
   Trophy,
-  Ticket,
   Lock,
 } from "lucide-react";
 import { supabase } from "./supabase.js";
@@ -36,6 +27,7 @@ import { GAME_INFO } from "./GameCard.jsx";
 import StreakBadge from "./StreakBadge.jsx";
 import { memberNumberLabel, saveUsername, USERNAME_HINT } from "./Account.jsx";
 import { useScrollLock } from "./scrollLock.js";
+import { ACHIEVEMENT_ICONS } from "./AwardsPopup.jsx";
 
 const CARD_COLORS = ["cobalt", "orchid", "caramel", "fern", "scarlet"];
 
@@ -61,8 +53,6 @@ const GENRES = [
   "War",
   "Western",
 ];
-
-const ACHIEVEMENT_ICONS = { Clapperboard, Target, Zap, EyeOff, Timer, Swords, Crosshair, LayoutGrid, Trophy, Flame, Ticket };
 
 const MUTE = "#8D96A3";
 const labelStyle = {
@@ -91,7 +81,7 @@ function fromMovieRow(r) {
 // someone else; omitted for your own profile. relation is 'friends', 'sent',
 // 'received', or 'none'. onRelationChange lets the Friends list refresh after
 // a request is sent/accepted/removed from in here.
-export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, viewUser, onRelationChange }) {
+export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, viewUser, onRelationChange, initialTab = "card" }) {
   useScrollLock();
   const isSelf = !viewUser || viewUser.id === auth.user?.id;
   const targetId = isSelf ? auth.user?.id : viewUser.id;
@@ -101,7 +91,7 @@ export default function ProfileModal({ auth, onClose, listsCount, ratingsCount, 
     ? { username: auth.profile?.username, memberNumber: auth.profile?.member_number, since: auth.user?.created_at }
     : { username: viewUser.username, memberNumber: viewUser.member_number, since: viewUser.created_at };
 
-  const [tab, setTab] = useState("card");
+  const [tab, setTab] = useState(initialTab);
   const [card, setCard] = useState(null); // null = loading
   const [stats, setStats] = useState(null);
   const [loadError, setLoadError] = useState("");

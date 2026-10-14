@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Film, Check, X, Share2, Info } from "lucide-react";
 import CleanBadge from "./CleanBadge.jsx";
 import { useFocusTracker, isCleanGame, shareMark } from "./focusTracker.js";
+import { useNewAwards, AwardsUnlockedModal } from "./AwardsPopup.jsx";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, iconBtn, primaryBtn } from "./theme.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
@@ -216,6 +217,7 @@ export default function FaceoffGame({
   const [target, setTarget] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [progress, setProgress] = useState(() => loadProgress(storageId, date));
+  const newAwards = useNewAwards();
   const progressRef = useRef(progress);
   progressRef.current = progress;
   const [justAnswered, setJustAnswered] = useState(null); // { pairIndex, choice, correct } | null
@@ -278,7 +280,7 @@ export default function FaceoffGame({
     setProgress(next);
     saveProgress(storageId, date, next);
     setJustAnswered({ pairIndex, choice: side, correct });
-    if (next.answers.length >= ROUNDS) recordFinishedGames();
+    if (next.answers.length >= ROUNDS) recordFinishedGames().then(newAwards.check);
   }
 
   useFocusTracker(!!target && !done, progressRef, (next) => {
@@ -289,8 +291,8 @@ export default function FaceoffGame({
   // counts today toward the account's streak and records finished games
   // (both no-ops when signed out)
   useEffect(() => {
-    markActiveToday();
-    recordFinishedGames();
+    Promise.all([markActiveToday(), recordFinishedGames()]).then(newAwards.check);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function saveRating(movie, rating) {
@@ -507,6 +509,13 @@ export default function FaceoffGame({
           onClose={() => setModalMovie(null)}
           onSaveRating={(rating) => saveRating(modalMovie, rating)}
           onDetails={(details) => saveDetails(modalMovie, details)}
+        />
+      )}
+      {newAwards.awards.length > 0 && (
+        <AwardsUnlockedModal
+          awards={newAwards.awards}
+          onClose={newAwards.dismiss}
+          onSeeAll={() => (window.location.href = "/?profile=awards")}
         />
       )}
     </main>

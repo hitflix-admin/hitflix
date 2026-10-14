@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, Film, Share2, Tag, Lightbulb, Users, Info } from "lucide-react";
 import CleanBadge from "./CleanBadge.jsx";
 import { useFocusTracker, isCleanGame, shareMark } from "./focusTracker.js";
+import { useNewAwards, AwardsUnlockedModal } from "./AwardsPopup.jsx";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
@@ -373,9 +374,10 @@ export default function DailyGuessGame({
 
   // counts today toward the account's streak and records finished games
   // (both no-ops when signed out)
+  const newAwards = useNewAwards();
   useEffect(() => {
-    markActiveToday();
-    recordFinishedGames();
+    Promise.all([markActiveToday(), recordFinishedGames()]).then(newAwards.check);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---- countdown ticks once the puzzle is over ----
@@ -454,7 +456,7 @@ export default function DailyGuessGame({
         };
         setProgress(next);
         saveProgress(storageId, date, next);
-        if (nextStatus !== "playing") recordFinishedGames();
+        if (nextStatus !== "playing") recordFinishedGames().then(newAwards.check);
       } finally {
         setSubmitting(false);
       }
@@ -688,6 +690,13 @@ export default function DailyGuessGame({
           onClose={() => setModalMovie(null)}
           onSaveRating={(rating) => saveRating(modalMovie, rating)}
           onDetails={(details) => saveDetails(modalMovie, details)}
+        />
+      )}
+      {newAwards.awards.length > 0 && (
+        <AwardsUnlockedModal
+          awards={newAwards.awards}
+          onClose={newAwards.dismiss}
+          onSeeAll={() => (window.location.href = "/?profile=awards")}
         />
       )}
     </main>

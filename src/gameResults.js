@@ -1,4 +1,5 @@
 import { todayGameDateString } from "./dailyMovie.js";
+import { computeStats, achievementProgress } from "./gameStats.js";
 
 /* ---------------------------------------------------------
    Records account activity from any page, signed in only
@@ -7,6 +8,8 @@ import { todayGameDateString } from "./dailyMovie.js";
      (any visit counts — the streak isn't about games)
    - recordFinishedGames: finished daily games, for profile
      game stats and achievements
+   - findNewAwards: achievements just unlocked, for the
+     "award unlocked" popup (AwardsPopup.jsx)
 
    Each game already keeps its day's progress in localStorage
    (`<game>:progress:<date>`), so results are read from there
@@ -159,4 +162,49 @@ export function recordFinishedGames() {
       inFlight = null;
     });
   return inFlight;
+}
+
+let awardsInFlight = null;
+
+// Awards the signed-in account has unlocked but hasn't been shown yet (see
+// supabase/migrations/0013), marking them as shown. The first check for an
+// account marks everything it has already earned as shown and returns
+// nothing, so popups start with the next award. Resolves [] when signed out
+// or on any error.
+export function findNewAwards() {
+  if (!mightBeSignedIn()) return Promise.resolve([]);
+  if (awardsInFlight) return awardsInFlight;
+  awardsInFlight = (async () => {
+    const client = await signedInClient();
+    if (!client) return [];
+    const { supabase, userId } = client;
+    const [resultsRes, daysRes, noticesRes] = await Promise.all([
+      supabase.from("game_results").select("*").eq("user_id", userId),
+      supabase.from("activity_days").select("day").eq("user_id", userId),
+      supabase.from("award_notices").select("seen").eq("user_id", userId).maybeSingle(),
+    ]);
+    const error = resultsRes.error || daysRes.error || noticesRes.error;
+    if (error) throw error;
+    const unlocked = achievementProgress(
+      computeStats(resultsRes.data, todayGameDateString(), daysRes.data.map((r) => r.day))
+    ).filter((a) => a.unlocked);
+
+    const seen = noticesRes.data ? new Set(noticesRes.data.seen) : null;
+    const fresh = seen ? unlocked.filter((a) => !seen.has(a.id)) : [];
+    if (!seen || fresh.length) {
+      const ids = (seen ? fresh : unlocked).map((a) => a.id);
+      const { error: markError } = await supabase.rpc("mark_awards_seen", { award_ids: ids });
+      // not recorded as shown → don't show it now either, or it would pop again
+      if (markError) throw markError;
+    }
+    return fresh;
+  })()
+    .catch((e) => {
+      console.error(e);
+      return [];
+    })
+    .finally(() => {
+      awardsInFlight = null;
+    });
+  return awardsInFlight;
 }
