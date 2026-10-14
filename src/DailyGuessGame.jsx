@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Search, ArrowLeft, ArrowUp, ArrowDown, Check, Film, Share2, Tag, Lightbulb, Users, Info } from "lucide-react";
+import CleanBadge from "./CleanBadge.jsx";
+import { useFocusTracker, isCleanGame, shareMark } from "./focusTracker.js";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, iconBtn, primaryBtn } from "./theme.js";
 import { searchWikipediaFilms, fetchMovieDetails, yearFromDescription, normalizeOscarTitle, parseBoxOfficeUSD } from "./movieData.js";
@@ -88,15 +90,15 @@ function formatCountdown(ms) {
 
 const TILE_EMOJI = { correct: "🟩", full: "🟩", partial: "🟨", wrong: "⬛", none: "⬛", unknown: "⬛" };
 
-function buildShareText(shareLabel, shareUrl, date, guesses, status) {
+function buildShareText(shareLabel, shareUrl, date, guesses, status, progress) {
   const puzzleNum = puzzleNumberForDate(date);
   const lines = guesses.map((g) =>
     FIELD_META.map((f) => TILE_EMOJI[g.fields[f.key].status] || "⬛").join("")
   );
   const headline =
     status === "won"
-      ? `🏆 I solved ${shareLabel} #${puzzleNum} in ${guesses.length}/${MAX_GUESSES}!`
-      : `💀 ${shareLabel} #${puzzleNum} got the best of me (X/${MAX_GUESSES})`;
+      ? `🏆 I solved ${shareLabel} #${puzzleNum} in ${guesses.length}/${MAX_GUESSES}! ${shareMark(progress)}`
+      : `💀 ${shareLabel} #${puzzleNum} got the best of me (X/${MAX_GUESSES}) ${shareMark(progress)}`;
   return `${headline}\n\n${lines.join("\n")}\n\n${shareUrl}`;
 }
 
@@ -363,6 +365,11 @@ export default function DailyGuessGame({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, progress.status]);
+
+  useFocusTracker(!!target && progress.status === "playing", progressRef, (next) => {
+    setProgress(next);
+    saveProgress(storageId, date, next);
+  });
 
   // counts today toward the account's streak and records finished games
   // (both no-ops when signed out)
@@ -632,12 +639,13 @@ export default function DailyGuessGame({
             {progress.status !== "playing" && (
               <EndScreen
                 status={progress.status}
+                clean={isCleanGame(progress)}
                 target={target}
                 countdown={countdown}
                 copied={copied}
                 onViewMovie={() => setModalMovie(target)}
                 onShare={() => {
-                  const text = buildShareText(shareLabel, shareUrl, date, progress.guesses, progress.status);
+                  const text = buildShareText(shareLabel, shareUrl, date, progress.guesses, progress.status, progress);
                   if (navigator.clipboard?.writeText) {
                     navigator.clipboard
                       .writeText(text)
@@ -843,7 +851,7 @@ function GuessHistory({ guesses }) {
   );
 }
 
-function EndScreen({ status, target, countdown, copied, onShare, onViewMovie }) {
+function EndScreen({ status, clean, target, countdown, copied, onShare, onViewMovie }) {
   return (
     <div
       style={{
@@ -854,17 +862,19 @@ function EndScreen({ status, target, countdown, copied, onShare, onViewMovie }) 
         padding: 18,
       }}
     >
-      <div
-        style={{
-          fontWeight: 800,
-          textTransform: "uppercase",
-          fontSize: 16,
-          letterSpacing: 0.4,
-          marginBottom: 12,
-          color: status === "won" ? COLORS.fern : COLORS.scarlet,
-        }}
-      >
-        {status === "won" ? "You got it!" : "Better luck tomorrow"}
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "6px 10px", marginBottom: 12 }}>
+        <div
+          style={{
+            fontWeight: 800,
+            textTransform: "uppercase",
+            fontSize: 16,
+            letterSpacing: 0.4,
+            color: status === "won" ? COLORS.fern : COLORS.scarlet,
+          }}
+        >
+          {status === "won" ? "You got it!" : "Better luck tomorrow"}
+        </div>
+        {status === "won" && clean && <CleanBadge label="Clean win" />}
       </div>
 
       <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>

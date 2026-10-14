@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Film, Check, X, Share2, Info } from "lucide-react";
+import CleanBadge from "./CleanBadge.jsx";
+import { useFocusTracker, isCleanGame, shareMark } from "./focusTracker.js";
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, iconBtn, primaryBtn } from "./theme.js";
 import { todayGameDateString, puzzleNumberForDate, msUntilNextPuzzle } from "./dailyMovie.js";
@@ -214,6 +216,8 @@ export default function FaceoffGame({
   const [target, setTarget] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [progress, setProgress] = useState(() => loadProgress(storageId, date));
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
   const [justAnswered, setJustAnswered] = useState(null); // { pairIndex, choice, correct } | null
   const [countdown, setCountdown] = useState(() => formatCountdown(msUntilNextPuzzle()));
   const [copied, setCopied] = useState(false);
@@ -270,12 +274,17 @@ export default function FaceoffGame({
     const chosen = pair[side];
     const other = pair[side === "left" ? "right" : "left"];
     const correct = chosen.value > other.value;
-    const next = { answers: [...progress.answers, { choice: side, correct }] };
+    const next = { ...progress, answers: [...progress.answers, { choice: side, correct }] };
     setProgress(next);
     saveProgress(storageId, date, next);
     setJustAnswered({ pairIndex, choice: side, correct });
     if (next.answers.length >= ROUNDS) recordFinishedGames();
   }
+
+  useFocusTracker(!!target && !done, progressRef, (next) => {
+    setProgress(next);
+    saveProgress(storageId, date, next);
+  });
 
   // counts today toward the account's streak and records finished games
   // (both no-ops when signed out)
@@ -447,6 +456,8 @@ export default function FaceoffGame({
             {done && (
               <FaceoffEndScreen
                 answers={progress.answers}
+                // Faceoff has no win/lose: only a perfect score counts as a clean win
+                clean={score === ROUNDS && isCleanGame(progress)}
                 target={target}
                 score={score}
                 percent={percent}
@@ -455,7 +466,7 @@ export default function FaceoffGame({
                 formatValue={formatValue}
                 onShare={() => {
                   const lines = progress.answers.map((a) => (a.correct ? "✅" : "❌")).join("");
-                  const text = `${shareLabel} #${puzzleNumberForDate(date)} ${score}/${ROUNDS}\n\n${lines}\n\n${shareUrl}`;
+                  const text = `${shareLabel} #${puzzleNumberForDate(date)} ${score}/${ROUNDS} ${shareMark(progress)}\n\n${lines}\n\n${shareUrl}`;
                   if (navigator.clipboard?.writeText) {
                     navigator.clipboard
                       .writeText(text)
@@ -502,7 +513,7 @@ export default function FaceoffGame({
   );
 }
 
-function FaceoffEndScreen({ answers, target, score, percent, countdown, copied, formatValue, onShare }) {
+function FaceoffEndScreen({ answers, clean, target, score, percent, countdown, copied, formatValue, onShare }) {
   return (
     <div
       style={{
@@ -518,6 +529,11 @@ function FaceoffEndScreen({ answers, target, score, percent, countdown, copied, 
         <div style={{ color: COLORS.mute, fontSize: 13, marginTop: 6 }}>
           {score} of {answers.length} correct
         </div>
+        {clean && (
+          <div style={{ marginTop: 10 }}>
+            <CleanBadge label="Clean game" />
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
