@@ -9,6 +9,8 @@ import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
 import { useScrollLock } from "./scrollLock.js";
+import { loadHitflixScore } from "./cloudStore.js";
+import { supabase } from "./supabase.js";
 
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
 const SUBCATEGORIES = [
@@ -32,6 +34,21 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
   const extract = movie.extract || "";
   const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
+  // undefined = loading, null = not enough ratings yet, "error" = couldn't load
+  const [hitflixScore, setHitflixScore] = useState(undefined);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    setHitflixScore(undefined);
+    loadHitflixScore(movie.id).then(
+      (score) => !cancelled && setHitflixScore(score),
+      () => !cancelled && setHitflixScore("error")
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [movie.id]);
 
   useEffect(() => {
     if (movie.details && !detailsLookStale(movie.details)) return;
@@ -173,6 +190,46 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
                 </a>
               </div>
             )}
+          </div>
+        )}
+
+        {supabase && hitflixScore !== "error" && (
+          <div
+            style={{
+              borderTop: "1px solid rgba(231,233,236,0.1)",
+              marginTop: 4,
+              paddingTop: 14,
+              paddingBottom: 14,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              minHeight: 56,
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  fontSize: 13,
+                  letterSpacing: 0.5,
+                  color: "#8D96A3",
+                  marginBottom: 3,
+                }}
+              >
+                Hitflix score
+              </div>
+              <div style={{ fontSize: 12.5, color: "#8D96A3", lineHeight: 1.4 }}>
+                {hitflixScore === undefined
+                  ? "Loading…"
+                  : hitflixScore === null
+                  ? "Not enough ratings yet"
+                  : "Everyone's average rating"}
+              </div>
+            </div>
+            {typeof hitflixScore === "number" && <Gauge score={hitflixScore} size={56} />}
           </div>
         )}
 
