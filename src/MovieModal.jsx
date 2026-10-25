@@ -9,7 +9,7 @@ import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
 import { useScrollLock } from "./scrollLock.js";
-import { loadHitflixScore } from "./cloudStore.js";
+import { loadHitflixScores } from "./hitflixScore.js";
 import { supabase } from "./supabase.js";
 
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
@@ -21,7 +21,9 @@ const SUBCATEGORIES = [
 ];
 const DESCRIPTION_TRUNCATE_LENGTH = 275;
 
-export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) {
+// onSignIn opens sign-in; without it (the game pages), Sign in goes to the
+// home page with its sign-in popup open (/?signin=1).
+export default function MovieModal({ movie, onClose, onSaveRating, onDetails, onSignIn }) {
   useScrollLock();
   const [expanded, setExpanded] = useState(false);
   const hasExistingRating = !!movie.rating;
@@ -37,18 +39,27 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
   // undefined = loading, null = not enough ratings yet, "error" = couldn't load
   const [hitflixScore, setHitflixScore] = useState(undefined);
 
+  // null until known; signed-out ratings stay in this browser and don't
+  // count toward the Hitflix score, so those players get a sign-in prompt
+  const [signedIn, setSignedIn] = useState(null);
+
   useEffect(() => {
     if (!supabase) return;
     let cancelled = false;
     setHitflixScore(undefined);
-    loadHitflixScore(movie.id).then(
-      (score) => !cancelled && setHitflixScore(score),
+    loadHitflixScores([movie.id]).then(
+      (scores) => !cancelled && setHitflixScore(String(movie.id) in scores ? scores[movie.id] : "error"),
       () => !cancelled && setHitflixScore("error")
     );
     return () => {
       cancelled = true;
     };
   }, [movie.id]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data?.session));
+  }, []);
 
   useEffect(() => {
     if (movie.details && !detailsLookStale(movie.details)) return;
@@ -254,6 +265,36 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails }) 
           >
             Your rating
           </div>
+
+          {signedIn === false && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                background: "rgba(231,233,236,0.05)",
+                border: "1px solid rgba(231,233,236,0.1)",
+                borderRadius: 6,
+                padding: "10px 12px",
+                marginBottom: 16,
+              }}
+            >
+              <div style={{ fontSize: 12.5, color: "#E7E9EC", lineHeight: 1.4 }}>
+                Sign in so your rating counts toward the Hitflix score
+              </div>
+              <button
+                onClick={() => {
+                  if (hasChanges) onSaveRating(draftRating);
+                  if (onSignIn) onSignIn();
+                  else window.location.href = "/?signin=1";
+                }}
+                style={{ ...primaryBtn, flex: "none", padding: "8px 14px", fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}
+              >
+                Sign in
+              </button>
+            </div>
+          )}
 
           {/* Section 1: total calculated score */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>

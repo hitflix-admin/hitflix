@@ -13,6 +13,7 @@ import {
 } from "./movieData.js";
 import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
+import { useHitflixScores } from "./hitflixScore.js";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
 import ProfileModal from "./Profile.jsx";
 import { useFriends, FriendsButton, FriendsModal } from "./Friends.jsx";
@@ -193,6 +194,9 @@ function loadLocalReviews(loadedLists) {
   return reviews;
 }
 
+// read once when the page loads (the param is then removed from the address)
+const OPEN_SIGN_IN_ON_LOAD = new URLSearchParams(window.location.search).get("signin") === "1";
+
 export default function App() {
   const [view, setView] = useState("home"); // home | editor
   const [lists, setLists] = useState(null); // null = loading
@@ -225,7 +229,14 @@ export default function App() {
   const [defaultMovies, setDefaultMovies] = useState([]); // the 4 "add rating" starter placeholders
 
   const auth = useAuth();
-  const [accountOpen, setAccountOpen] = useState(false);
+  // a game page's movie popup sends signed-out players to /?signin=1
+  const [accountOpen, setAccountOpen] = useState(OPEN_SIGN_IN_ON_LOAD);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("signin")) return;
+    url.searchParams.delete("signin");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }, []);
   // which profile tab opens; a game page's "See all awards" lands on
   // /?profile=awards to open the Awards tab here
   const [profileTab, setProfileTab] = useState(() => {
@@ -964,7 +975,6 @@ export default function App() {
         <SharedListView
           token={joinToken}
           signedIn={!!(userId && auth.profile?.username)}
-          reviews={reviews}
           onSignIn={() => setAccountOpen(true)}
           onOpenMovie={openMovieDirect}
           onSaveCopy={setCopySource}
@@ -1061,6 +1071,10 @@ export default function App() {
           onClose={() => setModalRef(null)}
           onSaveRating={(rating) => saveRating(rating)}
           onDetails={(details) => setMovieDetails(details)}
+          onSignIn={() => {
+            setModalRef(null);
+            setAccountOpen(true);
+          }}
         />
       )}
 
@@ -1888,6 +1902,10 @@ function EditorView({
   const honorableMentions = list.honorableMentions || [];
   const full = list.targetLength > 0 && list.entries.length >= list.targetLength;
   const members = list.members || [];
+  // shared lists (other members, or its join link on) show everyone's Hitflix
+  // score on each movie; private lists show your own
+  const shared = members.length > 1 || !!list.linkOn;
+  const hitflixScores = useHitflixScores(shared ? [...list.entries, ...honorableMentions].map((e) => e.id) : []);
   // "added by" only means something once someone else has been on the list
   const showAddedBy =
     members.length > 1 || [...list.entries, ...honorableMentions].some((e) => e.addedBy && e.addedBy !== userId);
@@ -1963,6 +1981,11 @@ function EditorView({
           {list.entries.length}
           {list.targetLength ? ` / ${list.targetLength}` : ""} titles · {list.ranked ? "ranked" : "unranked"} · drag the handle to reorder
         </div>
+        {shared && (
+          <div style={{ color: "#8D96A3", fontSize: 12.5, marginTop: 2 }}>
+            Shared list: scores are Hitflix scores · tap a movie for yours
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
           <div
             style={{
@@ -2095,7 +2118,26 @@ function EditorView({
                     flexShrink: 0,
                   }}
                 >
-                  {calcScore(reviews[entry.id]?.rating) !== null ? (
+                  {shared ? (
+                    <>
+                      <div
+                        className="your-score-label"
+                        style={{
+                          fontSize: 9,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.4,
+                          fontWeight: 700,
+                          color: "#8D96A3",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        Hitflix score
+                      </div>
+                      <div className="entry-gauge" onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
+                        <Gauge score={hitflixScores[entry.id] ?? null} size={60} />
+                      </div>
+                    </>
+                  ) : calcScore(reviews[entry.id]?.rating) !== null ? (
                     <>
                       <div
                         className="your-score-label"
@@ -2281,7 +2323,11 @@ function EditorView({
                       </div>
                     )}
                     <div style={{ marginTop: "auto" }}>
-                      {calcScore(reviews[entry.id]?.rating) !== null ? (
+                      {shared ? (
+                        <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }} title="Hitflix score">
+                          <Gauge score={hitflixScores[entry.id] ?? null} size={34} />
+                        </div>
+                      ) : calcScore(reviews[entry.id]?.rating) !== null ? (
                         <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
                           <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
                         </div>

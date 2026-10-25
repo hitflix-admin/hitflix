@@ -349,15 +349,6 @@ async function saveReview(movie, rating) {
   );
 }
 
-// The Hitflix score (0015_hitflix_score.sql): everyone's average for a movie,
-// or null when not enough people have rated it yet. Works signed out too.
-export async function loadHitflixScore(movieId) {
-  if (!supabase || !/^\d+$/.test(String(movieId ?? ""))) return null;
-  const { data, error } = await supabase.rpc("hitflix_scores", { movie_ids: [String(movieId)] });
-  if (error) throw error;
-  return data?.[0]?.score ?? null;
-}
-
 // Pushes ratings that changed between two snapshots of the reviews map.
 export async function syncRatings(prev, next, lists) {
   for (const [id, r] of Object.entries(next)) {

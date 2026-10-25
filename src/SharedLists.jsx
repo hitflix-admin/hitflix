@@ -9,7 +9,8 @@ import { X, Users, Link2, Check, ArrowLeft } from "lucide-react";
 import { supabase } from "./supabase.js";
 import { COLORS, primaryBtn, secondaryBtn, inputStyle } from "./theme.js";
 import { useScrollLock } from "./scrollLock.js";
-import { PosterArt, Gauge, calcScore } from "./movieUI.jsx";
+import { PosterArt, Gauge } from "./movieUI.jsx";
+import { useHitflixScores } from "./hitflixScore.js";
 import { fromMovieRow } from "./cloudStore.js";
 
 const MUTE = "#8D96A3";
@@ -511,11 +512,13 @@ export function SaveCopyModal({ defaultName, onCancel, onSave }) {
 
 // What a join link opens: the list, read-only, for anyone — signed out
 // included. Signed in, you can also join it to edit.
-export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie, onSaveCopy, onJoined, onClose }) {
+export function SharedListView({ token, signedIn, onSignIn, onOpenMovie, onSaveCopy, onJoined, onClose }) {
   const [list, setList] = useState(undefined); // undefined = loading, null = link dead
   const [loadError, setLoadError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // a shared list shows everyone's Hitflix score, never the viewer's own
+  const hitflixScores = useHitflixScores((list?.entries || []).map((m) => m.id));
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -633,8 +636,6 @@ export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie
     );
   }
 
-  const scoreOf = (movie) => calcScore(reviews?.[movie.id]?.rating);
-
   return (
     <div style={{ paddingBottom: 130 }}>
       {header}
@@ -693,8 +694,9 @@ export function SharedListView({ token, signedIn, reviews, onSignIn, onOpenMovie
                 </div>
                 <div style={{ fontSize: 12, color: MUTE }}>{movie.year || "Year unknown"}</div>
               </div>
-              {/* the viewer's own rating, if they have one — never anyone else's */}
-              {scoreOf(movie) !== null && <Gauge score={scoreOf(movie)} size={44} />}
+              <div title="Hitflix score">
+                <Gauge score={hitflixScores[movie.id] ?? null} size={44} />
+              </div>
             </div>
           ))}
         </div>
