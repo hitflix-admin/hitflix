@@ -1,3 +1,6 @@
+// first: it checks whether this browser has been here before, before any
+// page stores anything (see WhatsNew.jsx)
+import WhatsNew from "./WhatsNew.jsx";
 import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
@@ -35,5 +38,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Suspense fallback={null}>
       <Root />
     </Suspense>
+    <WhatsNew />
   </React.StrictMode>
 );
