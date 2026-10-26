@@ -13,7 +13,7 @@ import {
 } from "./movieData.js";
 import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
-import { useHitflixScores } from "./hitflixScore.js";
+import { useHitflixScores, loadMoviesCloseToScore } from "./hitflixScore.js";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
 import ProfileModal from "./Profile.jsx";
 import { useFriends, FriendsButton, FriendsModal } from "./Friends.jsx";
@@ -1276,7 +1276,7 @@ function DefaultMovieTile({ movie, onAddRating }) {
           border: "1px solid rgba(110,153,212,0.6)",
           color: COLORS.cobalt,
           borderRadius: 3,
-          padding: "5px 8px",
+          padding: "5px 4px",
           fontSize: 11.5,
           fontWeight: 600,
           cursor: "pointer",
@@ -1286,6 +1286,57 @@ function DefaultMovieTile({ movie, onAddRating }) {
       >
         Add rating
       </button>
+    </div>
+  );
+}
+
+// Signed in: movies others have rated that are closest to getting a Hitflix
+// score, to rate next. Refetched whenever you rate something, so a movie you
+// just rated (or one that just got its score) is swapped for the next one.
+function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
+  const [movies, setMovies] = useState([]);
+  const ratedKey = Object.keys(reviews)
+    .filter((id) => reviews[id]?.rating)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    let cancelled = false;
+    loadMoviesCloseToScore(3).then(
+      (found) => !cancelled && setMovies(found),
+      (e) => console.error(e)
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [ratedKey]);
+
+  // hide one you've rated right away, before the refetch lands
+  const shown = movies.filter((m) => !reviews[m.id]?.rating);
+  if (!shown.length) return null;
+
+  return (
+    <div style={{ marginTop: 34 }}>
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          fontSize: 17,
+          letterSpacing: 0.5,
+          marginBottom: 4,
+        }}
+      >
+        Help unlock a Hitflix score
+      </div>
+      <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 14 }}>
+        Others have rated these. A few more ratings and they get an official score.
+      </div>
+      <div className="library-grid">
+        {shown.map((movie) => (
+          <DefaultMovieTile key={`close-${movie.id}`} movie={movie} onAddRating={() => onOpenStandaloneMovie(movie)} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -1633,6 +1684,8 @@ function HomeView({
       )}
 
       <GamesSection />
+
+      {userId && <CloseToScoreSection reviews={reviews} onOpenStandaloneMovie={onOpenStandaloneMovie} />}
 
       <ReviewedLibrary
         lists={lists}
