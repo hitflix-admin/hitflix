@@ -11,28 +11,8 @@ import GameCard from "./GameCard.jsx";
 import { preloadOtherGames } from "./gamePreload.js";
 import { fetchPrecomputedPuzzle } from "./dailyPuzzleFetch.js";
 import MovieModal from "./MovieModal.jsx";
+import { useGameReviews } from "./gameReviews.js";
 import { recordFinishedGames, markActiveToday } from "./gameResults.js";
-
-// Same "movieReviews" localStorage shape the list-builder (App.jsx) and
-// Faceoff (FaceoffGame.jsx) read and write, keyed by each movie's Wikipedia
-// pageid — so a rating left here on today's movie shows up in "Your reviews"
-// (and in Faceoff) too, and vice versa.
-const REVIEWS_STORAGE_KEY = "movieReviews";
-
-function loadReviews() {
-  try {
-    const raw = localStorage.getItem(REVIEWS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    return {};
-  }
-}
-
-function saveReviewsToStorage(reviews) {
-  try {
-    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviews));
-  } catch (e) {}
-}
 
 // Give the current game's own first interactions (typing a guess) priority
 // over background prefetch requests before starting to warm the other games.
@@ -285,7 +265,8 @@ export default function DailyGuessGame({
   const [guessError, setGuessError] = useState("");
   const [countdown, setCountdown] = useState(() => formatCountdown(msUntilNextPuzzle()));
   const [copied, setCopied] = useState(false);
-  const [reviews, setReviews] = useState(() => loadReviews());
+  // ratings: in this browser signed out, on the account signed in
+  const { reviews, saveRating, saveDetails } = useGameReviews();
   const [modalMovie, setModalMovie] = useState(null);
 
   useEffect(() => {
@@ -463,22 +444,6 @@ export default function DailyGuessGame({
     },
     [target, submitting, progress, date, storageId]
   );
-
-  function saveRating(movie, rating) {
-    setReviews((prev) => {
-      const next = { ...prev, [movie.id]: { ...prev[movie.id], rating, movie } };
-      saveReviewsToStorage(next);
-      return next;
-    });
-  }
-
-  function saveDetails(movie, details) {
-    setReviews((prev) => {
-      const next = { ...prev, [movie.id]: { ...prev[movie.id], details } };
-      saveReviewsToStorage(next);
-      return next;
-    });
-  }
 
   const wrap = {
     fontFamily: "'Montserrat', sans-serif",

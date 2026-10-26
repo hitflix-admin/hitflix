@@ -336,7 +336,7 @@ function findMovie(id, reviews, lists) {
   return null;
 }
 
-async function saveReview(movie, rating) {
+export async function saveReview(movie, rating) {
   await check(
     supabase.rpc("save_review", {
       movie,
