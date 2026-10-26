@@ -1,13 +1,13 @@
 // "What's new" popup: opens by itself on any page when there are update
 // announcements (whatsNewUpdates.js) this person hasn't seen, oldest first,
-// as a carousel. Closing it (✕, the button, or tapping outside) marks every
+// as a carousel. Closing it (✕, Escape, or tapping outside) marks every
 // one shown as seen — on the account when signed in (0017_whats_new.sql),
 // and in this browser either way.
 
 import React, { useEffect, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "./supabase.js";
-import { COLORS, primaryBtn } from "./theme.js";
+import { COLORS } from "./theme.js";
 import { useScrollLock } from "./scrollLock.js";
 import { UPDATES } from "./whatsNewUpdates.js";
 
@@ -108,12 +108,6 @@ export function WhatsNewModal({ updates, onClose }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [updates.length, onClose]);
-
-  function act() {
-    onClose();
-    const to = update.cta?.to;
-    if (to && window.location.pathname !== to) window.location.href = to;
-  }
 
   const arrowBtn = (disabled) => ({
     background: "rgba(231,233,236,0.06)",
@@ -216,13 +210,13 @@ export function WhatsNewModal({ updates, onClose }) {
           {update.title}
         </div>
         {update.body.map((p, i) => (
-          <p key={i} style={{ fontSize: 14, color: "#C9CDD3", lineHeight: 1.55, margin: "0 0 10px" }}>
+          <p key={i} style={{ fontSize: 14, color: "#C9CDD3", lineHeight: 1.55, margin: i === update.body.length - 1 ? 0 : "0 0 10px" }}>
             {p}
           </p>
         ))}
 
         {many && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "16px 0 4px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "18px 0 0" }}>
             <button
               onClick={() => setIndex((i) => Math.max(i - 1, 0))}
               disabled={index === 0}
@@ -257,9 +251,6 @@ export function WhatsNewModal({ updates, onClose }) {
           </div>
         )}
 
-        <button onClick={act} style={{ ...primaryBtn, width: "100%", marginTop: 14 }}>
-          {update.cta?.label || "Got it"}
-        </button>
       </div>
     </div>
   );

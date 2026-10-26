@@ -9,8 +9,6 @@
 //   publishedAt  ISO time it goes live; accounts/browsers newer than this
 //                don't get it
 //   title, body  headline and paragraphs
-//   cta          { label, to } — the main button; closes the popup and, if
-//                `to` is set and this isn't already that page, goes there
 
 export const UPDATES = [
   {
@@ -21,6 +19,5 @@ export const UPDATES = [
       "Every movie now has an official Hitflix score: the average of everyone's ratings. A score shows up once enough people have rated a movie, so every rating helps.",
       'Sign in, rate the movies you\'ve seen, and look for "Contribute to the official Hitflix score" on the home page.',
     ],
-    cta: { label: "Start rating", to: "/" },
   },
 ];
