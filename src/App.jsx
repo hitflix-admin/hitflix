@@ -1290,8 +1290,8 @@ function DefaultMovieTile({ movie, onAddRating }) {
   );
 }
 
-// Signed in: movies others have rated that are closest to getting a Hitflix
-// score, to rate next. Refetched whenever you rate something, so a movie you
+// "Contribute to the official Hitflix score" (signed in): movies others have
+// rated that are closest to getting a Hitflix score, to rate next. Refetched whenever you rate something, so a movie you
 // just rated (or one that just got its score) is swapped for the next one.
 function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
   const [movies, setMovies] = useState([]);
@@ -1327,7 +1327,7 @@ function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
           marginBottom: 4,
         }}
       >
-        Help unlock a Hitflix score
+        Contribute to the official Hitflix score
       </div>
       <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 14 }}>
         Others have rated these. A few more ratings and they get an official score.

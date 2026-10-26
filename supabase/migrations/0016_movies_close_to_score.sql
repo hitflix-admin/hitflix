@@ -1,6 +1,7 @@
--- "Help unlock a Hitflix score": a home-page section, for signed-in players,
--- suggesting movies that other people have rated but that don't have a
--- Hitflix score yet (0015), the ones closest to the bar first.
+-- "Contribute to the official Hitflix score": a home-page section, for
+-- signed-in players, suggesting movies that other people have rated but
+-- that don't have a Hitflix score yet (0015), the ones closest to the bar
+-- first.
 --
 -- Closest = the most ratings that count toward the score (accounts that
 -- clear hitflix_min_reviews_per_account), then the most ratings of any kind
