@@ -1293,6 +1293,7 @@ function DefaultMovieTile({ movie, onAddRating }) {
 // "Contribute to the official Hitflix score" (signed in): movies others have
 // rated that are closest to getting a Hitflix score, to rate next. Refetched whenever you rate something, so a movie you
 // just rated (or one that just got its score) is swapped for the next one.
+// Fetches a full desktop row (5); phones show the first 3 (index.css).
 function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
   const [movies, setMovies] = useState([]);
   const ratedKey = Object.keys(reviews)
@@ -1302,7 +1303,7 @@ function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
 
   useEffect(() => {
     let cancelled = false;
-    loadMoviesCloseToScore(3).then(
+    loadMoviesCloseToScore(5).then(
       (found) => !cancelled && setMovies(found),
       (e) => console.error(e)
     );
@@ -1332,7 +1333,7 @@ function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
       <div style={{ color: "#8D96A3", fontSize: 12.5, marginBottom: 14 }}>
         Others have rated these. A few more ratings and they get an official score.
       </div>
-      <div className="library-grid">
+      <div className="library-grid close-to-score-grid">
         {shown.map((movie) => (
           <DefaultMovieTile key={`close-${movie.id}`} movie={movie} onAddRating={() => onOpenStandaloneMovie(movie)} />
         ))}

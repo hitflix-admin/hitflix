@@ -31,6 +31,11 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
   }
+  /* "Contribute to the official Hitflix score" loads a 5-wide desktop row;
+     phones keep one row of 3 (!important: the tiles set display inline) */
+  .close-to-score-grid > :nth-child(n + 4) {
+    display: none !important;
+  }
 }
 
 /* Streak badge (StreakBadge.jsx): a slow glow pulse in the tier's color,
