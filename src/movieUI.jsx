@@ -8,10 +8,15 @@ import { Film } from "lucide-react";
 export function calcScore(rating) {
   if (!rating) return null;
   const subTotal = rating.writing + rating.performance + rating.visuals + rating.audio;
-  // ((subTotal/20 + overall/10) / 2) * 100, kept in integers until the final
-  // halving so .5 always rounds up — the float version sometimes landed just
-  // under .5 (e.g. 57.49999…) and disagreed with reviews.score in the database
-  return Math.round((subTotal * 5 + rating.overall * 10) / 2);
+  // ((subTotal/20 + overall/10) / 2) * 100 out of 100, kept in integers until
+  // the final halving so it's exact: a whole number or a half (72.5), matching
+  // reviews.score in the database. Only the Hitflix score is rounded.
+  return (subTotal * 5 + rating.overall * 10) / 2;
+}
+
+// 72.5 → { whole: "72", half: true }; the ".5" is drawn smaller
+function splitScore(score) {
+  return { whole: String(Math.floor(score)), half: score % 1 !== 0 };
 }
 
 export function ratingColor(value, min, max) {
@@ -26,6 +31,7 @@ export function Gauge({ score, size = 44 }) {
   const circumference = 2 * Math.PI * radius;
   const pct = hasScore ? Math.max(0, Math.min(100, score)) / 100 : 0;
   const color = hasScore ? ratingColor(score, 0, 100) : "rgba(231,233,236,0.22)";
+  const parts = hasScore ? splitScore(score) : null;
 
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
@@ -73,8 +79,8 @@ export function Gauge({ score, size = 44 }) {
       >
         {hasScore ? (
           <>
-            {score}
-            <span style={{ fontSize: size * (score >= 100 ? 0.135 : 0.16), marginLeft: 1 }}>%</span>
+            {parts.whole}
+            {parts.half && <span style={{ fontSize: size * 0.16 }}>.5</span>}
           </>
         ) : (
           <span style={{ color: "#8D96A3" }}>N/A</span>
