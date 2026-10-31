@@ -150,11 +150,12 @@ function decodeHtmlEntities(str) {
 }
 
 // Footnote/explanatory-note templates (e.g. {{efn|...}} explaining a cumulative
-// box-office figure) carry annotation text that isn't meant to be displayed inline —
-// strip them out entirely rather than keeping their contents.
+// box-office figure, or {{#tag:ref|...|group=nb}} as on Dunkirk's budget) carry
+// annotation text that isn't meant to be displayed inline — strip them out
+// entirely rather than keeping their contents.
 function stripFootnoteTemplates(wikitext) {
   let s = wikitext;
-  const nameRegex = /\{\{\s*(?:efn|refn|sfn|r|citation needed|cn)\b/i;
+  const nameRegex = /\{\{\s*(?:efn|refn|sfn|r|citation needed|cn|#tag:ref)\b/i;
   let guard = 0;
   while (nameRegex.test(s) && guard < 25) {
     const block = extractTemplate(s, nameRegex);
@@ -411,13 +412,13 @@ export async function fetchMovieDetails(title, year, displayTitle) {
 }
 
 // Details fetched and cached before the wikitext cleanup (raw "&nbsp;", leftover
-// "{{efn|...}}" footnotes, etc.) should be treated as stale so they're refetched once
+// "{{efn|...}}" or "#tag:ref|..." footnotes, etc.) should be treated as stale so they're refetched once
 // rather than staying wrong forever in the cache.
 export function detailsLookStale(details) {
   if (!details) return true;
   if (details.oscarSource !== OSCAR_DATA_VERSION) return true;
   const fields = [details.budget, details.boxOffice, details.releaseDateUS, details.director];
-  return fields.some((f) => typeof f === "string" && /&[a-zA-Z#0-9]+;|\{\{|efn\||refn\|/i.test(f));
+  return fields.some((f) => typeof f === "string" && /&[a-zA-Z#0-9]+;|\{\{|efn\||refn\||#tag:ref\|/i.test(f));
 }
 
 /* ---------------- Genre tags (for Faceoff pairing) ---------------- */
