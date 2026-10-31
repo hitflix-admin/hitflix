@@ -14,9 +14,12 @@ export function calcScore(rating) {
   return (subTotal * 5 + rating.overall * 10) / 2;
 }
 
-// 72.5 → { whole: "72", half: true }; the ".5" is drawn smaller
-function splitScore(score) {
-  return { whole: String(Math.floor(score)), half: score % 1 !== 0 };
+// Splits the number shown in a Gauge so the decimals can be drawn smaller:
+// a personal score out of 10 (82.5 → "8" + ".25"), or the Hitflix score out
+// of 100 (68 → "68").
+function splitScore(score, outOf) {
+  const [whole, decimals] = String(outOf === 10 ? score / 10 : score).split(".");
+  return { whole, decimals: decimals ? `.${decimals}` : "" };
 }
 
 export function ratingColor(value, min, max) {
@@ -24,14 +27,16 @@ export function ratingColor(value, min, max) {
   return `hsl(${Math.round(t * 120)}, 65%, 48%)`;
 }
 
-export function Gauge({ score, size = 44 }) {
+// score is always 0–100 (it sets the ring and color); outOf={10} shows a
+// personal score out of 10, the default 100 is for the Hitflix score.
+export function Gauge({ score, size = 44, outOf = 100 }) {
   const hasScore = score !== null && score !== undefined;
   const strokeWidth = Math.max(3, size * 0.11);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = hasScore ? Math.max(0, Math.min(100, score)) / 100 : 0;
   const color = hasScore ? ratingColor(score, 0, 100) : "rgba(231,233,236,0.22)";
-  const parts = hasScore ? splitScore(score) : null;
+  const parts = hasScore ? splitScore(score, outOf) : null;
 
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
@@ -72,7 +77,7 @@ export function Gauge({ score, size = 44 }) {
           fontFamily: "'Montserrat', sans-serif",
           fontWeight: 800,
           color: "#E7E9EC",
-          fontSize: hasScore ? size * (score >= 100 ? 0.27 : 0.32) : size * 0.22,
+          fontSize: hasScore ? size * (parts.whole.length >= 3 ? 0.27 : 0.32) : size * 0.22,
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1,
         }}
@@ -80,7 +85,7 @@ export function Gauge({ score, size = 44 }) {
         {hasScore ? (
           <>
             {parts.whole}
-            {parts.half && <span style={{ fontSize: size * 0.16 }}>.5</span>}
+            {parts.decimals && <span style={{ fontSize: size * 0.16 }}>{parts.decimals}</span>}
           </>
         ) : (
           <span style={{ color: "#8D96A3" }}>N/A</span>

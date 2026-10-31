@@ -298,7 +298,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
 
           {/* Section 1: total calculated score */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-            <Gauge score={score} size={132} />
+            <Gauge score={score} size={132} outOf={10} />
           </div>
 
           {/* Section 2 (overall, left) + Section 3 (subcategories, right) */}

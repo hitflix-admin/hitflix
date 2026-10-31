@@ -1447,7 +1447,7 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
                   {entry.title}
                 </div>
                 <div style={{ marginTop: "auto" }}>
-                  <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+                  <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} outOf={10} />
                 </div>
               </div>
             ))}
@@ -2206,7 +2206,7 @@ function EditorView({
                         Your score
                       </div>
                       <div className="entry-gauge" onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                        <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} />
+                        <Gauge score={calcScore(reviews[entry.id]?.rating)} size={60} outOf={10} />
                       </div>
                     </>
                   ) : (
@@ -2382,7 +2382,7 @@ function EditorView({
                         </div>
                       ) : calcScore(reviews[entry.id]?.rating) !== null ? (
                         <div onClick={() => onOpenMovie(entry)} style={{ cursor: "pointer" }}>
-                          <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} />
+                          <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} outOf={10} />
                         </div>
                       ) : (
                         <button
