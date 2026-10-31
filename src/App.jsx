@@ -11,7 +11,7 @@ import {
   fetchMovieDetails,
   detailsLookStale,
 } from "./movieData.js";
-import { calcScore, Gauge, PosterArt } from "./movieUI.jsx";
+import { calcScore, Gauge, PosterArt, ScoreBar } from "./movieUI.jsx";
 import MovieModal from "./MovieModal.jsx";
 import { useHitflixScores, loadMoviesCloseToScore } from "./hitflixScore.js";
 import { useAuth, AccountButton, SignInModal, UsernameModal, ImportModal } from "./Account.jsx";
@@ -1447,8 +1447,8 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
                 >
                   {entry.title}
                 </div>
-                <div style={{ marginTop: "auto" }}>
-                  <Gauge score={calcScore(reviews[entry.id]?.rating)} size={34} outOf={10} />
+                <div style={{ marginTop: "auto", width: "100%" }}>
+                  <ScoreBar score={calcScore(reviews[entry.id]?.rating)} />
                 </div>
               </div>
             ))}

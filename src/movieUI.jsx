@@ -95,6 +95,40 @@ export function Gauge({ score, size = 44, outOf = 100 }) {
   );
 }
 
+// A personal score (0–100) on a movie card: the score out of 10 over a bar
+// that fills to it, wide enough to read at phone size (the 34px Gauge wasn't).
+export function ScoreBar({ score }) {
+  return (
+    <div style={{ width: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "center",
+          gap: 3,
+          fontFamily: "'Montserrat', sans-serif",
+          fontVariantNumeric: "tabular-nums",
+          lineHeight: 1,
+        }}
+      >
+        <span style={{ fontWeight: 800, fontSize: 18, color: "#E7E9EC" }}>{score / 10}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#8D96A3" }}>/10</span>
+      </div>
+      <div style={{ height: 6, borderRadius: 3, background: "rgba(231,233,236,0.12)", marginTop: 7 }}>
+        <div
+          style={{
+            height: "100%",
+            width: `${Math.max(0, Math.min(100, score))}%`,
+            borderRadius: 3,
+            background: ratingColor(score, 0, 100),
+            transition: "width 0.25s ease, background 0.25s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function PosterArt({ poster, title, size = "thumb" }) {
   const [failed, setFailed] = useState(false);
   const initials = (title || "?")
