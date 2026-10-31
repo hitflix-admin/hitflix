@@ -15,9 +15,9 @@ import { supabase } from "./supabase.js";
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
 const SUBCATEGORIES = [
   { key: "writing", label: "Writing" },
-  { key: "performance", label: "Performance" },
-  { key: "visuals", label: "Visuals" },
   { key: "audio", label: "Audio" },
+  { key: "visuals", label: "Visuals" },
+  { key: "performance", label: "Performances" },
 ];
 const DESCRIPTION_TRUNCATE_LENGTH = 275;
 
