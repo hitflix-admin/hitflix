@@ -4,7 +4,7 @@ import { loadReviews as loadAccountReviews, saveReview, toMoviePayload, writeDet
 
 /* ---------------------------------------------------------
    Ratings on the game pages (Daily Movie, Faceoff), in the
-   same movieId -> { rating, movie, details } shape the home
+   same movieId -> { rating, movie, details, ratedAt } shape the home
    page uses.
 
    Signed out: kept in this browser ("movieReviews"), like
@@ -95,7 +95,7 @@ export function useGameReviews() {
 
   function saveRating(movie, rating) {
     setReviews((prev) => {
-      const next = { ...prev, [movie.id]: { ...prev[movie.id], rating, movie } };
+      const next = { ...prev, [movie.id]: { ...prev[movie.id], rating, movie, ratedAt: Date.now() } };
       if (!userId) saveLocalReviews(next);
       return next;
     });

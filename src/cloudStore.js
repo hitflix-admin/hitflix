@@ -163,7 +163,7 @@ export async function loadLists() {
 export async function loadReviews(localReviewsFallback = {}) {
   const { data, error } = await supabase
     .from("reviews")
-    .select("overall, writing, performance, visuals, audio, movie:movies(*)");
+    .select("overall, writing, performance, visuals, audio, updated_at, movie:movies(*)");
   if (error) throw error;
 
   // details: this browser's cache first, then whatever the signed-out
@@ -178,6 +178,8 @@ export async function loadReviews(localReviewsFallback = {}) {
       ...reviews[movie.id],
       movie,
       rating: Object.fromEntries(RATING_KEYS.map((k) => [k, r[k]])),
+      // when it was rated or last re-rated, for "Your reviews" sorting
+      ratedAt: Date.parse(r.updated_at),
     };
   }
   return reviews;

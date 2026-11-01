@@ -225,7 +225,7 @@ export default function App() {
   const [homeSearchError, setHomeSearchError] = useState("");
 
   const [modalRef, setModalRef] = useState(null); // { listId, uid } | { movie } | null
-  const [reviews, setReviews] = useState({}); // movieId -> { rating, details }, shared across all lists
+  const [reviews, setReviews] = useState({}); // movieId -> { rating, details, movie, ratedAt }, shared across all lists
   const [defaultMovies, setDefaultMovies] = useState([]); // the 4 "add rating" starter placeholders
 
   const auth = useAuth();
@@ -827,7 +827,7 @@ export default function App() {
     // stash the movie's own title/poster/year alongside the rating so it can render in
     // "Your reviews" even when it was rated directly (search or a default placeholder)
     // rather than added to a list — see getReviewedMovies below.
-    persistReviews({ ...reviews, [id]: { ...reviews[id], rating, movie: modalBase } });
+    persistReviews({ ...reviews, [id]: { ...reviews[id], rating, movie: modalBase, ratedAt: Date.now() } });
   }
 
   function removeEntry(uidToRemove) {
@@ -1203,34 +1203,47 @@ function getReviewedMovies(lists, reviews) {
   return Array.from(byId.values());
 }
 
-function movieSortYear(entry) {
-  const y = parseInt(entry.year, 10);
-  return Number.isFinite(y) ? y : null;
-}
-
-function sortReviewedMovies(items, mode) {
-  const sorted = items.slice();
-  if (mode === "newest" || mode === "oldest") {
-    const dir = mode === "newest" ? -1 : 1;
-    sorted.sort((a, b) => {
-      const ya = movieSortYear(a.entry);
-      const yb = movieSortYear(b.entry);
-      if (ya === null && yb === null) return a.entry.title.localeCompare(b.entry.title);
-      if (ya === null) return 1;
-      if (yb === null) return -1;
-      return dir * (ya - yb);
-    });
-  } else {
-    sorted.sort((a, b) => a.entry.title.localeCompare(b.entry.title));
-  }
-  return sorted;
+// "newest"/"oldest" go by when you rated (or last re-rated) the movie.
+// Ratings saved in this browser before that was recorded have no ratedAt and
+// count as the oldest. Ties fall back to A–Z.
+function sortReviewedMovies(items, mode, reviews) {
+  const byTitle = (a, b) => a.entry.title.localeCompare(b.entry.title);
+  const ratedAt = (item) => reviews[item.entry.id]?.ratedAt || 0;
+  const score = (item) => calcScore(reviews[item.entry.id]?.rating) ?? 0;
+  const compare = {
+    alpha: byTitle,
+    newest: (a, b) => ratedAt(b) - ratedAt(a) || byTitle(a, b),
+    oldest: (a, b) => ratedAt(a) - ratedAt(b) || byTitle(a, b),
+    highest: (a, b) => score(b) - score(a) || byTitle(a, b),
+    lowest: (a, b) => score(a) - score(b) || byTitle(a, b),
+  }[mode];
+  return items.slice().sort(compare || byTitle);
 }
 
 const SORT_OPTIONS = [
-  { key: "alpha", label: "A–Z" },
-  { key: "newest", label: "Newest" },
-  { key: "oldest", label: "Oldest" },
+  { key: "newest", label: "Newest review" },
+  { key: "oldest", label: "Oldest review" },
+  { key: "highest", label: "Highest rated" },
+  { key: "lowest", label: "Lowest rated" },
+  { key: "alpha", label: "A to Z" },
 ];
+
+// Case- and accent-insensitive, so "amelie" finds "Amélie"
+function normalizeForSearch(text) {
+  return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+const sortSelectStyle = {
+  ...inputStyle,
+  width: "auto",
+  flex: "0 0 auto",
+  appearance: "none",
+  WebkitAppearance: "none",
+  colorScheme: "dark",
+  paddingRight: 34,
+  cursor: "pointer",
+  background: `#141414 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238D96A3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center`,
+};
 
 function DefaultMovieTile({ movie, onAddRating }) {
   return (
@@ -1343,7 +1356,8 @@ function CloseToScoreSection({ reviews, onOpenStandaloneMovie }) {
 }
 
 function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenStandaloneMovie }) {
-  const [sortMode, setSortMode] = useState("alpha");
+  const [sortMode, setSortMode] = useState("newest");
+  const [query, setQuery] = useState("");
 
   const defaultIds = new Set(defaultMovies.map((m) => m.id));
   const hasNonDefaultRating = Object.entries(reviews).some(
@@ -1355,7 +1369,9 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
 
   // getReviewedMovies already merges in ratings saved outside a list (search results,
   // rated default placeholders) using the metadata saveRating stashed alongside them.
-  const reviewed = sortReviewedMovies(getReviewedMovies(lists, reviews), sortMode);
+  const reviewed = sortReviewedMovies(getReviewedMovies(lists, reviews), sortMode, reviews);
+  const needle = normalizeForSearch(query.trim());
+  const shown = needle ? reviewed.filter(({ entry }) => normalizeForSearch(entry.title).includes(needle)) : reviewed;
 
   return (
     <div style={{ marginTop: 34 }}>
@@ -1394,16 +1410,32 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
         <>
           {reviewed.length > 0 && (
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setSortMode(opt.key)}
-                  style={sortMode === opt.key ? segmentBtnActive : segmentBtn}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search"
+                aria-label="Search your reviews"
+                style={{ ...inputStyle, flex: "1 1 auto", minWidth: 0 }}
+              />
+              <select
+                value={sortMode}
+                onChange={(e) => setSortMode(e.target.value)}
+                aria-label="Sort your reviews"
+                style={sortSelectStyle}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {needle && shown.length === 0 && (
+            <div style={{ color: "#8D96A3", fontSize: 14, padding: "8px 0 4px" }}>
+              No reviews match "{query.trim()}".
             </div>
           )}
 
@@ -1415,7 +1447,7 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
                 onAddRating={() => onOpenStandaloneMovie(movie)}
               />
             ))}
-            {reviewed.map(({ entry, listId }) => (
+            {shown.map(({ entry, listId }) => (
               <div
                 key={listId ? `${listId}-${entry.uid}` : `standalone-${entry.id}`}
                 onClick={() => (listId ? onOpenMovie(listId, entry.uid) : onOpenStandaloneMovie(entry))}
