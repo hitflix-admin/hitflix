@@ -18,7 +18,7 @@ import { computeStats, achievementProgress } from "./gameStats.js";
    failed to record last time (offline, etc).
 --------------------------------------------------------- */
 
-const GUESS_GAMES = ["dailyGame", "dailyWinner"];
+const GUESS_GAMES = ["dailyGame", "dailyWinner", "whoAmI"];
 const FACEOFF_GAMES = ["faceoff", "nominationsFaceoff"];
 const MAX_GUESSES = 5;
 const FACEOFF_ROUNDS = 5;
@@ -53,7 +53,8 @@ export function resultFromProgress(game, date) {
       puzzle_date: date,
       won: progress.status === "won",
       guesses,
-      // the plot hint can only be revealed before the 5th guess
+      // the plot hint can only be revealed before the 5th guess (Who am I?
+      // has no hint, so it's always false there)
       hint_used: Boolean(progress.hintUsed) && guesses === MAX_GUESSES,
       active_seconds: Number.isFinite(progress.activeMs)
         ? Math.min(Math.round(progress.activeMs / 1000), 86400)

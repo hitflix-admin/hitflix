@@ -1,5 +1,5 @@
-// Precomputes today's puzzle for all four daily games — Daily Movie, Daily Movie
-// (Oscar Edition), Faceoff, and Faceoff (Oscar Edition) — and writes it to
+// Precomputes today's puzzle for all five daily games — Daily Movie, Daily Movie
+// (Oscar Edition), Faceoff, Faceoff (Oscar Edition), and Who am I? — and writes it to
 // public/puzzles/<date>.json, which Vite copies straight into the deployed site.
 // The puzzle is identical for every player on a given date (see RESET_TIMEZONE in
 // src/dailyMovie.js), so resolving it once here — instead of every visitor's
@@ -29,16 +29,31 @@ import path from "node:path";
 import { getDailyMovie, getDailyOscarWinner, todayGameDateString } from "../src/dailyMovie.js";
 import { getDailyFaceoff } from "../src/faceoff.js";
 import { getDailyNominationsFaceoff } from "../src/nominationsFaceoff.js";
+import { whoAmICandidates } from "../src/whoAmISelection.js";
+import { hasWhoAmIQuotes, whoAmIQuotesFor } from "./whoAmIQuotes.mjs";
+
+// The only place selection (whoAmISelection.js) and quotes (whoAmIQuotes.mjs)
+// meet: today's pick from the movies that have quotes, plus its lines.
+// Who am I? is the one game with no live fallback in the browser — its
+// quotes file is build-time only — so if this fails the page shows "not
+// ready" until the next run.
+async function resolveWhoAmI(date) {
+  for await (const movie of whoAmICandidates(date, { include: (c) => hasWhoAmIQuotes(c.key) })) {
+    return { ...movie, quotes: whoAmIQuotesFor(movie.key) };
+  }
+  throw new Error("Could not resolve a Who am I? movie");
+}
 
 // Keys match each game's own localStorage storageId (DailyGame.jsx: "dailyGame",
 // OscarWinnerGame.jsx: "dailyWinner", Faceoff.jsx: "faceoff",
-// NominationsFaceoff.jsx: "nominationsFaceoff") so the client can look itself up
+// NominationsFaceoff.jsx: "nominationsFaceoff", WhoAmIGame.jsx: "whoAmI") so the client can look itself up
 // by the same id it already uses for caching.
 const GAMES = [
   { key: "dailyGame", resolve: getDailyMovie },
   { key: "dailyWinner", resolve: getDailyOscarWinner },
   { key: "faceoff", resolve: getDailyFaceoff },
   { key: "nominationsFaceoff", resolve: getDailyNominationsFaceoff },
+  { key: "whoAmI", resolve: resolveWhoAmI },
 ];
 
 async function main() {
@@ -86,7 +101,7 @@ async function main() {
 
   if (problems.length) {
     console.log(
-      `\n${problems.length}/${GAMES.length} game(s) failed to resolve — those games' players fall back to live resolution today, and the next scheduled run will retry them:`
+      `\n${problems.length}/${GAMES.length} game(s) failed to resolve — those games' players fall back to live resolution today (Who am I? has none: it shows "not ready" until a run succeeds), and the next scheduled run will retry them:`
     );
     problems.forEach((p) => console.log(`  - ${p}`));
   }

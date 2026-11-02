@@ -1516,6 +1516,7 @@ function GamesSection() {
         <GameCard {...GAME_INFO.oscarWinner} />
         <GameCard {...GAME_INFO.faceoff} />
         <GameCard {...GAME_INFO.nominationsFaceoff} />
+        <GameCard {...GAME_INFO.whoAmI} />
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ const DailyGame = lazy(() => import("./DailyGame.jsx"));
 const OscarWinnerGame = lazy(() => import("./OscarWinnerGame.jsx"));
 const Faceoff = lazy(() => import("./Faceoff.jsx"));
 const NominationsFaceoff = lazy(() => import("./NominationsFaceoff.jsx"));
+const WhoAmIGame = lazy(() => import("./WhoAmIGame.jsx"));
 
 // GitHub Pages has no server-side routing: vite.config.js copies the built
 // index.html to 404.html so any path (e.g. /games/daily) still loads this
@@ -27,6 +28,7 @@ const ROUTES = {
   "/games/daily-oscar-edition": OscarWinnerGame,
   "/games/faceoff": Faceoff,
   "/games/faceoff-oscar-edition": NominationsFaceoff,
+  "/games/who-am-i": WhoAmIGame,
 };
 const Root = ROUTES[path] || App;
 

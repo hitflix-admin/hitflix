@@ -43,10 +43,17 @@ export function cleanMovieTitle(title) {
 
 const NON_MOVIE_DESCRIPTION = /\b(director|actor|actress|producer|screenwriter|composer|cinematographer|editor|soundtrack|album|score|song|series|franchise|trilogy|registry|studio|festival|award|musician|singer|novel|book|video game|podcast)\b/i;
 
-function isMovieDescription(desc) {
+// Judged on the short description, ignoring its "by <name>" credit — "1995
+// film by Bryan Singer" otherwise trips the "singer" exclusion. Descriptions
+// that never say "film" ("1999 American teen sex comedy", "Science fiction
+// thriller by Alfonso Cuarón") fall back to the article's first sentence,
+// which nearly always does ("…is a 1999 American teen sex comedy film…").
+function isMovieDescription(desc, extract = "") {
   if (!desc) return false;
-  if (!/\bfilm\b/i.test(desc)) return false;
-  return !NON_MOVIE_DESCRIPTION.test(desc);
+  if (NON_MOVIE_DESCRIPTION.test(desc.replace(/\bby\b.*$/i, ""))) return false;
+  if (/\bfilm\b/i.test(desc)) return true;
+  const firstSentence = extract.split(/(?<=\.)\s/)[0] || "";
+  return /\b(is|was) an? .*\bfilm\b/i.test(firstSentence);
 }
 
 async function fetchFilmSummary(title) {
@@ -84,6 +91,17 @@ function toFilmResult(s) {
   };
 }
 
+// A film article by its exact Wikipedia page title (redirects followed), or
+// null if there's no such page or it isn't a film. For titles whose article
+// search doesn't surface — "The Usual Suspects film" ranks the Keyser Söze
+// character page instead.
+export async function fetchFilmByPageTitle(pageTitle) {
+  const s = await fetchFilmSummary(pageTitle);
+  if (!s) return null;
+  const film = toFilmResult(s);
+  return film.title && isMovieDescription(film.description, film.extract) ? film : null;
+}
+
 // targetYear is an optional caller hint (candidate-resolution callers already
 // know the year they're after and only ever use the single closest-matching
 // result — see resolveCandidate in dailyMovie.js/faceoff.js/nominationsFaceoff.js).
@@ -108,7 +126,7 @@ export async function searchWikipediaFilms(query, targetYear = null) {
     return summaries
       .filter(Boolean)
       .map(toFilmResult)
-      .filter((s) => s.title && isMovieDescription(s.description));
+      .filter((s) => s.title && isMovieDescription(s.description, s.extract));
   }
 
   const results = [];
@@ -116,11 +134,68 @@ export async function searchWikipediaFilms(query, targetYear = null) {
     const s = await fetchFilmSummary(t);
     if (!s) continue;
     const film = toFilmResult(s);
-    if (!film.title || !isMovieDescription(film.description)) continue;
+    if (!film.title || !isMovieDescription(film.description, film.extract)) continue;
     results.push(film);
     if (film.year && Math.abs(Number(film.year) - targetYear) <= 1) break;
   }
   return results;
+}
+
+// sequel numerals compare equal either way ("Frozen II" on Box Office Mojo,
+// "Frozen 2" on Wikipedia), and Star Wars' "Episode VII" is dropped, since
+// Wikipedia's article titles leave it out
+const ROMAN = { ii: "2", iii: "3", iv: "4", v: "5", vi: "6", vii: "7", viii: "8", ix: "9" };
+const titleCore = (t) =>
+  normalizeOscarTitle(t)
+    .replace(/^(the|a|an) /, "")
+    .replace(/\b(ii|iii|iv|vi|vii|viii|ix)\b/g, (n) => ROMAN[n])
+    .replace(/\bepisode \d+ /, "");
+// "Star Wars: Episode V - The Empire Strikes Back" → its title and each part
+// either side of a colon or dash, so it matches "The Empire Strikes Back"
+const titleParts = (t) => [t, ...t.split(/:|\s[-–—]\s/)].map(titleCore).filter(Boolean);
+
+// How well a Wikipedia result's title fits a pool entry's title: 3 exact, 2 one is a
+// part of the other (subtitles, "Episode IV"), 1 one starts with the other
+// (Box Office Mojo's long "Birds of Prey and the Fantabulous…") or is the
+// other minus a possessive credit ("Bram Stoker's Dracula"), 0 different.
+// Without this, a search's first same-year result could be a different movie
+// entirely (Get Shorty resolving to Seven, Hook to The Addams Family).
+export function titleMatchScore(listTitle, wikiTitle) {
+  const a = titleCore(listTitle);
+  const b = titleCore(wikiTitle);
+  if (a === b) return 3;
+  const aParts = titleParts(listTitle);
+  const bParts = titleParts(wikiTitle);
+  if (aParts.includes(b) || bParts.includes(a)) return 2;
+  const [short, long] = a.length < b.length ? [a, b] : [b, a];
+  if (short.includes(" ") && long.startsWith(`${short} `)) return 1;
+  if (long.endsWith(` ${short}`) && /\bs( (the|a|an))?$/.test(long.slice(0, -short.length - 1))) return 1;
+  return 0;
+}
+
+// A daily game's pick → its Wikipedia search result: a title match within a
+// year of the pick's year (so a 1991 re-release of a 1961 film doesn't
+// count), best title match first. Tries a quick year-targeted search, then a
+// full one, then the usual article names directly for the few films search
+// doesn't surface. Shared by every daily game's candidate resolution.
+export async function findFilmArticle(title, year) {
+  const pick = (results) =>
+    results
+      .filter((r) => r.year && Math.abs(Number(r.year) - year) <= 1)
+      .map((r) => ({ r, score: titleMatchScore(title, r.title) }))
+      .filter((x) => x.score > 0)
+      .sort((x, y) => y.score - x.score || Math.abs(x.r.year - year) - Math.abs(y.r.year - year))[0]?.r;
+  // The Oscar pool's titles come normalized, punctuation stripped ("Don T Look
+  // Up"); put contractions back together for searching ("Don't Look Up").
+  // Matching itself compares normalized titles, so this only helps search.
+  const query = title.replace(/(\w) (t|s|re|ll|ve|d|m)\b/gi, "$1'$2");
+  return (
+    pick(await searchWikipediaFilms(`${query} ${year}`, year)) ||
+    pick(await searchWikipediaFilms(`${query} ${year}`)) ||
+    pick(await searchWikipediaFilms(query)) ||
+    pick((await Promise.all([`${query} (${year} film)`, `${query} (film)`, query].map(fetchFilmByPageTitle))).filter(Boolean)) ||
+    null
+  );
 }
 
 /* ---------------- Wikipedia infobox parsing ---------------- */

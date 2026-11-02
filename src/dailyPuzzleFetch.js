@@ -3,7 +3,7 @@
 // a single small same-origin fetch instead of the dozens of live Wikipedia
 // requests each game's own resolver makes. `gameKey` is the game's own
 // localStorage storageId ("dailyGame", "dailyWinner", "faceoff",
-// "nominationsFaceoff"), which doubles as its key in the precomputed file.
+// "nominationsFaceoff", "whoAmI"), which doubles as its key in the precomputed file.
 //
 // Returns null on any problem — a 404 (the cron hasn't run yet today, or
 // failed), a malformed file, a stale date (clock skew, or a deploy that hasn't

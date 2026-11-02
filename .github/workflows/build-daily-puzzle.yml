@@ -1,6 +1,6 @@
 name: Build Daily Puzzle
 
-# Precomputes the day's puzzle for all four daily games (see
+# Precomputes the day's puzzle for all five daily games (see
 # scripts/build-daily-puzzle.mjs) instead of leaving every visitor's browser to
 # resolve it live against Wikipedia, then builds and deploys the site directly
 # from this same run. The precomputed answer file is never committed — it only

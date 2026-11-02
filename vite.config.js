@@ -34,6 +34,13 @@ const ROUTE_META = [
       "Pick which of two similar movies earned more Oscar nominations across 5 head-to-head rounds. New matchups every day.",
     entry: "src/NominationsFaceoff.jsx",
   },
+  {
+    path: "/games/who-am-i",
+    title: "Who am I? — Guess the Movie from a Quote | Hitflix",
+    description:
+      "Name the movie from one line of its dialogue in 5 tries. Every wrong guess swaps in a more recognizable line, ending on the movie's most iconic quote. A new movie every day.",
+    entry: "src/WhoAmIGame.jsx",
+  },
 ];
 const HOME_ENTRY = "src/App.jsx";
 

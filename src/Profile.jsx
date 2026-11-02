@@ -1023,7 +1023,7 @@ function GuessDistribution({ distribution, losses, accent }) {
 }
 
 function StatsPanel({ stats }) {
-  const guessGames = [GAME_INFO.daily, GAME_INFO.oscarWinner];
+  const guessGames = [GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.whoAmI];
   const faceoffGames = [GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff];
   const noGames = stats.totalGames === 0;
   return (
@@ -1048,7 +1048,7 @@ function StatsPanel({ stats }) {
         <div style={{ color: MUTE, fontSize: 12, lineHeight: 1.4, textAlign: "right" }}>
           <span style={{ color: "#E7E9EC", fontWeight: 700 }}>{stats.guessGamesPlayed}</span>{" "}
           {stats.guessGamesPlayed === 1 ? "game" : "games"} played
-          <div style={{ fontSize: 11 }}>Daily Movie games</div>
+          <div style={{ fontSize: 11 }}>guessing games</div>
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginTop: 8 }}>
@@ -1056,7 +1056,7 @@ function StatsPanel({ stats }) {
         <StatTile label="Best streak" value={stats.streak.best} />
       </div>
       <div style={{ color: MUTE, fontSize: 11.5, marginTop: 8, lineHeight: 1.4 }}>
-        Win rate covers both Daily Movie games. Your streak counts every day you visit Hitflix while signed in.
+        Win rate covers both Daily Movie games and Who am I?. Your streak counts every day you visit Hitflix while signed in.
       </div>
 
       {noGames && (
@@ -1078,7 +1078,12 @@ function StatsPanel({ stats }) {
                   <StatTile label="Win rate" value={fmtPct(g.winRate)} />
                   <StatTile label="Played" value={g.played} />
                   <StatTile label="Avg guesses" value={fmtNum(g.avgGuesses)} />
-                  <StatTile label="No-hint wins" value={g.noHintWins} />
+                  {/* Who am I? has no hint to skip */}
+                  {info.storageId === "whoAmI" ? (
+                    <StatTile label="Wins" value={g.wins} />
+                  ) : (
+                    <StatTile label="No-hint wins" value={g.noHintWins} />
+                  )}
                   <StatTile label="Avg time" value={fmtTime(g.avgSeconds)} />
                   <StatTile label="Fastest" value={fmtTime(g.fastestSeconds)} />
                 </div>
