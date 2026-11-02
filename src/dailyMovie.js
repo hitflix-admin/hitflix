@@ -4,7 +4,7 @@
 // draws from the Oscar-nominations database's winners-only pool. Both resolve
 // the pick against Wikipedia for display data and score guesses against it.
 
-import { loadOscarAwardsData, normalizeOscarTitle, searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
+import { loadOscarAwardsData, normalizeOscarTitle, findFilmArticle, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
 import boxOfficeTop10 from "./boxOfficeTop10.json" with { type: "json" };
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
@@ -332,16 +332,11 @@ async function resolveCandidate(candidate) {
   // normalized/title-cased form, which the Oscar pool's candidates fall back to
   // since they only have a normalized key to work from.
   const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
-  if (results.length === 0) return null;
-
-  // Require the result's own year to actually be near the candidate's — falling
-  // back to results[0] unconditionally let a generically-titled candidate (e.g.
-  // "Black Fox", a 1962 documentary) resolve to an unrelated, irrelevant top hit
-  // ("The Little Foxes", 1941), silently pairing that movie's title/poster/extract
-  // with a completely different movie's director/cast/runtime/Oscar data.
-  const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
+  // Both the year and the title have to match: year alone let a candidate
+  // resolve to whichever same-year film the search ranked first (Get Shorty
+  // showing up as Seven, Hook as The Addams Family), pairing one movie's
+  // title/poster/extract with another's director/cast/runtime/Oscar data.
+  const best = await findFilmArticle(guessTitle, candidate.year);
   if (!best) return null;
 
   const [details, genreTags, plotHint] = await Promise.all([

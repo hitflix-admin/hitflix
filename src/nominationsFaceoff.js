@@ -3,7 +3,7 @@
 // Oscar nomination count — no Wikipedia box-office data required, since the
 // nomination count is already known from the Oscar-nominations dataset itself.
 
-import { searchWikipediaFilms, fetchGenreTags } from "./movieData.js";
+import { findFilmArticle, fetchGenreTags } from "./movieData.js";
 import { getCandidatePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
 import { buildGenrePairs } from "./facePairing.js";
 
@@ -14,16 +14,10 @@ const SIDE_SEED_OFFSET = 40001;
 
 async function resolveCandidate(candidate) {
   const guessTitle = titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
-  if (results.length === 0) return null;
-
-  // Require the result's own year to actually be near the candidate's — falling
-  // back to results[0] unconditionally let a generically-titled candidate (e.g.
-  // "Black Fox", a 1962 documentary) resolve to an unrelated, irrelevant top hit
-  // ("The Little Foxes", 1941), silently pairing that movie's title/poster with
-  // the wrong nomination count.
-  const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
+  // Year and title both have to match, or a same-year film the search ranked
+  // first stands in, paired with the wrong nomination count (see
+  // findFilmArticle).
+  const best = await findFilmArticle(guessTitle, candidate.year);
   if (!best) return null;
 
   const genreTags = await fetchGenreTags(best.pageTitle);
