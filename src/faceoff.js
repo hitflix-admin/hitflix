@@ -2,7 +2,7 @@
 // midnight): each pair is two movies with at least one shared genre tag, and
 // the player guesses which grossed more worldwide at the box office.
 
-import { searchWikipediaFilms, fetchMovieDetails, fetchGenreTags, parseBoxOfficeUSD } from "./movieData.js";
+import { findFilmArticle, fetchMovieDetails, fetchGenreTags, parseBoxOfficeUSD } from "./movieData.js";
 import { getBoxOfficePool, titleCaseGuess, todayGameDateString } from "./dailyMovie.js";
 import { buildGenrePairs } from "./facePairing.js";
 
@@ -17,16 +17,10 @@ async function resolveFaceoffCandidate(candidate) {
   // ampersands and all) over round-tripping through the normalized/title-cased
   // form — see the matching comment in dailyMovie.js's resolveCandidate.
   const guessTitle = candidate.displayTitle || titleCaseGuess(candidate.normalizedTitle);
-  let results = await searchWikipediaFilms(`${guessTitle} ${candidate.year}`, candidate.year);
-  if (results.length === 0) results = await searchWikipediaFilms(guessTitle, candidate.year);
-  if (results.length === 0) return null;
-
-  // Require the result's own year to actually be near the candidate's — falling
-  // back to results[0] unconditionally let a generically-titled candidate (e.g.
-  // "Black Fox", a 1962 documentary) resolve to an unrelated, irrelevant top hit
-  // ("The Little Foxes", 1941), silently pairing that movie's title/poster with
-  // the wrong box-office figure.
-  const best = results.find((r) => r.year && Math.abs(Number(r.year) - candidate.year) <= 1);
+  // Year and title both have to match, or a same-year film the search ranked
+  // first stands in, paired with the wrong box-office figure (see
+  // findFilmArticle).
+  const best = await findFilmArticle(guessTitle, candidate.year);
   if (!best) return null;
 
   const [details, genreTags] = await Promise.all([

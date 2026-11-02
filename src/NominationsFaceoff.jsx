@@ -18,7 +18,7 @@ export default function NominationsFaceoff() {
       shareUrl="https://hitflix.club/games/faceoff-oscar-edition"
       resolvePairs={getDailyNominationsFaceoff}
       formatValue={formatNominations}
-      crossLinks={[GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.faceoff]}
+      crossLinks={[GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.faceoff, GAME_INFO.whoAmI]}
     />
   );
 }

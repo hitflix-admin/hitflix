@@ -110,4 +110,11 @@ export const GAME_INFO = {
     description: "Pick the movie with more Oscar nominations across 5 head-to-head rounds",
     storageId: "nominationsFaceoff",
   },
+  whoAmI: {
+    href: "/games/who-am-i",
+    accent: COLORS.teal,
+    title: "Who am I?",
+    description: "Name the movie from one line of dialogue — every miss brings an easier line",
+    storageId: "whoAmI",
+  },
 };

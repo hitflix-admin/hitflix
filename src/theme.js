@@ -30,6 +30,9 @@ export const COLORS = {
   caramel: "#BF945C",
   fern: "#5CBF63",
   scarlet: "#BF5A62",
+  // Who am I?'s accent — the same saturation/lightness family, in the one
+  // hue the other four games' accents don't already cover
+  teal: "#5CB8BF",
 };
 
 export const inputStyle = {

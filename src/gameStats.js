@@ -5,7 +5,11 @@
    to past games too.
 --------------------------------------------------------- */
 
-const GUESS_GAMES = ["dailyGame", "dailyWinner"];
+const GUESS_GAMES = ["dailyGame", "dailyWinner", "whoAmI"];
+// the two Daily Movie editions — "One-Take Wonder" and "Gone in 60 Seconds"
+// are about them; Who am I? guesses need no lookup, so a fast or first-try
+// win there isn't the same feat
+const DAILY_MOVIE_GAMES = ["dailyGame", "dailyWinner"];
 const FACEOFF_GAMES = ["faceoff", "nominationsFaceoff"];
 
 // "YYYY-MM-DD" -> whole days, for streak math
@@ -72,6 +76,7 @@ export function computeStats(rows, today, activeDays = []) {
   const byGame = (game) => rows.filter((r) => r.game === game);
   const guessRows = rows.filter((r) => GUESS_GAMES.includes(r.game));
   const guessWins = guessRows.filter((r) => r.won).length;
+  const dailyMovieRows = rows.filter((r) => DAILY_MOVIE_GAMES.includes(r.game));
   const games = Object.fromEntries([
     ...GUESS_GAMES.map((g) => [g, guessGameStats(byGame(g))]),
     ...FACEOFF_GAMES.map((g) => [g, faceoffStats(byGame(g))]),
@@ -86,9 +91,9 @@ export function computeStats(rows, today, activeDays = []) {
     streak: streaks(activeDays, today),
     games,
     allFourDays: Object.values(gamesPerDay).filter((n) => n >= 4).length,
-    holeInOnes: guessRows.filter((r) => r.won && r.guesses === 1).length,
+    holeInOnes: dailyMovieRows.filter((r) => r.won && r.guesses === 1).length,
     clutchWins: guessRows.filter((r) => r.won && r.guesses === 5).length,
-    speedRuns: guessRows.filter((r) => r.won && Number.isFinite(r.active_seconds) && r.active_seconds < 60).length,
+    speedRuns: dailyMovieRows.filter((r) => r.won && Number.isFinite(r.active_seconds) && r.active_seconds < 60).length,
     noHintWins: games.dailyGame.noHintWins + games.dailyWinner.noHintWins,
     perfectFaceoffs: games.faceoff.perfectGames + games.nominationsFaceoff.perfectGames,
   };

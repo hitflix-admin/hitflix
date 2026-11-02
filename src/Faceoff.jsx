@@ -21,7 +21,7 @@ export default function Faceoff() {
       shareUrl="https://hitflix.club/games/faceoff"
       resolvePairs={getDailyFaceoff}
       formatValue={formatUSD}
-      crossLinks={[GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.nominationsFaceoff]}
+      crossLinks={[GAME_INFO.daily, GAME_INFO.oscarWinner, GAME_INFO.nominationsFaceoff, GAME_INFO.whoAmI]}
     />
   );
 }

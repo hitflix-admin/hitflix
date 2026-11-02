@@ -1,13 +1,13 @@
 // "What's new" popup: opens by itself on any page when there are update
 // announcements (whatsNewUpdates.js) this person hasn't seen, oldest first,
-// as a carousel. Closing it (✕, Escape, or tapping outside) marks every
-// one shown as seen — on the account when signed in (0017_whats_new.sql),
-// and in this browser either way.
+// as a carousel. Closing it (✕, Escape, tapping outside, or an update's own
+// action button) marks every one shown as seen — on the account when signed
+// in (0017_whats_new.sql), and in this browser either way.
 
 import React, { useEffect, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "./supabase.js";
-import { COLORS } from "./theme.js";
+import { COLORS, primaryBtn } from "./theme.js";
 import { useScrollLock } from "./scrollLock.js";
 import { UPDATES } from "./whatsNewUpdates.js";
 
@@ -79,14 +79,17 @@ export default function WhatsNew() {
 
   if (!updates.length) return null;
 
+  // resolves once the account has recorded them, so an action button can
+  // wait for that before leaving the page
   function close() {
     const ids = updates.map((u) => u.id);
     const browser = readBrowserState();
     writeBrowserState({ ...browser, seen: [...new Set([...browser.seen, ...ids])] });
-    if (signedIn) {
-      supabase.rpc("mark_whats_new_seen", { update_ids: ids }).then(({ error }) => error && console.error(error));
-    }
     setUpdates([]);
+    if (!signedIn) return Promise.resolve();
+    return supabase
+      .rpc("mark_whats_new_seen", { update_ids: ids })
+      .then(({ error }) => error && console.error(error));
   }
 
   return <WhatsNewModal updates={updates} onClose={close} />;
@@ -214,6 +217,31 @@ export function WhatsNewModal({ updates, onClose }) {
             {p}
           </p>
         ))}
+
+        {update.action && (
+          <a
+            href={update.action.href}
+            onClick={(e) => {
+              // record "seen" before leaving, or the next page shows it again;
+              // give up waiting after a moment so a slow network can't trap them
+              e.preventDefault();
+              const href = update.action.href;
+              Promise.race([Promise.resolve(onClose()), new Promise((r) => setTimeout(r, 1500))]).finally(() => {
+                window.location.href = href;
+              });
+            }}
+            style={{
+              ...primaryBtn,
+              display: "block",
+              textAlign: "center",
+              textDecoration: "none",
+              marginTop: 18,
+              boxSizing: "border-box",
+            }}
+          >
+            {update.action.label}
+          </a>
+        )}
 
         {many && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, margin: "18px 0 0" }}>

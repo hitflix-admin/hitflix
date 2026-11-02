@@ -39,7 +39,7 @@ export default function OscarWinnerGame() {
       shareUrl="https://hitflix.club/games/daily-oscar-edition"
       resolveTarget={getDailyOscarWinner}
       renderHint={(target) => <WinnerHint hintCategory={target.hintCategory} />}
-      crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff]}
+      crossLinks={[GAME_INFO.daily, GAME_INFO.faceoff, GAME_INFO.nominationsFaceoff, GAME_INFO.whoAmI]}
     />
   );
 }

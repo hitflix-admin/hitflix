@@ -1,7 +1,7 @@
 // Warms the localStorage cache for the games a player *isn't* currently on,
 // so clicking a "More games" tile feels instant instead of re-triggering a
 // multi-second Wikipedia resolution. Also prunes stale cache entries, since
-// none of the four games otherwise expire old dates.
+// none of the games otherwise expire old dates.
 
 import { getDailyMovie, getDailyOscarWinner, todayGameDateString } from "./dailyMovie.js";
 import { getDailyFaceoff } from "./faceoff.js";
@@ -13,11 +13,13 @@ const GAMES = [
   { storageId: "dailyWinner", resolve: getDailyOscarWinner },
   { storageId: "faceoff", resolve: getDailyFaceoff },
   { storageId: "nominationsFaceoff", resolve: getDailyNominationsFaceoff },
+  // precomputed file only — its quotes can't be generated in the browser
+  { storageId: "whoAmI", resolve: null },
 ];
 
 // Deliberately not a strict UTC-date regex on the storageId — just needs to
-// tell "today" apart from every other cached date across all four games.
-const CACHE_KEY_RE = /^(dailyGame|dailyWinner|faceoff|nominationsFaceoff):(target|progress):(\d{4}-\d{2}-\d{2})$/;
+// tell "today" apart from every other cached date across all the games.
+const CACHE_KEY_RE = /^(dailyGame|dailyWinner|faceoff|nominationsFaceoff|whoAmI):(target|progress):(\d{4}-\d{2}-\d{2})$/;
 
 function pruneOldEntries(currentDate) {
   try {
@@ -63,8 +65,8 @@ export async function preloadOtherGames(currentStorageId) {
     if (game.storageId === currentStorageId) continue;
     if (isTargetCached(game.storageId, date)) continue;
     try {
-      const data = (await fetchPrecomputedPuzzle(date, game.storageId)) || (await game.resolve(date));
-      cacheTarget(game.storageId, date, data);
+      const data = (await fetchPrecomputedPuzzle(date, game.storageId)) || (game.resolve && (await game.resolve(date)));
+      if (data) cacheTarget(game.storageId, date, data);
     } catch (e) {}
   }
 }
