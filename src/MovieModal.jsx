@@ -4,13 +4,14 @@
 // storage but share this same UI and the "movieReviews" localStorage shape.
 
 import { useState, useEffect } from "react";
-import { X, ExternalLink } from "lucide-react";
+import { X, ExternalLink, Info } from "lucide-react";
 import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
 import { useScrollLock } from "./scrollLock.js";
 import { loadHitflixScores } from "./hitflixScore.js";
 import { supabase } from "./supabase.js";
+import HitflixScoreInfo from "./HitflixScoreInfo.jsx";
 
 const DEFAULT_RATING = { overall: 5, writing: 3, performance: 3, visuals: 3, audio: 3 };
 const SUBCATEGORIES = [
@@ -20,6 +21,38 @@ const SUBCATEGORIES = [
   { key: "performance", label: "Performances" },
 ];
 const DESCRIPTION_TRUNCATE_LENGTH = 275;
+
+// The ⓘ next to "Hitflix score" and "Your rating": opens HitflixScoreInfo.
+function ScoreInfoButton({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="How the Hitflix Score works"
+      style={{
+        background: "none",
+        border: "none",
+        padding: 4,
+        margin: -4,
+        color: COLORS.caramel,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <Info size={15} strokeWidth={2.2} />
+    </button>
+  );
+}
+
+// "The Craft" / "The Reaction" heading over each half of Your rating
+const partLabel = {
+  fontSize: 11.5,
+  fontWeight: 800,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+  color: COLORS.caramel,
+  marginBottom: 2,
+};
 
 // onSignIn opens sign-in; without it (the game pages), Sign in goes to the
 // home page with its sign-in popup open (/?signin=1).
@@ -38,6 +71,7 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
   const shownExtract = expanded || !isLong ? extract : extract.slice(0, DESCRIPTION_TRUNCATE_LENGTH).trimEnd() + "…";
   // undefined = loading, null = not enough ratings yet, "error" = couldn't load
   const [hitflixScore, setHitflixScore] = useState(undefined);
+  const [showScoreInfo, setShowScoreInfo] = useState(false);
 
   // null until known; signed-out ratings stay in this browser and don't
   // count toward the Hitflix score, so those players get a sign-in prompt
@@ -227,22 +261,28 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
                   fontSize: 13,
                   letterSpacing: 0.5,
                   color: "#8D96A3",
-                  marginBottom: 3,
+                  marginBottom: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
                 }}
               >
                 Hitflix score
+                <ScoreInfoButton onClick={() => setShowScoreInfo(true)} />
               </div>
-              <div style={{ fontSize: 12.5, color: "#8D96A3", lineHeight: 1.4 }}>
-                {hitflixScore === undefined
-                  ? "Loading…"
-                  : hitflixScore === null
-                  ? "Not enough ratings yet"
-                  : "Everyone's average rating"}
+              <div style={{ fontSize: 12.5, color: "#AEB5BF", lineHeight: 1.45 }}>
+                The Hitflix Score blends the craft with the reaction, so you know what to expect before you sit down.
               </div>
+              {hitflixScore !== undefined && hitflixScore !== null ? null : (
+                <div style={{ fontSize: 12, color: "#8D96A3", lineHeight: 1.4, marginTop: 4, fontStyle: "italic" }}>
+                  {hitflixScore === undefined ? "Loading…" : "Not enough ratings yet"}
+                </div>
+              )}
             </div>
             {typeof hitflixScore === "number" && <Gauge score={hitflixScore} size={56} />}
           </div>
         )}
+        {showScoreInfo && <HitflixScoreInfo onClose={() => setShowScoreInfo(false)} />}
 
         <div
           style={{
@@ -261,9 +301,13 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
               letterSpacing: 0.5,
               color: "#8D96A3",
               marginBottom: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
             Your rating
+            <ScoreInfoButton onClick={() => setShowScoreInfo(true)} />
           </div>
 
           {signedIn === false && (
@@ -308,28 +352,31 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
-                <span>Overall</span>
-                <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {showValues ? `${draftRating.overall}/10` : "N/A"}
-                </span>
+              <div style={partLabel}>The Reaction</div>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
+                  <span>Overall</span>
+                  <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                    {showValues ? `${draftRating.overall}/10` : "N/A"}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={10}
+                  step={1}
+                  value={draftRating.overall}
+                  onChange={(e) => setDraftRating((r) => ({ ...r, overall: Number(e.target.value) }))}
+                  style={{ width: "100%" }}
+                />
               </div>
-              <input
-                type="range"
-                min={0}
-                max={10}
-                step={1}
-                value={draftRating.overall}
-                onChange={(e) => setDraftRating((r) => ({ ...r, overall: Number(e.target.value) }))}
-                style={{ width: "100%" }}
-              />
             </div>
 
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={partLabel}>The Craft</div>
               {SUBCATEGORIES.map((cat) => {
                 const value = draftRating[cat.key];
                 const color = showValues ? ratingColor(value, 1, 5) : "#4a525c";
