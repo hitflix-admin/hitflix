@@ -4,7 +4,7 @@
 // storage but share this same UI and the "movieReviews" localStorage shape.
 
 import { useState, useEffect } from "react";
-import { X, ExternalLink, Info } from "lucide-react";
+import { X, ExternalLink, Info, RotateCcw } from "lucide-react";
 import { COLORS, primaryBtn } from "./theme.js";
 import { fetchMovieDetails, detailsLookStale } from "./movieData.js";
 import { calcScore, ratingColor, Gauge, PosterArt } from "./movieUI.jsx";
@@ -44,6 +44,22 @@ function ScoreInfoButton({ onClick }) {
   );
 }
 
+// What each Reaction score (the overall slider) means. 0 is no longer
+// offered; a rating saved as 0 before then reads as 1.
+const REACTION_LABELS = {
+  1: "Couldn't finish it",
+  2: "Really bad",
+  3: "Lots of issues",
+  4: "Below average",
+  5: "Average",
+  6: "Some good moments",
+  7: "Enjoyed it",
+  8: "Highly recommend",
+  9: "Loved it",
+  10: "Incredible",
+};
+const reactionLabel = (overall) => REACTION_LABELS[Math.max(1, overall)];
+
 // "The Craft" / "The Reaction" heading over each half of Your rating
 const partLabel = {
   fontSize: 11.5,
@@ -62,9 +78,14 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
   const hasExistingRating = !!movie.rating;
   const savedRating = movie.rating || DEFAULT_RATING;
   const [draftRating, setDraftRating] = useState(savedRating);
-  const hasChanges = JSON.stringify(draftRating) !== JSON.stringify(savedRating);
+  // Once any slider is touched, an unrated movie counts as rated, even if
+  // every slider is left at its starting value (5/10, 3/5).
+  const [touched, setTouched] = useState(false);
+  const touch = () => setTouched(true);
+  const hasChanges = JSON.stringify(draftRating) !== JSON.stringify(savedRating) || (!hasExistingRating && touched);
   const showValues = hasExistingRating || hasChanges;
   const score = showValues ? calcScore(draftRating) : null;
+  const reactionColor = ratingColor(draftRating.overall, 1, 10);
   const saveButtonLabel = !hasChanges ? "Return to list" : hasExistingRating ? "Update rating" : "Add rating";
   const extract = movie.extract || "";
   const isLong = extract.length > DESCRIPTION_TRUNCATE_LENGTH;
@@ -304,10 +325,40 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
               display: "flex",
               alignItems: "center",
               gap: 6,
+              minHeight: 24, // room for Reset, so the heading doesn't jump
             }}
           >
             Your rating
             <ScoreInfoButton onClick={() => setShowScoreInfo(true)} />
+            {hasChanges && (
+              <button
+                onClick={() => {
+                  setDraftRating(savedRating);
+                  setTouched(false);
+                }}
+                aria-label={hasExistingRating ? "Undo changes to your rating" : "Reset your rating"}
+                style={{
+                  marginLeft: "auto",
+                  background: "none",
+                  border: "1px solid rgba(231,233,236,0.18)",
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  color: "#AEB5BF",
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: 0.3,
+                  textTransform: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <RotateCcw size={12} strokeWidth={2.4} />
+                Reset
+              </button>
+            )}
           </div>
 
           {signedIn === false && (
@@ -356,22 +407,68 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
               }}
             >
               <div style={partLabel}>The Reaction</div>
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "#8D96A3" }}>
-                  <span>Overall</span>
-                  <span style={{ color: "#E7E9EC", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                    {showValues ? `${draftRating.overall}/10` : "N/A"}
-                  </span>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 44,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    color: showValues ? reactionColor : "#4a525c",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {showValues ? draftRating.overall : "–"}
+                </div>
+                <div style={{ fontSize: 12, color: "#8D96A3", marginTop: 2 }}>/10</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: showValues ? "#E7E9EC" : "#8D96A3",
+                    margin: "8px 0 10px",
+                    minHeight: 18,
+                  }}
+                >
+                  {showValues ? reactionLabel(draftRating.overall) : "How did it make you feel?"}
                 </div>
                 <input
                   type="range"
-                  min={0}
+                  min={1}
                   max={10}
                   step={1}
-                  value={draftRating.overall}
-                  onChange={(e) => setDraftRating((r) => ({ ...r, overall: Number(e.target.value) }))}
-                  style={{ width: "100%" }}
+                  value={Math.max(1, draftRating.overall)}
+                  onChange={(e) => {
+                    touch();
+                    setDraftRating((r) => ({ ...r, overall: Number(e.target.value) }));
+                  }}
+                  onPointerDown={touch}
+                  onKeyDown={touch}
+                  aria-label="Your reaction, out of 10"
+                  aria-valuetext={showValues ? `${draftRating.overall} out of 10, ${reactionLabel(draftRating.overall)}` : undefined}
+                  style={{ width: "100%", accentColor: showValues ? reactionColor : "#4a525c" }}
                 />
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                    color: "#6B737E",
+                    marginTop: 2,
+                  }}
+                >
+                  <span>1</span>
+                  <span>10</span>
+                </div>
               </div>
             </div>
 
@@ -394,7 +491,12 @@ export default function MovieModal({ movie, onClose, onSaveRating, onDetails, on
                       max={5}
                       step={1}
                       value={value}
-                      onChange={(e) => setDraftRating((r) => ({ ...r, [cat.key]: Number(e.target.value) }))}
+                      onChange={(e) => {
+                        touch();
+                        setDraftRating((r) => ({ ...r, [cat.key]: Number(e.target.value) }));
+                      }}
+                      onPointerDown={touch}
+                      onKeyDown={touch}
                       style={{ width: "100%", accentColor: color }}
                     />
                   </div>
