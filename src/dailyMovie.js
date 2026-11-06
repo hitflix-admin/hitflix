@@ -1,11 +1,12 @@
 // Picks the day's featured movie (same for every player, changes at midnight
-// US Eastern). getDailyMovie draws from the top-10-grossing-per-year pool
-// (boxOfficeTop10.json — real, broadly recognizable hits); getDailyOscarWinner
+// US Eastern). getDailyMovie draws from the top-10-US-domestic-grossing-per-year
+// pool (boxOfficeDomesticTop10.json — real, broadly recognizable hits); getDailyOscarWinner
 // draws from the Oscar-nominations database's winners-only pool. Both resolve
 // the pick against Wikipedia for display data and score guesses against it.
 
 import { loadOscarAwardsData, normalizeOscarTitle, findFilmArticle, fetchMovieDetails, fetchGenreTags, fetchPlotHint, parseBoxOfficeUSD } from "./movieData.js";
 import boxOfficeTop10 from "./boxOfficeTop10.json" with { type: "json" };
+import boxOfficeDomesticTop10 from "./boxOfficeDomesticTop10.json" with { type: "json" };
 
 const SMALL_WORDS = new Set(["a", "an", "the", "of", "in", "for", "and", "to", "is", "on"]);
 
@@ -38,6 +39,17 @@ function featureCategories(winners) {
 // qualify a movie for the daily pool — it still counts toward the nomination-
 // count path below, same as any other nominee.
 const NICHE_WIN_ONLY_CATEGORY_RE = /^documentary|international feature film|foreign language film/i;
+
+// A movie whose *only* nomination was Foreign Language / International Feature
+// (The Lives of Others, Son of Saul…) isn't eligible for the Oscar Winner pool
+// — rarely seen by a US audience. One with other nominations too (Parasite,
+// Roma, Crouching Tiger) stays. The dataset only lists the categories a movie
+// won, so "every nomination was one of its international-feature wins" is how
+// this is checked.
+function onlyNominatedForInternationalFeature(entry) {
+  const intlWins = entry.winners.filter((c) => /international feature film|foreign language film/i.test(c)).length;
+  return intlWins > 0 && entry.nominations <= intlWins;
+}
 
 function hasMainstreamWin(winners) {
   return featureCategories(winners).some((c) => !NICHE_WIN_ONLY_CATEGORY_RE.test(c));
@@ -132,35 +144,40 @@ async function buildPool(predicate) {
   return pool;
 }
 
-// The box-office-hit pool shared by the regular Daily Movie and regular Faceoff
-// games: the top 10 highest-grossing films of each year in src/boxOfficeTop10.json
-// (built by scripts/build-boxoffice-data.mjs from Wikipedia's own yearly box-office
-// tables) — real box-office hits rather than an Oscar-nomination proxy for fame,
-// so mainstream movies with no awards pedigree (Transformers, Meet the Fockers,
-// etc.) are eligible too. Daily Movie uses the most recent 45 years of it;
-// Faceoff — which needs more variety spread across more rounds — uses the full
-// 60-year dataset.
+// The box-office-hit pools (both built by scripts/build-boxoffice-data.mjs from
+// Wikipedia's own yearly box-office tables) — real box-office hits rather than
+// an Oscar-nomination proxy for fame, so mainstream movies with no awards
+// pedigree (Transformers, Meet the Fockers, etc.) are eligible too. Each is the
+// top 10 grossing films of each year:
+// - "domestic" (boxOfficeDomesticTop10.json, US gross, American films) — the
+//   regular Daily Movie, most recent 45 years. Domestic rather than worldwide
+//   so the pick is something a US audience saw, not a China-only hit like
+//   Ne Zha 2.
+// - "worldwide" (boxOfficeTop10.json) — the regular Faceoff, which needs more
+//   variety across more rounds and uses the full 60 years.
 const DAILY_MOVIE_YEARS_BACK = 45;
+const BOX_OFFICE_DATASETS = { domestic: boxOfficeDomesticTop10, worldwide: boxOfficeTop10 };
 
-let cachedFullBoxOfficePool = null;
-function getFullBoxOfficePool() {
-  if (!cachedFullBoxOfficePool) {
+const cachedBoxOfficePools = {};
+function getFullBoxOfficePool(dataset) {
+  if (!cachedBoxOfficePools[dataset]) {
+    const data = BOX_OFFICE_DATASETS[dataset];
     const pool = [];
-    for (const year of Object.keys(boxOfficeTop10).sort()) {
-      for (const title of boxOfficeTop10[year]) {
+    for (const year of Object.keys(data).sort()) {
+      for (const title of data[year]) {
         pool.push({ normalizedTitle: normalizeOscarTitle(title), year: parseInt(year, 10), displayTitle: title });
       }
     }
-    cachedFullBoxOfficePool = pool;
+    cachedBoxOfficePools[dataset] = pool;
   }
-  return cachedFullBoxOfficePool;
+  return cachedBoxOfficePools[dataset];
 }
 
-// yearsBack lets each consumer take its own trailing slice of the same dataset
-// (see comment above) instead of every consumer needing its own scraped JSON.
-export function getBoxOfficePool(yearsBack = DAILY_MOVIE_YEARS_BACK) {
-  const pool = getFullBoxOfficePool();
-  const years = Object.keys(boxOfficeTop10).map(Number);
+// yearsBack lets each consumer take its own trailing slice of a dataset
+// (see comment above).
+export function getBoxOfficePool(yearsBack = DAILY_MOVIE_YEARS_BACK, dataset = "domestic") {
+  const pool = getFullBoxOfficePool(dataset);
+  const years = Object.keys(BOX_OFFICE_DATASETS[dataset]).map(Number);
   const minYear = Math.max(...years) - yearsBack + 1;
   return pool.filter((c) => c.year >= minYear);
 }
@@ -181,7 +198,9 @@ export function getCandidatePool() {
 let cachedWinnerPool = null;
 function getWinnerPool() {
   if (!cachedWinnerPool) {
-    cachedWinnerPool = buildPool((e) => featureCategories(e.winners).length > 0);
+    cachedWinnerPool = buildPool(
+      (e) => featureCategories(e.winners).length > 0 && !onlyNominatedForInternationalFeature(e)
+    );
   }
   return cachedWinnerPool;
 }
