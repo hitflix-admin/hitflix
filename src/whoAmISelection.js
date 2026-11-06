@@ -15,6 +15,8 @@
 // - whoAmIPopCulture.json: 10 hand-picked pop-culture staples per year,
 //   1976 onward — iconic, endlessly quoted movies that never topped the box
 //   office (The Room, Office Space, Napoleon Dynamite…). Edit freely.
+// Box-office-only movies from before 1985 are left out (see
+// MIN_BOX_OFFICE_ONLY_YEAR); older classics come in through the pop-culture list.
 
 import { normalizeOscarTitle, fetchMovieDetails, findFilmArticle } from "./movieData.js";
 import { mulberry32, daysSinceEpoch, todayGameDateString } from "./dailyMovie.js";
@@ -25,6 +27,12 @@ import popCulture from "./whoAmIPopCulture.json" with { type: "json" };
 // future day's pick.
 const SHUFFLE_SEED = 4242;
 const MAX_ATTEMPTS = 25;
+
+// Before this year, a movie is only in the pool if it's on the hand-picked
+// pop-culture list — a 1970s/early-80s box-office hit alone (Semi-Tough, The
+// Deep) is usually one a millennial audience has never heard of. Filtered after
+// the shuffle, so the remaining movies keep their relative order.
+const MIN_BOX_OFFICE_ONLY_YEAR = 1985;
 
 // Same movie in both lists (or a re-release a year later) counts once, and is
 // tagged with every list it came from.
@@ -59,8 +67,8 @@ export function getWhoAmIPool() {
     const j = Math.floor(rand() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  cachedPool = pool;
-  return pool;
+  cachedPool = pool.filter((m) => m.year >= MIN_BOX_OFFICE_ONLY_YEAR || m.sources.includes("popCulture"));
+  return cachedPool;
 }
 
 // Finds the candidate's Wikipedia article and pulls display details.

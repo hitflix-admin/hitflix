@@ -55,7 +55,7 @@ function toPublicMovie({ id, title, pageTitle, year, poster, pageUrl, extract, g
 
 export async function getDailyFaceoff(dateString = todayGameDateString()) {
   const pairs = await buildGenrePairs({
-    pool: getBoxOfficePool(FACEOFF_YEARS_BACK),
+    pool: getBoxOfficePool(FACEOFF_YEARS_BACK, "worldwide"),
     dateString,
     seedOffset: FACEOFF_SEED_OFFSET,
     sideSeedOffset: SIDE_SEED_OFFSET,
