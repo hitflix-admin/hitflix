@@ -235,7 +235,7 @@ export default function UpcomingReleases({ onOpenMovie }) {
   }
 
   return (
-    <section>
+    <section id="coming-soon" className="home-section-anchor">
       <div
         style={{
           fontFamily: "'Montserrat', sans-serif",
