@@ -224,3 +224,59 @@ body {
     padding: 0 14px 14px;
   }
 }
+
+/* Homepage section jump links (HomeNav in App.jsx), under the logo and
+   daily quote. Phones get four equal columns so every link always shows. */
+.home-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.home-nav-item {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid rgba(231, 233, 236, 0.18);
+  color: #E7E9EC;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.home-nav-item:hover,
+.home-nav-item:focus-visible {
+  border-color: #6E99D4;
+  color: #6E99D4;
+}
+
+@media (max-width: 430px) {
+  .home-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .home-nav-item {
+    padding: 7px 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-nav {
+    gap: 5px;
+  }
+  .home-nav-item {
+    padding: 7px 2px;
+    font-size: 11.5px;
+  }
+}
+
+/* a little room above a section when jumped to */
+.home-section-anchor {
+  scroll-margin-top: 16px;
+}

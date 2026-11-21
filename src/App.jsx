@@ -1375,7 +1375,7 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
   const shown = needle ? reviewed.filter(({ entry }) => normalizeForSearch(entry.title).includes(needle)) : reviewed;
 
   return (
-    <div style={{ marginTop: 34 }}>
+    <div id="reviews" className="home-section-anchor" style={{ marginTop: 34 }}>
       <div
         style={{
           fontFamily: "'Montserrat', sans-serif",
@@ -1494,9 +1494,37 @@ function ReviewedLibrary({ lists, reviews, onOpenMovie, defaultMovies, onOpenSta
 
 /* ---------------- Home ---------------- */
 
+// Jump links to each homepage section, under the logo and daily quote.
+// Buttons that scroll directly rather than #hash links, so the URL stays
+// clean and the jump can be smooth (instant with reduced motion).
+const HOME_NAV_ITEMS = [
+  { id: "lists", label: "My Lists" },
+  { id: "games", label: "Games" },
+  { id: "reviews", label: "Reviews" },
+  { id: "coming-soon", label: "Upcoming" },
+];
+
+function HomeNav() {
+  function jump(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+  return (
+    <nav className="home-nav" aria-label="Homepage sections">
+      {HOME_NAV_ITEMS.map((item) => (
+        <button key={item.id} type="button" className="home-nav-item" onClick={() => jump(item.id)}>
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function GamesSection() {
   return (
-    <div style={{ marginTop: 34 }}>
+    <div id="games" className="home-section-anchor" style={{ marginTop: 34 }}>
       <div
         style={{
           fontFamily: "'Montserrat', sans-serif",
@@ -1584,6 +1612,7 @@ function HomeView({
         <div style={{ color: "#8D96A3", fontSize: 13.5, marginTop: 6 }}>
           {dailyQuote}
         </div>
+        <HomeNav />
       </div>
 
       {listInvites && listInvites.invites.length > 0 && (
@@ -1591,6 +1620,8 @@ function HomeView({
       )}
 
       <div
+        id="lists"
+        className="home-section-anchor"
         style={{
           fontFamily: "'Montserrat', sans-serif",
           fontWeight: 800,
