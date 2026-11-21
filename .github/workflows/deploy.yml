@@ -33,6 +33,11 @@ jobs:
       # the puzzle live, which is slower but fine, and the nightly run retries.
       - run: node scripts/build-daily-puzzle.mjs
         continue-on-error: true
+      # Refresh the homepage's "Coming to Theaters" list (see
+      # scripts/build-upcoming-releases.mjs). Non-blocking: if Wikipedia
+      # hiccups, the committed public/upcoming.json ships instead.
+      - run: node scripts/build-upcoming-releases.mjs
+        continue-on-error: true
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

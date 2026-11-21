@@ -3,6 +3,7 @@ import { Search, X, Plus, GripVertical, Trash2, ArrowLeft, Film, ExternalLink, C
 import logo from "./assets/hitflix-logo-transparent.png";
 import { COLORS, inputStyle, primaryBtn, secondaryBtn, dangerBtn, segmentBtn, segmentBtnActive, iconBtn } from "./theme.js";
 import GameCard, { GAME_INFO } from "./GameCard.jsx";
+import UpcomingReleases from "./UpcomingReleases.jsx";
 import { getDailyQuote } from "./dailyQuote.js";
 import {
   cleanMovieTitle,
@@ -1728,6 +1729,14 @@ function HomeView({
         defaultMovies={defaultMovies}
         onOpenStandaloneMovie={onOpenStandaloneMovie}
       />
+
+      {/* Two-up row at the bottom of the page: "Coming to Theaters" takes
+          the left half, the right half is held for a future section. On
+          phones the halves stack full width (.home-split in index.css). */}
+      <div className="home-split">
+        <UpcomingReleases onOpenMovie={onOpenStandaloneMovie} />
+        <div aria-hidden="true" />
+      </div>
     </div>
   );
 }
